@@ -11,66 +11,96 @@
         body { font-family: 'Inter', sans-serif; background-color: #111; color: #d1d5db; }
         .font-mafia { font-family: 'Playfair Display', serif; }
         .text-gold { color: #d4af37; }
-        
         .panel-bg { background: #161616; border: 1px solid rgba(212, 175, 55, 0.2); }
-        .card-mafia { background: #222; border: 1px solid #333; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
-        .card-offline { cursor: pointer; border-left: 4px solid #555; }
-        .card-offline:hover { background: #2a2a2a; border-left-color: #d4af37; }
-        .card-waiting { cursor: default; border-left: 4px solid #d4af37; background: #1a1a1a; box-shadow: inset 0 0 10px rgba(212,175,55,0.1); }
-        
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #111; }
-        ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
-    <div class="flex-1 p-8 overflow-y-auto bg-[#0a0a0a] border-r border-[#d4af37]/30">
-        <h2 class="text-2xl font-mafia text-gray-500 mb-2 tracking-widest uppercase text-center"><i class="fa-solid fa-user-clock mr-2"></i> CHƯA CHẤM CÔNG</h2>
-        <div class="text-center text-[10px] text-gray-600 mb-8 uppercase tracking-[0.2em] font-bold">Chạm vào tên để Check-in</div>
-        <div id="offline-list" class="flex flex-col gap-4 max-w-md mx-auto"></div>
-    </div>
-    
-    <div class="flex-1 p-8 bg-[#161616] overflow-y-auto shadow-[-10px_0_20px_rgba(0,0,0,0.8)] z-10">
-        <h2 class="text-2xl font-mafia text-gold mb-2 tracking-widest uppercase text-center drop-shadow-md"><i class="fa-solid fa-mug-hot mr-2"></i> KHO CHỜ VIỆC (STANDBY)</h2>
-        <div class="text-center text-[10px] text-[#d4af37]/60 mb-8 uppercase tracking-[0.2em] font-bold">Sẵn sàng nhận lệnh từ Floor</div>
-        <div id="waiting-list" class="flex flex-col gap-4 max-w-md mx-auto"></div>
+<body class="flex flex-col h-screen overflow-hidden">
+    <header class="p-6 bg-[#0a0a0a] border-b border-[#d4af37]/30 text-center">
+        <h1 class="text-4xl font-mafia text-[#d4af37] tracking-widest uppercase"><i class="fa-solid fa-clock mr-3"></i>KIOSK CHẤM CÔNG</h1>
+        <p class="text-xs text-gray-500 mt-2 uppercase tracking-[0.2em]">Hệ Thống Quản Lý Mafia Casino</p>
+    </header>
+
+    <div class="flex-1 flex justify-center items-center p-8 bg-black">
+        <div class="w-full max-w-md panel-bg p-8 rounded-xl shadow-2xl relative">
+            <h2 class="text-2xl font-mafia text-[#d4af37] mb-6 tracking-widest uppercase text-center border-b border-[#333] pb-4">ĐĂNG NHẬP CA LÀM</h2>
+            
+            <div class="mb-4">
+                <label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">Chọn Nhân Viên</label>
+                <select id="kiosk-staff" class="w-full bg-[#1a1a1a] border border-[#333] p-3 rounded text-white focus:border-[#d4af37] outline-none text-lg">
+                    <!-- Staff list here -->
+                </select>
+            </div>
+            
+            <div class="mb-8">
+                <label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">Mã PIN CÁ NHÂN</label>
+                <input type="password" id="kiosk-pin" class="w-full bg-[#1a1a1a] border border-[#333] p-3 rounded text-white focus:border-[#d4af37] outline-none text-3xl tracking-[0.5em] text-center" placeholder="****" maxlength="4">
+            </div>
+
+            <div class="flex gap-4">
+                <button onclick="handleClock('in')" class="flex-1 bg-green-700 hover:bg-green-600 text-white font-bold uppercase tracking-widest py-4 rounded transition-colors shadow-lg flex flex-col items-center">
+                    <i class="fa-solid fa-right-to-bracket text-2xl mb-1"></i> CHECK-IN
+                </button>
+                <button onclick="handleClock('out')" class="flex-1 bg-red-700 hover:bg-red-600 text-white font-bold uppercase tracking-widest py-4 rounded transition-colors shadow-lg flex flex-col items-center">
+                    <i class="fa-solid fa-right-from-bracket text-2xl mb-1"></i> CHECK-OUT
+                </button>
+            </div>
+            
+            <div class="mt-6 text-center">
+                 <a href="./index.html" class="text-xs text-gray-500 hover:text-white uppercase tracking-widest underline"><i class="fa-solid fa-arrow-left"></i> Về Sảnh</a>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
         const socket = io('https://akpoker.onrender.com');
-        const offlineListDiv = document.getElementById('offline-list');
-        const waitingListDiv = document.getElementById('waiting-list');
+        let currentStaffList = [];
 
-        function renderStaff(staffList) {
-            offlineListDiv.innerHTML = '';
-            waitingListDiv.innerHTML = '';
+        socket.on('update_state', (state) => {
+            if (state.staff) {
+                currentStaffList = state.staff;
+                renderStaffDropdown();
+            }
+        });
+        
+        // Listen to old update_staff_list for backward compatibility
+        socket.on('update_staff_list', (staffList) => {
+            currentStaffList = staffList;
+            renderStaffDropdown();
+        });
 
-            staffList.forEach(staff => {
-                const card = document.createElement('div');
-                const isOffline = staff.status === 'offline';
-                card.className = `card-mafia p-5 rounded-md flex justify-between items-center ${isOffline ? 'card-offline' : 'card-waiting'}`;
-                
-                card.innerHTML = `
-                    <div>
-                        <div class="text-lg font-bold text-gray-200 mb-1 tracking-wide">${staff.name}</div>
-                        <div class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">${staff.role}</div>
-                    </div>
-                    <div>
-                        ${isOffline ? '<i class="fa-solid fa-fingerprint text-2xl text-gray-600"></i>' : '<i class="fa-solid fa-check text-2xl text-[#d4af37]"></i>'}
-                    </div>
-                `;
-                
-                if (isOffline) {
-                    card.onclick = () => socket.emit('staff_checkin', staff.id);
-                    offlineListDiv.appendChild(card);
-                } else if (staff.status === 'waiting') {
-                    waitingListDiv.appendChild(card);
+        function renderStaffDropdown() {
+            const select = document.getElementById('kiosk-staff');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- Chọn Tên Bạn --</option>';
+            
+            currentStaffList.forEach(s => {
+                let statusInfo = s.status === 'offline' ? '(OFF)' : '(IN)';
+                select.innerHTML += `<option value="${s.id}">${s.id} - ${s.name} ${statusInfo}</option>`;
+            });
+            
+            if(currentVal) select.value = currentVal;
+        }
+
+        function handleClock(type) {
+            const staffId = document.getElementById('kiosk-staff').value;
+            const pin = document.getElementById('kiosk-pin').value;
+            
+            if (!staffId) return alert("Vui lòng chọn tên nhân viên!");
+            if (!pin) return alert("Vui lòng nhập mã PIN!");
+
+            const eventName = type === 'in' ? 'clock_in' : 'clock_out';
+            
+            socket.emit(eventName, { staff_id: staffId, pin }, (res) => {
+                if (res.success) {
+                    alert(res.message);
+                    document.getElementById('kiosk-pin').value = '';
+                } else {
+                    alert("LỖI: " + res.message);
+                    document.getElementById('kiosk-pin').value = '';
                 }
             });
         }
-
-        socket.on('update_staff_list', (staffList) => renderStaff(staffList));
     </script>
 </body>
 </html>
