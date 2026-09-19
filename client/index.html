@@ -14,7 +14,7 @@
         const statusDiv = document.getElementById('status');
         
         // Connect to the local server
-        const socket = io('http://localhost:3000');
+        const socket = io('https://akpoker.onrender.com');
 
         socket.on('connect', () => {
             statusDiv.innerHTML = `<span style="color: green;">Connected! Socket ID: ${socket.id}</span>`;
