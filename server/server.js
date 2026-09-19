@@ -81,6 +81,7 @@ if (fdb) {
       console.log('[FIREBASE] Database trống, sử dụng RAM rỗng.');
     }
     isFirebaseLoaded = true;
+    broadcastState();
   });
 } else {
   isFirebaseLoaded = true;
