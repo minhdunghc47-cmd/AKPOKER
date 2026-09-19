@@ -5,8 +5,19 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 
 // 1. KHỞI TẠO FIREBASE ADMIN SDK
+
 try {
-  const serviceAccount = require('./serviceAccountKey.json');
+  let serviceAccount;
+  if (fs.existsSync('/etc/secrets/serviceAccountKey.json')) {
+    serviceAccount = require('/etc/secrets/serviceAccountKey.json');
+  } else if (fs.existsSync('../serviceAccountKey.json')) {
+    serviceAccount = require('../serviceAccountKey.json');
+  } else if (fs.existsSync('./serviceAccountKey.json')) {
+    serviceAccount = require('./serviceAccountKey.json');
+  } else {
+    throw new Error('Không tìm thấy file Key');
+  }
+
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     databaseURL: "https://<YOUR_DATABASE_NAME>.firebaseio.com" // Hãy thay bằng URL thật của sòng
