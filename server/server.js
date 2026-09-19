@@ -104,6 +104,8 @@ function broadcastState() {
   // Real-time Backup lên Cloud
   saveToFirebase('tournaments', db.tournaments);
   saveToFirebase('members', db.members);
+  saveToFirebase('staff', db.staff);
+  saveToFirebase('time_logs', db.time_logs);
 }
 
 // TIMER ENGINE (Đã tối ưu không ghi đè Firebase mỗi giây)
