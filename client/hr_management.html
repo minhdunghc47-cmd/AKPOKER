@@ -70,13 +70,18 @@
                 <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Lương Cơ Bản (VNĐ/Giờ)</label>
                 <input type="number" id="hr-salary" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none" value="50000">
             </div>
-            <div class="flex gap-2 mt-4">
-                <button id="btn-cancel" onclick="resetStaffForm()" class="hidden w-1/3 bg-[#333] hover:bg-[#444] text-white font-bold uppercase tracking-widest py-3 rounded transition-colors shadow-lg">
-                    HỦY
-                </button>
-                <button id="btn-submit" onclick="submitStaff()" class="flex-1 bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold uppercase tracking-widest py-3 rounded transition-colors shadow-lg">
+            <div class="flex flex-col gap-2 mt-4">
+                <button id="btn-submit" onclick="submitStaff()" class="w-full bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold uppercase tracking-widest py-3 rounded transition-colors shadow-lg">
                     <i class="fa-solid fa-save mr-2"></i> LƯU HỒ SƠ
                 </button>
+                <div class="flex gap-2">
+                    <button id="btn-cancel" onclick="resetStaffForm()" class="hidden flex-1 bg-[#333] hover:bg-[#444] text-white font-bold uppercase tracking-widest py-3 rounded transition-colors shadow-lg">
+                        HỦY
+                    </button>
+                    <button id="btn-resign" onclick="resignStaff()" class="hidden flex-1 bg-[#800020] hover:bg-red-700 text-white font-bold uppercase tracking-widest py-3 rounded transition-colors shadow-lg">
+                        ⛔ THÔI VIỆC
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -110,18 +115,37 @@
             tbody.innerHTML = '';
             
             if(staffList) {
+                staffList.sort((a, b) => {
+                    const aResigned = a.work_status === 'RESIGNED' ? 1 : 0;
+                    const bResigned = b.work_status === 'RESIGNED' ? 1 : 0;
+                    return aResigned - bResigned;
+                });
+
                 staffList.forEach(s => {
+                    const isResigned = s.work_status === 'RESIGNED';
                     const hours = (s.total_minutes / 60).toFixed(2);
                     const salary = (s.total_minutes / 60) * s.base_salary;
+                    
                     let statusColor = s.status === 'offline' ? 'text-gray-500' : 'text-[#2ecc71]';
                     if(s.status === 'waiting') statusColor = 'text-[#d4af37]';
+                    let statusText = s.status;
+                    
+                    let rowClass = "border-b border-[#222] hover:bg-[#333] cursor-pointer transition-colors";
+                    let textNameClass = "text-white";
+                    
+                    if (isResigned) {
+                        rowClass += " opacity-50";
+                        statusText = "ĐÃ THÔI VIỆC";
+                        statusColor = "text-red-500";
+                        textNameClass = "text-gray-500";
+                    }
                     
                     tbody.innerHTML += `
-                        <tr class="border-b border-[#222] hover:bg-[#333] cursor-pointer transition-colors" onclick="editStaff('${s.id}', '${s.name}', '${s.pin}', '${s.role}', ${s.base_salary})">
+                        <tr class="${rowClass}" onclick="editStaff('${s.id}', '${s.name}', '${s.pin}', '${s.role}', ${s.base_salary})">
                             <td class="p-3 text-gray-400 font-bold">${s.id}</td>
-                            <td class="p-3 text-white">${s.name}</td>
+                            <td class="p-3 ${textNameClass}">${s.name}</td>
                             <td class="p-3 text-[#d4af37]">${s.role}</td>
-                            <td class="p-3 ${statusColor} uppercase font-bold text-xs">${s.status}</td>
+                            <td class="p-3 ${statusColor} uppercase font-bold text-xs">${statusText}</td>
                             <td class="p-3">${hours}h</td>
                             <td class="p-3 text-right text-green-400 font-bold">${new Intl.NumberFormat('vi-VN', {style:'currency', currency:'VND'}).format(salary)}</td>
                         </tr>
@@ -143,8 +167,11 @@
             document.getElementById('hr-role').value = role;
             document.getElementById('hr-salary').value = base_salary;
             
-            document.getElementById('btn-submit').innerText = 'CẬP NHẬT';
+            document.getElementById('btn-submit').innerHTML = '<i class="fa-solid fa-save mr-2"></i> CẬP NHẬT';
+            document.getElementById('btn-submit').classList.replace('bg-[#d4af37]', 'bg-blue-600');
+            document.getElementById('btn-submit').classList.replace('hover:bg-[#b5952f]', 'hover:bg-blue-500');
             document.getElementById('btn-cancel').classList.remove('hidden');
+            document.getElementById('btn-resign').classList.remove('hidden');
         }
 
         function resetStaffForm() {
@@ -163,6 +190,7 @@
             document.getElementById('btn-submit').classList.replace('bg-blue-600', 'bg-[#d4af37]');
             document.getElementById('btn-submit').classList.replace('hover:bg-blue-500', 'hover:bg-[#b5952f]');
             document.getElementById('btn-cancel').classList.add('hidden');
+            document.getElementById('btn-resign').classList.add('hidden');
             
             hrIdInput.focus();
         }
@@ -185,6 +213,19 @@
                     resetStaffForm();
                 }
             });
+        }
+
+        function resignStaff() {
+            const id = document.getElementById('hr-id').value;
+            if(!id) return;
+            if(confirm("Bạn có chắc chắn muốn cho nhân viên này thôi việc? Dữ liệu sẽ được lưu trữ để đối soát.")) {
+                socket.emit('resign_staff', id, (res) => {
+                    alert(res.message);
+                    if(res.success) {
+                        resetStaffForm();
+                    }
+                });
+            }
         }
     </script>
 </body>
