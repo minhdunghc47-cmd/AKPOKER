@@ -1,9 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        const role = sessionStorage.getItem('acepoker_role');
+        if (role !== 'god') {
+            window.location.href = './index.html';
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker TMS 2.0 - GOD MODE (Mafia Edition)</title>
+    <title>ACEPOKER - GOD MODE (Mafia Edition)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->

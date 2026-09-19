@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker TMS 2.0 - Sảnh Chính</title>
+    <title>ACEPOKER - Sảnh Chính</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
@@ -41,6 +41,12 @@
             70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
             100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
         }
+        
+        /* Modal Styles */
+        #pin-modal {
+            backdrop-filter: blur(10px);
+            background-color: rgba(0,0,0,0.85);
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden relative">
@@ -50,36 +56,36 @@
         
         <div class="text-center">
             <h1 class="text-5xl md:text-6xl font-mafia text-[#d4af37] tracking-widest drop-shadow-lg neon-glow mb-4">
-                <i class="fa-solid fa-dice mr-3"></i>HỆ THỐNG QUẢN TRỊ POKER TMS 2.0
+                <i class="fa-solid fa-dice mr-3"></i>HỆ THỐNG QUẢN TRỊ ACEPOKER
             </h1>
             <p class="text-gray-400 text-sm md:text-base uppercase tracking-[0.4em] font-bold">Sảnh Điều Hướng Trung Tâm</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
             
-            <a href="./cashier.html" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
+            <div onclick="openPinModal('./cashier.html', 'cashier')" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
                 <i class="fa-solid fa-money-bill-wave text-5xl text-[#d4af37] mb-4 group-hover:scale-110 transition-transform"></i>
                 <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-[#d4af37] transition-colors">POS Thu Ngân</h2>
                 <p class="text-gray-500 text-xs uppercase tracking-wider">Quản lý quỹ & Hội viên</p>
-            </a>
+            </div>
 
-            <a href="./td_dashboard.html" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
+            <div onclick="openPinModal('./td_dashboard.html', 'td')" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
                 <i class="fa-solid fa-gamepad text-5xl text-[#d4af37] mb-4 group-hover:scale-110 transition-transform"></i>
                 <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-[#d4af37] transition-colors">TD Dashboard</h2>
                 <p class="text-gray-500 text-xs uppercase tracking-wider">Điều hành giải đấu</p>
-            </a>
+            </div>
 
-            <a href="./floor_ipad.html" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
+            <div onclick="openPinModal('./floor_ipad.html', 'floor')" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
                 <i class="fa-solid fa-tablet-screen-button text-5xl text-[#d4af37] mb-4 group-hover:scale-110 transition-transform"></i>
                 <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-[#d4af37] transition-colors">Floor iPad</h2>
                 <p class="text-gray-500 text-xs uppercase tracking-wider">Sơ đồ bàn & Nhân sự</p>
-            </a>
+            </div>
 
-            <a href="./god_mode.html" class="glass-panel border-[#800020]/40 hover:border-[#800020] rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
+            <div onclick="openPinModal('./god_mode.html', 'god')" class="glass-panel border-[#800020]/40 hover:border-[#800020] rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
                 <i class="fa-solid fa-chess-king text-5xl text-[#800020] mb-4 group-hover:scale-110 transition-transform"></i>
                 <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-[#800020] transition-colors">God Mode</h2>
                 <p class="text-gray-500 text-xs uppercase tracking-wider">Tổng quan Giám Đốc sòng</p>
-            </a>
+            </div>
 
         </div>
     </main>
@@ -89,6 +95,28 @@
         <div class="w-2.5 h-2.5 bg-gray-500 rounded-full" id="status-dot"></div>
         <span class="text-gray-400 font-bold text-[10px] tracking-widest uppercase" id="status-text">Đang kết nối...</span>
     </footer>
+
+    <!-- PIN MODAL -->
+    <div id="pin-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+        <div class="bg-[#151515] border border-[#d4af37]/50 rounded-xl p-8 w-96 max-w-[90%] shadow-2xl relative">
+            <button onclick="closePinModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <div class="text-center mb-6">
+                <i class="fa-solid fa-lock text-3xl text-[#d4af37] mb-3"></i>
+                <h2 class="text-xl font-mafia text-[#d4af37] uppercase tracking-widest">Yêu Cầu Mã PIN</h2>
+                <p class="text-xs text-gray-500 mt-2 uppercase">Vui lòng xác thực quyền truy cập</p>
+            </div>
+            
+            <input type="password" id="pin-input" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#d4af37] rounded-lg px-4 py-3 text-center text-2xl text-white tracking-[0.5em] mb-4 outline-none transition-colors" placeholder="****" maxlength="4" autocomplete="off">
+            
+            <p id="pin-error" class="text-red-500 text-xs text-center font-bold uppercase hidden mb-4">Mã PIN không hợp lệ!</p>
+            
+            <button onclick="verifyPin()" class="w-full bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold uppercase tracking-widest py-3 rounded-lg transition-colors">
+                Xác Nhận
+            </button>
+        </div>
+    </div>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
@@ -109,6 +137,50 @@
             statusDot.className = "w-2.5 h-2.5 bg-red-500 rounded-full";
             statusText.className = "text-red-500 font-bold text-[10px] tracking-widest uppercase";
             statusText.innerText = "Disconnected";
+        });
+
+        // PIN LOGIC
+        let targetLink = '';
+        let targetRole = '';
+        const modal = document.getElementById('pin-modal');
+        const input = document.getElementById('pin-input');
+        const errorMsg = document.getElementById('pin-error');
+
+        function openPinModal(link, role) {
+            targetLink = link;
+            targetRole = role;
+            input.value = '';
+            errorMsg.classList.add('hidden');
+            modal.classList.remove('hidden');
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function closePinModal() {
+            modal.classList.add('hidden');
+        }
+
+        function verifyPin() {
+            const pin = input.value;
+            let isValid = false;
+            let assignedRole = '';
+
+            if (targetRole === 'cashier' && pin === '6666') { isValid = true; assignedRole = 'cashier'; }
+            else if (targetRole === 'td' && pin === '8888') { isValid = true; assignedRole = 'td'; }
+            else if (targetRole === 'floor' && pin === '1111') { isValid = true; assignedRole = 'floor'; }
+            else if (targetRole === 'god' && pin === '9999') { isValid = true; assignedRole = 'god'; }
+
+            if (isValid) {
+                sessionStorage.setItem('acepoker_role', assignedRole);
+                window.location.href = targetLink;
+            } else {
+                errorMsg.classList.remove('hidden');
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        input.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') verifyPin();
         });
     </script>
 </body>
