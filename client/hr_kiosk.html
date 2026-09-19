@@ -31,9 +31,25 @@
                 </select>
             </div>
             
-            <div class="mb-8">
+            <div class="mb-4">
                 <label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">Mã PIN CÁ NHÂN</label>
-                <input type="password" id="kiosk-pin" class="w-full bg-[#1a1a1a] border border-[#333] p-3 rounded text-white focus:border-[#d4af37] outline-none text-3xl tracking-[0.5em] text-center" placeholder="****" maxlength="4">
+                <input type="password" id="kiosk-pin" class="w-full bg-[#1a1a1a] border border-[#333] p-3 rounded text-white focus:border-[#d4af37] outline-none text-3xl tracking-[0.5em] text-center cursor-default" placeholder="****" maxlength="4" readonly>
+            </div>
+            
+            <!-- Virtual Numpad -->
+            <div class="grid grid-cols-3 gap-2 mb-6">
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-xl py-3 rounded transition-colors border border-[#333]" data-key="1">1</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-xl py-3 rounded transition-colors border border-[#333]" data-key="2">2</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-xl py-3 rounded transition-colors border border-[#333]" data-key="3">3</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-xl py-3 rounded transition-colors border border-[#333]" data-key="4">4</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-xl py-3 rounded transition-colors border border-[#333]" data-key="5">5</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-xl py-3 rounded transition-colors border border-[#333]" data-key="6">6</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-xl py-3 rounded transition-colors border border-[#333]" data-key="7">7</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-xl py-3 rounded transition-colors border border-[#333]" data-key="8">8</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-xl py-3 rounded transition-colors border border-[#333]" data-key="9">9</button>
+                <button class="numpad-btn bg-[#800020] hover:bg-red-700 text-white font-bold text-xl py-3 rounded transition-colors border border-red-900" data-key="Backspace"><i class="fa-solid fa-delete-left"></i></button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-xl py-3 rounded transition-colors border border-[#333]" data-key="0">0</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-xl py-3 rounded transition-colors border border-[#333] opacity-50 cursor-not-allowed" disabled></button>
             </div>
 
             <div class="flex gap-4">
@@ -100,6 +116,40 @@
                     document.getElementById('kiosk-pin').value = '';
                 }
             });
+        }
+
+        // NUMPAD LOGIC
+        const pinInput = document.getElementById('kiosk-pin');
+        document.querySelectorAll('.numpad-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.getAttribute('data-key');
+                if(!key) return;
+                handleKioskPin(key);
+            });
+        });
+
+        window.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (['0','1','2','3','4','5','6','7','8','9','Backspace'].includes(key)) {
+                handleKioskPin(key);
+                
+                // Highlight button
+                const btn = document.querySelector(`.numpad-btn[data-key="${key}"]`);
+                if (btn) {
+                    btn.classList.add('bg-white', 'text-black', 'scale-95');
+                    setTimeout(() => btn.classList.remove('bg-white', 'text-black', 'scale-95'), 150);
+                }
+            }
+        });
+
+        function handleKioskPin(key) {
+            if (key === 'Backspace') {
+                pinInput.value = pinInput.value.slice(0, -1);
+            } else {
+                if (pinInput.value.length < 4) {
+                    pinInput.value += key;
+                }
+            }
         }
     </script>
 </body>

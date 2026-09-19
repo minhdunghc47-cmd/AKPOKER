@@ -120,13 +120,25 @@
                 <p class="text-xs text-gray-500 mt-2 uppercase">Vui lòng xác thực quyền truy cập</p>
             </div>
             
-            <input type="password" id="pin-input" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#d4af37] rounded-lg px-4 py-3 text-center text-2xl text-white tracking-[0.5em] mb-4 outline-none transition-colors" placeholder="****" maxlength="4" autocomplete="off">
+            <input type="password" id="pin-input" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#d4af37] rounded-lg px-4 py-3 text-center text-3xl text-white tracking-[0.5em] mb-6 outline-none transition-colors cursor-default" placeholder="****" maxlength="4" autocomplete="off" readonly>
             
-            <p id="pin-error" class="text-red-500 text-xs text-center font-bold uppercase hidden mb-4">Mã PIN không hợp lệ!</p>
+            <p id="pin-error" class="text-red-500 text-xs text-center font-bold uppercase hidden mb-4 -mt-2">Mã PIN không hợp lệ!</p>
             
-            <button onclick="verifyPin()" class="w-full bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold uppercase tracking-widest py-3 rounded-lg transition-colors">
-                Xác Nhận
-            </button>
+            <!-- Virtual Numpad -->
+            <div class="grid grid-cols-3 gap-3">
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="1">1</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="2">2</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="3">3</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="4">4</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="5">5</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="6">6</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="7">7</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="8">8</button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="9">9</button>
+                <button class="numpad-btn bg-[#800020] hover:bg-red-700 text-white font-bold text-xl py-4 rounded-lg transition-colors border border-red-900" data-key="Backspace"><i class="fa-solid fa-delete-left"></i></button>
+                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="0">0</button>
+                <button class="numpad-btn bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold text-xl py-4 rounded-lg transition-colors border border-[#b5952f]" data-key="Enter"><i class="fa-solid fa-check"></i></button>
+            </div>
         </div>
     </div>
 
@@ -191,9 +203,44 @@
             }
         }
 
-        input.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') verifyPin();
+        // KEYBOARD & NUMPAD LOGIC
+        document.querySelectorAll('.numpad-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.getAttribute('data-key');
+                handlePinInput(key);
+            });
         });
+
+        window.addEventListener('keydown', (e) => {
+            if (modal.classList.contains('hidden')) return;
+            const key = e.key;
+            if (['0','1','2','3','4','5','6','7','8','9','Backspace','Enter'].includes(key)) {
+                handlePinInput(key);
+                
+                // Highlight button
+                const btn = document.querySelector(`.numpad-btn[data-key="${key}"]`);
+                if (btn) {
+                    btn.classList.add('bg-white', 'text-black', 'scale-95');
+                    setTimeout(() => btn.classList.remove('bg-white', 'text-black', 'scale-95'), 150);
+                }
+            }
+        });
+
+        function handlePinInput(key) {
+            errorMsg.classList.add('hidden');
+            if (key === 'Backspace') {
+                input.value = input.value.slice(0, -1);
+            } else if (key === 'Enter') {
+                if(input.value.length === 4) verifyPin();
+            } else {
+                if (input.value.length < 4) {
+                    input.value += key;
+                    if(input.value.length === 4) {
+                        setTimeout(() => verifyPin(), 100);
+                    }
+                }
+            }
+        }
     </script>
 </body>
 </html>

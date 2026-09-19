@@ -28,9 +28,6 @@
             <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">Phân hệ Quản Trị Nhân Sự (God Mode)</p>
         </div>
         <div class="flex gap-4">
-            <button onclick="seedStaffData()" class="px-6 py-2 bg-[#800020] hover:bg-red-700 text-white font-bold rounded uppercase text-sm tracking-widest transition-colors shadow-lg">
-                <i class="fa-solid fa-database mr-2"></i> Reset & Seed 20 NV
-            </button>
             <a href="./index.html" class="px-6 py-2 bg-[#222] hover:bg-[#333] text-gray-300 font-bold rounded uppercase text-sm tracking-widest transition-colors">
                 <i class="fa-solid fa-arrow-left mr-2"></i> Thoát
             </a>
@@ -98,12 +95,12 @@
     <script>
         const socket = io('https://akpoker.onrender.com');
 
-        socket.on('update_state', (state) => {
+        socket.on('update_staff_list', (staffList) => {
             const tbody = document.getElementById('staff-table');
             tbody.innerHTML = '';
             
-            if(state.staff) {
-                state.staff.forEach(s => {
+            if(staffList) {
+                staffList.forEach(s => {
                     const hours = (s.total_minutes / 60).toFixed(2);
                     const salary = (s.total_minutes / 60) * s.base_salary;
                     let statusColor = s.status === 'offline' ? 'text-gray-500' : 'text-[#2ecc71]';
@@ -141,14 +138,6 @@
                     document.getElementById('hr-pin').value = '';
                 }
             });
-        }
-
-        function seedStaffData() {
-            if(confirm("CẢNH BÁO: Thao tác này sẽ XÓA SẠCH dữ liệu chấm công và tạo mới 20 nhân viên mẫu (PIN 1234). Bạn có chắc chắn?")) {
-                socket.emit('seed_staff_data', (res) => {
-                    alert(res.message);
-                });
-            }
         }
     </script>
 </body>
