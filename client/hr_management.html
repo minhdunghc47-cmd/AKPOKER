@@ -37,7 +37,12 @@
     <div class="flex gap-6 flex-1 overflow-hidden">
         <!-- FORM BỔ NHIỆM -->
         <div class="w-1/3 glass-panel p-6 rounded-lg flex flex-col gap-4">
-            <h2 class="text-xl font-mafia text-[#d4af37] uppercase tracking-widest mb-4 border-b border-[#333] pb-2"><i class="fa-solid fa-user-plus mr-2"></i>Bổ Nhiệm Nhân Sự</h2>
+            <div class="flex justify-between items-center mb-4 border-b border-[#333] pb-2">
+                <h2 class="text-xl font-mafia text-[#d4af37] uppercase tracking-widest"><i class="fa-solid fa-user-plus mr-2"></i>Bổ Nhiệm</h2>
+                <button onclick="resetStaffForm()" class="px-3 py-1 border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold rounded text-xs uppercase tracking-widest transition-colors">
+                    [+] Tạo Mới
+                </button>
+            </div>
             
             <div>
                 <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Mã NV (ID)</label>
@@ -66,11 +71,11 @@
                 <input type="number" id="hr-salary" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none" value="50000">
             </div>
             <div class="flex gap-2 mt-4">
-                <button id="btn-cancel" onclick="cancelEdit()" class="hidden w-1/3 bg-[#333] hover:bg-[#444] text-white font-bold uppercase tracking-widest py-3 rounded transition-colors shadow-lg">
+                <button id="btn-cancel" onclick="resetStaffForm()" class="hidden w-1/3 bg-[#333] hover:bg-[#444] text-white font-bold uppercase tracking-widest py-3 rounded transition-colors shadow-lg">
                     HỦY
                 </button>
                 <button id="btn-submit" onclick="submitStaff()" class="flex-1 bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold uppercase tracking-widest py-3 rounded transition-colors shadow-lg">
-                    Lưu Hồ Sơ
+                    <i class="fa-solid fa-save mr-2"></i> LƯU HỒ SƠ
                 </button>
             </div>
         </div>
@@ -142,19 +147,24 @@
             document.getElementById('btn-cancel').classList.remove('hidden');
         }
 
-        function cancelEdit() {
+        function resetStaffForm() {
             isEditing = false;
-            document.getElementById('hr-id').value = '';
-            document.getElementById('hr-id').disabled = false;
-            document.getElementById('hr-id').classList.remove('opacity-50', 'cursor-not-allowed');
+            const hrIdInput = document.getElementById('hr-id');
+            hrIdInput.value = '';
+            hrIdInput.disabled = false;
+            hrIdInput.classList.remove('opacity-50', 'cursor-not-allowed');
             
             document.getElementById('hr-name').value = '';
             document.getElementById('hr-pin').value = '';
             document.getElementById('hr-role').value = 'Dealer';
             document.getElementById('hr-salary').value = '50000';
             
-            document.getElementById('btn-submit').innerText = 'LƯU HỒ SƠ';
+            document.getElementById('btn-submit').innerHTML = '<i class="fa-solid fa-save mr-2"></i> LƯU HỒ SƠ';
+            document.getElementById('btn-submit').classList.replace('bg-blue-600', 'bg-[#d4af37]');
+            document.getElementById('btn-submit').classList.replace('hover:bg-blue-500', 'hover:bg-[#b5952f]');
             document.getElementById('btn-cancel').classList.add('hidden');
+            
+            hrIdInput.focus();
         }
 
         function submitStaff() {
@@ -165,14 +175,14 @@
                 role: document.getElementById('hr-role').value,
                 base_salary: document.getElementById('hr-salary').value
             };
-            if(!payload.id || !payload.name || !payload.pin) return alert("Vui lòng nhập đủ thông tin ID, Tên, và PIN");
+            if(!payload.id || !payload.name || ( !isEditing && !payload.pin )) return alert("Vui lòng nhập đủ thông tin ID, Tên, và PIN");
             
             const eventName = isEditing ? 'update_staff' : 'add_staff';
             
             socket.emit(eventName, payload, (res) => {
                 alert(res.message);
                 if(res.success) {
-                    cancelEdit();
+                    resetStaffForm();
                 }
             });
         }
