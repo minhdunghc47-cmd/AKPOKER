@@ -176,6 +176,24 @@ io.on('connection', (socket) => {
     if (callback) callback({ success: true, message: 'Bổ nhiệm nhân sự thành công!' });
   });
 
+  
+  socket.on('update_staff', (payload, callback) => {
+    const { id, name, pin, role, base_salary } = payload;
+    const staffIndex = db.staff.findIndex(s => s.id === id);
+    if (staffIndex === -1) {
+      if (callback) callback({ success: false, message: 'Không tìm thấy nhân viên!' });
+      return;
+    }
+    db.staff[staffIndex].name = name;
+    if(pin) db.staff[staffIndex].pin = pin;
+    db.staff[staffIndex].role = role;
+    db.staff[staffIndex].base_salary = Number(base_salary) || 50000;
+    
+    stateChanged = true;
+    broadcastState();
+    if (callback) callback({ success: true, message: 'Cập nhật nhân sự thành công!' });
+  });
+
   socket.on('clock_in', (payload, callback) => {
     const { staff_id, pin } = payload;
     const s = db.staff.find(s => s.id === staff_id);
