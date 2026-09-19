@@ -119,6 +119,10 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
         const socket = io('https://akpoker.onrender.com');
+
+        socket.on('connect', () => {
+            socket.emit('request_initial_data');
+        });
         
         function formatMoney(amount) {
             return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);

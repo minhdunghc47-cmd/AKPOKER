@@ -151,6 +151,10 @@
     <script>
         const socket = io('https://akpoker.onrender.com');
 
+        socket.on('connect', () => {
+            socket.emit('request_initial_data');
+        });
+
         socket.on('update_staff_list', (staffList) => {
             const tbody = document.getElementById('staff-table');
             tbody.innerHTML = '';

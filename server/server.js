@@ -51,38 +51,39 @@ let db = {
 
 // 2. ĐỒNG BỘ TỪ FIREBASE XUỐNG RAM KHI KHỞI ĐỘNG
 if (fdb) {
+  
   fdb.ref('/').once('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
       if (data.tournaments) db.tournaments = data.tournaments;
       if (data.members) db.members = data.members;
-            if (data.staff) {
-        db.staff = data.staff;
-      } else {
-        const roles = ['Dealer', 'Floor', 'Thu ngân', 'Phục vụ', 'TD'];
-        for (let i = 1; i <= 20; i++) {
-          db.staff.push({
-            id: 'NV' + String(i).padStart(2, '0'),
-            name: 'Nhân viên ' + i,
-            pin: '1234',
-            role: roles[i % roles.length],
-            base_salary: 50000,
-            status: 'offline',
-            total_minutes: 0,
-            last_in: null
-          });
-        }
-        console.log('[FIREBASE] Tự động khởi tạo 20 nhân viên mẫu.');
-        fdb.ref('/staff').set(db.staff);
-      }
       if (data.time_logs) db.time_logs = data.time_logs;
-      console.log('[FIREBASE] Đã load dữ liệu toàn sòng từ Cloud xuống RAM!');
-    } else {
-      console.log('[FIREBASE] Database trống, sử dụng RAM rỗng.');
     }
+    
+    // CƯỠNG CHẾ TẠO 20 NHÂN VIÊN
+    db.staff = [];
+    const roles = ['Dealer', 'Floor', 'Thu ngân', 'Phục vụ', 'TD'];
+    for (let i = 1; i <= 20; i++) {
+      db.staff.push({
+        id: 'NV' + String(i).padStart(2, '0'),
+        name: 'Nhân viên ' + i,
+        pin: '1234',
+        role: roles[i % roles.length],
+        base_salary: 50000,
+        status: 'offline',
+        total_minutes: 0,
+        last_in: null
+      });
+    }
+    console.log('[FIREBASE] Cưỡng chế tạo 20 nhân viên mẫu.');
+    fdb.ref('/staff').set(db.staff);
+    
     isFirebaseLoaded = true;
     broadcastState();
+    io.emit('staff_data_updated', db.staff);
+    console.log('[FIREBASE] Đã load dữ liệu toàn sòng từ Cloud xuống RAM!');
   });
+
 } else {
   isFirebaseLoaded = true;
   // Generate 20 test accounts if no DB
@@ -173,6 +174,13 @@ setInterval(() => {
 
 
 io.on('connection', (socket) => {
+  socket.on('request_initial_data', () => {
+    if(isFirebaseLoaded) {
+      socket.emit('update_staff_list', db.staff);
+      socket.emit('staff_data_updated', db.staff);
+      socket.emit('update_god_mode', { financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 }, staff: db.staff, all_tours: db.tournaments });
+    }
+  });
   broadcastState();
 
   
