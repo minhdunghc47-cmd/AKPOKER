@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker TMS 2.0 - GOD MODE (Mafia Edition)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #080808; 
+            color: #e2e8f0;
+        }
+        .font-mafia { font-family: 'Playfair Display', serif; }
+        .digital-font {
+            font-family: 'Share Tech Mono', monospace;
+            letter-spacing: 2px;
+        }
+        .glass-panel {
+            background: #111111;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .neon-glow {
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.8);
+        }
+        .pulse-dot {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.8); }
+            70% { box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #080808; }
+        ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+    <!-- HEADER & STATUS -->
+    <header class="flex justify-between items-center p-6 border-b border-[#d4af37]/30 bg-[#0a0a0a] shadow-lg z-10 relative">
+        <div class="absolute inset-0 bg-gradient-to-b from-[#800020]/10 to-transparent pointer-events-none"></div>
+        <div class="relative">
+            <h1 class="text-4xl font-mafia text-[#d4af37] tracking-widest drop-shadow-lg neon-glow">
+                <i class="fa-solid fa-chess-king mr-3"></i>GOD MODE
+            </h1>
+            <p class="text-gray-500 text-[10px] mt-2 uppercase tracking-[0.3em] font-bold">Mafia Casino Syndicate v2.0</p>
+        </div>
+        <div class="flex items-center space-x-3 bg-[#111] px-5 py-2.5 rounded-full border border-[#d4af37]/30 shadow-inner relative">
+            <div class="w-3 h-3 bg-[#d4af37] rounded-full pulse-dot"></div>
+            <span class="text-[#d4af37] font-bold text-xs tracking-widest uppercase">SYNDICATE LINK: LIVE</span>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+        
+        <!-- SECTION 1: TỔNG QUAN TÀI CHÍNH -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="glass-panel rounded-xl p-6 border-l-4 border-[#2ecc71] flex items-center justify-between">
+                <div>
+                    <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center"><i class="fa-solid fa-vault text-[#2ecc71] mr-2"></i>Két Thực Thu (Net)</h3>
+                    <div class="digital-font text-4xl text-[#2ecc71] font-bold" id="val-net" style="text-shadow: 0 0 10px rgba(46, 204, 113, 0.4);">0 ₫</div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-xl p-6 border-l-4 border-[#800020] flex items-center justify-between">
+                <div>
+                    <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center"><i class="fa-solid fa-book-skull text-[#800020] mr-2"></i>Sổ Ghi Nợ (Debt)</h3>
+                    <div class="digital-font text-4xl text-[#e74c3c] font-bold" id="val-debt" style="text-shadow: 0 0 10px rgba(128, 0, 32, 0.8);">0 ₫</div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-xl p-6 border-l-4 border-[#d4af37] flex items-center justify-between">
+                <div>
+                    <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center"><i class="fa-solid fa-coins text-[#d4af37] mr-2"></i>Rake Sòng (15%)</h3>
+                    <div class="digital-font text-4xl text-[#d4af37] font-bold neon-glow" id="val-rake">0 ₫</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: CHIA ĐÔI MÀN HÌNH -->
+        <div class="flex flex-col lg:flex-row gap-6 h-[calc(100vh-280px)] min-h-[400px]">
+            
+            <div class="lg:w-[40%] glass-panel rounded-xl p-6 flex flex-col">
+                <h2 class="font-mafia text-lg text-[#d4af37] border-b border-[#333] pb-4 mb-4 uppercase tracking-widest"><i class="fa-solid fa-users-viewfinder mr-2"></i> Mạng Lưới Nhân Sự</h2>
+                <div class="overflow-y-auto pr-2 space-y-3 flex-1" id="staff-list"></div>
+            </div>
+
+            <div class="lg:w-[60%] glass-panel rounded-xl p-6 flex flex-col">
+                <h2 class="font-mafia text-lg text-[#d4af37] border-b border-[#333] pb-4 mb-4 uppercase tracking-widest"><i class="fa-solid fa-trophy mr-2"></i> Lịch Sử Giải Đấu</h2>
+                <div class="overflow-y-auto pr-2 space-y-4 flex-1" id="tour-list"></div>
+            </div>
+            
+        </div>
+    </main>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:3000');
+        
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        }
+
+        socket.on('update_god_mode', (data) => {
+            const { financial, staff, all_tours } = data;
+
+            document.getElementById('val-net').innerText = formatMoney(financial.net_cash);
+            document.getElementById('val-debt').innerText = formatMoney(financial.total_debt);
+            document.getElementById('val-rake').innerText = formatMoney(financial.total_rake);
+
+            const staffListDiv = document.getElementById('staff-list');
+            staffListDiv.innerHTML = '';
+            staff.forEach(s => {
+                let statusBadge = '';
+                let bgClass = 'bg-[#151515] border-[#333]';
+                let iconColor = 'text-gray-600';
+                
+                if (s.status === 'offline') {
+                    statusBadge = '<span class="px-2 py-1 bg-[#111] text-gray-600 text-[9px] font-bold rounded uppercase">OFFLINE</span>';
+                } else if (s.status === 'waiting') {
+                    statusBadge = '<span class="px-2 py-1 bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30 text-[9px] font-bold rounded uppercase">STANDBY</span>';
+                    iconColor = 'text-[#d4af37]';
+                } else if (s.status === 'working') {
+                    statusBadge = '<span class="px-2 py-1 bg-[#800020]/30 text-red-400 border border-[#800020] text-[9px] font-bold rounded uppercase">ON DUTY</span>';
+                    iconColor = 'text-red-500';
+                    bgClass = 'bg-[#1a0a0a] border-[#800020]/50';
+                }
+
+                const item = document.createElement('div');
+                item.className = `flex items-center justify-between p-4 rounded-lg border ${bgClass}`;
+                item.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 rounded-full bg-[#0a0a0a] flex items-center justify-center border border-[#333]">
+                            <i class="fa-solid fa-user-tie ${iconColor}"></i>
+                        </div>
+                        <div>
+                            <div class="text-gray-200 font-bold text-sm">${s.name}</div>
+                            <div class="text-gray-600 text-[10px] uppercase tracking-widest font-bold mt-1">${s.role}</div>
+                        </div>
+                    </div>
+                    <div>${statusBadge}</div>
+                `;
+                staffListDiv.appendChild(item);
+            });
+
+            const tourListDiv = document.getElementById('tour-list');
+            tourListDiv.innerHTML = '';
+            
+            [...all_tours].reverse().forEach(t => {
+                let statusStyle = '';
+                let iconStr = '';
+                
+                if (t.status === 'running') {
+                    statusStyle = 'bg-[#800020]/30 text-red-400 border-[#800020] animate-pulse';
+                    iconStr = '<i class="fa-solid fa-satellite-dish mr-1"></i>LIVE';
+                } else if (t.status === 'paused') {
+                    statusStyle = 'bg-[#d4af37]/20 text-[#d4af37] border-[#d4af37]/50';
+                    iconStr = '<i class="fa-solid fa-pause mr-1"></i>PAUSED';
+                } else if (t.status === 'finished') {
+                    statusStyle = 'bg-gray-800 text-gray-300 border-gray-600';
+                    iconStr = '<i class="fa-solid fa-flag-checkered mr-1"></i>FINISHED';
+                } else if (t.status === 'archived') {
+                    statusStyle = 'bg-[#111] text-gray-700 border-[#222]';
+                    iconStr = '<i class="fa-solid fa-box-archive mr-1"></i>ARCHIVED';
+                }
+
+                let poolText = '';
+                let poolLabel = '';
+                
+                if (t.status === 'finished' || t.status === 'archived') {
+                    poolText = formatMoney(t.fund.payout_pool);
+                } else if (t.entries > 0) {
+                    const livePayout = t.fund.net_fund * 0.85;
+                    poolText = formatMoney(livePayout);
+                    poolLabel = '<div class="text-[9px] text-[#d4af37] animate-pulse mt-1 font-bold uppercase tracking-widest">(Live / Đang tăng...)</div>';
+                } else {
+                    poolText = 'Đang gom quỹ...';
+                }
+
+                const opacityClass = t.status === 'archived' ? 'opacity-40 grayscale' : '';
+
+                const item = document.createElement('div');
+                item.className = `flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-lg border border-[#333] bg-[#151515] ${opacityClass}`;
+                
+                item.innerHTML = `
+                    <div class="flex-1 mb-4 sm:mb-0">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <h3 class="text-lg font-mafia text-[#d4af37] tracking-wider">${t.name}</h3>
+                            <span class="px-2 py-1 text-[8px] font-bold uppercase rounded border ${statusStyle}">${iconStr}</span>
+                        </div>
+                        <div class="flex items-center space-x-5 text-[10px] text-gray-500 font-semibold uppercase tracking-widest">
+                            <span><i class="fa-solid fa-layer-group text-gray-600 mr-1.5"></i>${t.tables.join(', ') || 'N/A'}</span>
+                            <span><i class="fa-solid fa-users text-gray-600 mr-1.5"></i>${t.entries}</span>
+                            <span class="text-[#2ecc71]/80"><i class="fa-solid fa-money-bill-wave mr-1.5"></i>${formatMoney(t.fund.total_paid)}</span>
+                        </div>
+                    </div>
+                    <div class="sm:text-right bg-[#0a0a0a] p-3 rounded border border-[#222] min-w-[200px]">
+                        <div class="text-[8px] text-gray-600 uppercase font-bold tracking-[0.2em] mb-2">Payout Pool (Sau Rake)</div>
+                        <div class="digital-font text-lg text-gray-200 font-bold ${t.status === 'finished' ? 'text-[#d4af37] neon-glow' : ''}">${poolText}</div>
+                        ${poolLabel}
+                    </div>
+                `;
+                tourListDiv.appendChild(item);
+            });
+        });
+    </script>
+</body>
+</html>

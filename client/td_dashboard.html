@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker TMS 2.0 - TD Dashboard (Mafia Edition)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111; color: #d1d5db; }
+        .font-mafia { font-family: 'Playfair Display', serif; }
+        .font-digital { font-family: 'Share Tech Mono', monospace; }
+        .text-gold { color: #d4af37; }
+        .bg-burgundy { background-color: #800020; }
+        
+        .card-mafia { background: #1a1a1a; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 6px; box-shadow: 0 6px 12px rgba(0,0,0,0.8); }
+        .input-mafia { background: #111; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 4px; width: 100%; focus:outline-none; focus:border-[#d4af37]; }
+        .btn-gold { background: linear-gradient(to bottom, #e5c158, #d4af37); color: #000; font-weight: bold; border-radius: 4px; border: 1px solid #b5952f; text-shadow: 0 1px 1px rgba(255,255,255,0.4); transition: 0.2s; }
+        .btn-gold:hover:not(:disabled) { background: linear-gradient(to bottom, #d4af37, #b5952f); }
+        
+        .table-btn { aspect-ratio: 1; border: 1px solid #444; background: #222; color: #666; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .table-btn.selected { background: #d4af37; color: #000; border-color: #b5952f; box-shadow: inset 0 0 10px rgba(255,255,255,0.5); }
+        .table-btn.locked { background: #0a0a0a; color: #333; text-decoration: line-through; cursor: not-allowed; border-color: #1a1a1a; }
+        
+        .tv-card.running { box-shadow: 0 0 20px rgba(128, 0, 32, 0.8); border-color: #800020; }
+        .glow-btn { box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); }
+        
+        /* Hide arrows in number inputs for cleaner grid */
+        input[type="number"]::-webkit-outer-spin-button, 
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+    <!-- LEFT PANEL: CREATE TOUR -->
+    <div class="w-[500px] border-r border-[#d4af37]/40 p-6 overflow-y-auto flex flex-col gap-5 bg-[#161616] relative z-10 shadow-[5px_0_15px_rgba(0,0,0,0.8)]">
+        <h2 class="text-3xl font-mafia text-gold text-center tracking-wider border-b border-[#d4af37]/30 pb-4 drop-shadow-md">
+            <i class="fa-solid fa-crown mr-2"></i>CASINO TD
+        </h2>
+        
+        <div>
+            <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Mẫu Giải Đấu (Preset)</label>
+            <select id="tour-preset" class="input-mafia text-sm font-semibold" onchange="onPresetChange()">
+                <option value="">-- Chọn Mẫu Giải --</option>
+                <option value="hyper">Hyper Turbo (Lên Blinds Cực Nhanh)</option>
+                <option value="regular">Regular Daily (Giải Thi Đấu Tiêu Chuẩn)</option>
+                <option value="deepstack">Deepstack / High Roller (Stack Sâu)</option>
+                <option value="custom">Tùy chỉnh (Custom)</option>
+            </select>
+        </div>
+
+        <div class="flex gap-4">
+            <div class="flex-1">
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Tên Giải Đấu</label>
+                <input type="text" id="tour-name" class="input-mafia text-sm font-bold" placeholder="VD: Mafia High Roller">
+            </div>
+            <div class="w-1/3">
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Start Stack</label>
+                <input type="number" id="starting-stack" class="input-mafia text-sm font-bold text-emerald-400" value="50000" step="1000">
+            </div>
+        </div>
+
+        <!-- EDITABLE BLINDS GRID -->
+        <div id="blinds-preview-container" class="hidden flex-col gap-2 flex-1 min-h-[250px]">
+            <div class="flex justify-between items-center mb-1">
+                <label class="block text-[11px] font-bold text-[#d4af37] uppercase tracking-widest">Cấu trúc Blinds (Chỉnh Sửa Trực Tiếp)</label>
+                <div class="flex items-center gap-2 bg-red-900/40 px-2 py-1 rounded border border-red-500 shadow-md">
+                    <span class="text-[10px] font-bold text-white">LATE REG: LVL</span>
+                    <input type="number" id="late-reg-input" class="w-8 bg-transparent text-white font-bold border-b border-red-400 focus:outline-none text-center" value="8">
+                </div>
+            </div>
+            
+            <div class="bg-[#0a0a0a] border border-[#333] rounded-md flex-1 overflow-y-auto">
+                <table class="w-full text-left text-[11px] text-gray-300">
+                    <thead class="bg-[#1f1f1f] sticky top-0 text-[#d4af37] border-b border-[#333] z-10">
+                        <tr>
+                            <th class="p-2 font-bold uppercase tracking-wider w-[15%]">Lvl</th>
+                            <th class="p-2 font-bold uppercase tracking-wider text-center w-[40%]">SB / BB</th>
+                            <th class="p-2 font-bold uppercase tracking-wider w-[20%]">BBA</th>
+                            <th class="p-2 font-bold uppercase tracking-wider w-[15%]">Time</th>
+                            <th class="p-2 font-bold uppercase tracking-wider w-[10%] text-center">X</th>
+                        </tr>
+                    </thead>
+                    <tbody id="blinds-preview-body"></tbody>
+                </table>
+            </div>
+
+            <div class="flex gap-2">
+                <button class="flex-1 bg-[#1a1a1a] border border-[#333] text-[#d4af37] py-2 rounded text-[10px] font-bold uppercase hover:bg-[#222]" onclick="addBlindRow(false)"><i class="fa-solid fa-plus mr-1"></i> Level</button>
+                <button class="flex-1 bg-[#800020]/20 border border-[#800020]/50 text-red-400 py-2 rounded text-[10px] font-bold uppercase hover:bg-[#800020]/40" onclick="addBlindRow(true)"><i class="fa-solid fa-mug-hot mr-1"></i> Break</button>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-[11px] font-bold text-[#d4af37] mb-3 uppercase tracking-widest mt-2">Cấp Phát Bàn</label>
+            <div class="grid grid-cols-4 gap-2" id="tables-grid"></div>
+        </div>
+
+        <button class="btn-gold py-4 w-full uppercase tracking-widest text-sm shadow-lg mt-2" onclick="createTour()">KÍCH HOẠT GIẢI</button>
+    </div>
+
+    <!-- RIGHT PANEL: MINI TV -->
+    <div class="flex-1 p-8 overflow-y-auto bg-[#050505]">
+        <h2 class="text-2xl font-mafia text-gray-500 mb-8 tracking-widest uppercase border-b border-gray-800 pb-3"><i class="fa-solid fa-desktop mr-2 text-[#800020]"></i> Ma Trận Điều Hành</h2>
+        <div class="grid grid-cols-1 xl:grid-cols-2 3xl:grid-cols-3 gap-8" id="tv-grid"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:3000');
+        let currentTables = [], selectedTables = new Set(), currentTours = [];
+        let currentBlindsData = []; // Stateful Editable Grid Data
+
+        const baseBlinds = [
+            { level: 1, sb: 100, bb: 200, ante: 0 }, { level: 2, sb: 100, bb: 200, ante: 200 },
+            { level: 3, sb: 200, bb: 300, ante: 300 }, { level: 4, sb: 200, bb: 400, ante: 400 },
+            { level: 5, sb: 300, bb: 600, ante: 600 }, { level: 6, sb: 400, bb: 800, ante: 800 },
+            { level: 7, sb: 500, bb: 1000, ante: 1000 }, { level: 8, sb: 600, bb: 1200, ante: 1200 },
+            { level: 9, sb: 1000, bb: 1500, ante: 1500 }, { level: 10, sb: 1000, bb: 2000, ante: 2000 }
+        ];
+
+        const deepBlinds = [
+            { level: 1, sb: 100, bb: 100, ante: 0 }, { level: 2, sb: 100, bb: 200, ante: 200 },
+            { level: 3, sb: 100, bb: 300, ante: 300 }, { level: 4, sb: 200, bb: 400, ante: 400 },
+            { level: 5, sb: 300, bb: 500, ante: 500 }, { level: 6, sb: 300, bb: 600, ante: 600 },
+            { level: 7, sb: 400, bb: 800, ante: 800 }, { level: 8, sb: 500, bb: 1000, ante: 1000 },
+            { level: 9, sb: 600, bb: 1200, ante: 1200 }, { level: 10, sb: 1000, bb: 1500, ante: 1500 }
+        ];
+
+        function buildStructure(blinds, levelTime, breakAfterLevel, breakMinutes) {
+            const structure = [];
+            blinds.forEach(b => {
+                structure.push({ ...b, duration_minutes: levelTime, is_break: false });
+                if (b.level === breakAfterLevel) {
+                    structure.push({ level: 'BREAK', sb: 0, bb: 0, ante: 0, duration_minutes: breakMinutes, is_break: true });
+                }
+            });
+            return structure;
+        }
+
+        const TOURNAMENT_PRESETS = {
+            hyper: { name: "Hyper Turbo", late_reg_level: 8, starting_stack: 30000, blinds: buildStructure(baseBlinds, 10, 6, 10) },
+            regular: { name: "Regular Daily", late_reg_level: 8, starting_stack: 50000, blinds: buildStructure(baseBlinds, 20, 6, 15) },
+            deepstack: { name: "High Roller", late_reg_level: 10, starting_stack: 100000, blinds: buildStructure(deepBlinds, 30, 8, 20) },
+            custom: { name: "Custom Event", late_reg_level: 6, starting_stack: 50000, blinds: buildStructure(baseBlinds, 20, 6, 15) }
+        };
+
+        function formatMoney(amount) { return new Intl.NumberFormat('vi-VN').format(amount); }
+        function formatTime(seconds) {
+            if(seconds < 0) seconds = 0;
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // --- EDITABLE GRID LOGIC ---
+        function renderEditableBlinds() {
+            const tbody = document.getElementById('blinds-preview-body');
+            tbody.innerHTML = '';
+            
+            currentBlindsData.forEach((b, index) => {
+                const tr = document.createElement('tr');
+                if (b.is_break) {
+                    tr.className = 'border-b border-[#333] bg-[#800020]/20 font-bold';
+                    tr.innerHTML = `
+                        <td class="p-2 text-[#ff4c4c] uppercase tracking-wider" colspan="3"><i class="fa-solid fa-mug-hot mr-2"></i> ${b.level}</td>
+                        <td class="p-2">
+                            <input type="number" class="w-10 bg-transparent text-[#ff4c4c] font-bold border-b border-[#ff4c4c]/50 focus:outline-none focus:border-white text-right" value="${b.duration_minutes}" onchange="updateBlind(${index}, 'duration_minutes', this.value)">m
+                        </td>
+                        <td class="p-2 text-center"><button class="text-red-500 hover:text-white transition" onclick="removeBlind(${index})"><i class="fa-solid fa-xmark"></i></button></td>
+                    `;
+                } else {
+                    tr.className = 'border-b border-[#222] hover:bg-[#1a1a1a] transition';
+                    tr.innerHTML = `
+                        <td class="p-2 font-bold text-[#d4af37]">
+                            <input type="text" class="w-8 bg-transparent text-[#d4af37] font-bold border-b border-[#d4af37]/50 focus:outline-none focus:border-white text-center" value="${b.level}" onchange="updateBlind(${index}, 'level', this.value)">
+                        </td>
+                        <td class="p-2 text-white flex gap-2 items-center justify-center">
+                            <input type="number" class="w-12 bg-transparent border-b border-gray-600 focus:outline-none focus:border-white text-right" value="${b.sb}" onchange="updateBlind(${index}, 'sb', this.value)"> / 
+                            <input type="number" class="w-12 bg-transparent border-b border-gray-600 focus:outline-none focus:border-white text-left" value="${b.bb}" onchange="updateBlind(${index}, 'bb', this.value)">
+                        </td>
+                        <td class="p-2 text-emerald-400">
+                            <input type="number" class="w-12 bg-transparent border-b border-emerald-900 focus:outline-none focus:border-emerald-400" value="${b.ante}" onchange="updateBlind(${index}, 'ante', this.value)">
+                        </td>
+                        <td class="p-2 text-gray-400 font-bold">
+                            <input type="number" class="w-10 bg-transparent border-b border-gray-600 focus:outline-none focus:border-white text-right" value="${b.duration_minutes}" onchange="updateBlind(${index}, 'duration_minutes', this.value)">m
+                        </td>
+                        <td class="p-2 text-center"><button class="text-red-500 hover:text-white transition" onclick="removeBlind(${index})"><i class="fa-solid fa-xmark"></i></button></td>
+                    `;
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateBlind(index, key, value) {
+            if (key === 'level') currentBlindsData[index][key] = value;
+            else currentBlindsData[index][key] = Number(value) || 0;
+        }
+
+        function removeBlind(index) {
+            currentBlindsData.splice(index, 1);
+            renderEditableBlinds();
+        }
+
+        function addBlindRow(isBreak = false) {
+            if (isBreak) {
+                currentBlindsData.push({ level: 'BREAK', sb: 0, bb: 0, ante: 0, duration_minutes: 10, is_break: true });
+            } else {
+                let nextLvlNum = 1;
+                const activeLevels = currentBlindsData.filter(b => !b.is_break);
+                if(activeLevels.length > 0) {
+                    const lastNum = parseInt(activeLevels[activeLevels.length-1].level);
+                    if(!isNaN(lastNum)) nextLvlNum = lastNum + 1;
+                }
+                currentBlindsData.push({ level: nextLvlNum, sb: 1000, bb: 2000, ante: 2000, duration_minutes: 20, is_break: false });
+            }
+            renderEditableBlinds();
+            // Scroll to bottom
+            const container = document.querySelector('.overflow-y-auto.max-h-\\[220px\\]') || document.getElementById('blinds-preview-body').parentElement;
+            setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
+        }
+
+        function onPresetChange() {
+            const val = document.getElementById('tour-preset').value;
+            const container = document.getElementById('blinds-preview-container');
+            const lateInput = document.getElementById('late-reg-input');
+            const nameInput = document.getElementById('tour-name');
+            const stackInput = document.getElementById('starting-stack');
+            
+            if (val && TOURNAMENT_PRESETS[val]) {
+                const data = TOURNAMENT_PRESETS[val];
+                nameInput.value = data.name;
+                stackInput.value = data.starting_stack;
+                lateInput.value = data.late_reg_level;
+                
+                // Deep copy structure to allow local edits
+                currentBlindsData = JSON.parse(JSON.stringify(data.blinds));
+                
+                container.classList.remove('hidden');
+                container.classList.add('flex');
+                renderEditableBlinds();
+            } else {
+                container.classList.add('hidden');
+                container.classList.remove('flex');
+                nameInput.value = '';
+                currentBlindsData = [];
+            }
+        }
+
+        // --- REGULAR TV GRID LOGIC ---
+        function renderTables() {
+            const grid = document.getElementById('tables-grid');
+            grid.innerHTML = '';
+            currentTables.forEach(t => {
+                const btn = document.createElement('button');
+                btn.className = `table-btn flex items-center justify-center text-sm ${t.is_locked ? 'locked' : ''} ${selectedTables.has(t.id) ? 'selected' : ''}`;
+                btn.innerText = `Bàn ${t.id}`;
+                if (!t.is_locked) {
+                    btn.onclick = () => { selectedTables.has(t.id) ? selectedTables.delete(t.id) : selectedTables.add(t.id); renderTables(); };
+                }
+                grid.appendChild(btn);
+            });
+        }
+
+        function createTour() {
+            const name = document.getElementById('tour-name').value.trim();
+            const startStack = document.getElementById('starting-stack').value;
+            const lateReg = Number(document.getElementById('late-reg-input').value) || 6;
+            
+            if (!name) return alert("Vui lòng nhập tên giải đấu!");
+            if (selectedTables.size === 0) return alert("Vui lòng chọn ít nhất 1 bàn để phát!");
+            if (currentBlindsData.length === 0) return alert("Vui lòng cấu hình ít nhất 1 Level Blinds!");
+
+            socket.emit('create_tour', { 
+                name, 
+                selectedTableIds: Array.from(selectedTables),
+                settings: { level_time: null, late_reg_level: lateReg },
+                starting_stack: Number(startStack),
+                blinds_structure: currentBlindsData
+            });
+            
+            document.getElementById('tour-preset').value = '';
+            onPresetChange();
+            selectedTables.clear();
+        }
+
+        function renderTours() {
+            const grid = document.getElementById('tv-grid');
+            grid.innerHTML = '';
+            currentTours.forEach(tour => {
+                const card = document.createElement('div');
+                card.className = `card-mafia flex flex-col p-6 tv-card ${tour.status === 'running' ? 'running' : ''}`;
+                
+                const entriesOk = tour.entries >= 6;
+                const dealerOk = tour.dealer_assigned;
+                const canPlay = entriesOk && dealerOk && tour.status === 'paused';
+                const isRunning = tour.status === 'running';
+                const isFinished = tour.status === 'finished';
+
+                let html = `
+                    <div class="flex justify-between items-center border-b border-[#333] pb-3 mb-4">
+                        <h3 class="font-mafia text-xl text-gold drop-shadow-md truncate max-w-[70%]">${tour.name}</h3>
+                        <span class="bg-[#111] px-3 py-1 text-[11px] font-bold tracking-widest rounded border border-[#333] text-[#d4af37]">BÀN: ${tour.tables.join(',')}</span>
+                    </div>
+                `;
+                
+                if (isFinished) {
+                    html += `
+                        <div class="text-center text-[#800020] text-4xl font-mafia font-bold my-8 tracking-widest" style="text-shadow: 0 0 15px rgba(128,0,32,0.8);">FINISHED</div>
+                        <div class="text-center font-bold text-gold mb-8 border border-[#d4af37]/30 bg-[#d4af37]/10 py-4 rounded text-xl">Payout: ${formatMoney(tour.fund.payout_pool || 0)} ₫</div>
+                        <button class="mt-auto w-full py-4 bg-[#222] text-gray-400 font-bold rounded border border-[#444] hover:bg-[#333] uppercase tracking-widest text-xs transition" onclick="if(confirm('Xác nhận RESET & NHẢ BÀN?')) socket.emit('reset_tour', '${tour.id}')">🔄 Reset & Nhả Bàn</button>
+                    `;
+                } else {
+                    const blind = tour.blinds_structure[tour.current_level_idx];
+                    const isBreak = blind.is_break;
+                    const blindText = isBreak ? `<span class="text-[#ff4c4c] animate-pulse"><i class="fa-solid fa-mug-hot"></i> BREAK TIME</span>` : `Level ${blind.level}: ${formatMoney(blind.sb).replace('₫','')} / ${formatMoney(blind.bb).replace('₫','')} BBA ${formatMoney(blind.ante).replace('₫','')}`;
+                    
+                    const alivePlayers = tour.players.filter(p => p.status === 'alive').length;
+                    const totalChips = tour.entries * tour.starting_stack;
+                    const avgStack = alivePlayers > 0 ? Math.floor(totalChips / alivePlayers) : 0;
+
+                    let controlButtons = '';
+                    if (isRunning) {
+                        controlButtons = `
+                            <div class="flex justify-between items-center gap-3 mt-4">
+                                <button class="bg-[#222] text-[#d4af37] border border-[#333] px-4 py-3 rounded hover:bg-[#333] transition" onclick="socket.emit('prev_level', '${tour.id}')"><i class="fa-solid fa-backward"></i></button>
+                                <button class="flex-1 py-3 bg-[#800020] text-[#d4af37] border-2 border-[#d4af37] rounded uppercase font-bold text-sm tracking-widest transition-all glow-btn" onclick="socket.emit('pause_tour', '${tour.id}')">
+                                    <i class="fa-solid fa-pause mr-2"></i> PAUSE
+                                </button>
+                                <button class="bg-[#222] text-[#d4af37] border border-[#333] px-4 py-3 rounded hover:bg-[#333] transition" onclick="socket.emit('next_level', '${tour.id}')"><i class="fa-solid fa-forward"></i></button>
+                            </div>
+                        `;
+                    } else if (canPlay) {
+                        controlButtons = `
+                            <button class="mt-4 w-full py-3 btn-gold rounded uppercase font-bold text-sm tracking-widest transition-all" onclick="socket.emit('start_tour', '${tour.id}')">
+                                <i class="fa-solid fa-play mr-2"></i> KÍCH HOẠT ĐỒNG HỒ
+                            </button>
+                        `;
+                    } else {
+                        controlButtons = `
+                            <button class="mt-4 w-full py-3 bg-[#222] text-gray-600 border border-[#333] rounded uppercase font-bold text-sm tracking-widest cursor-not-allowed" disabled>
+                                ĐANG KHÓA (CHỜ ${tour.entries<6 ? 'KHÁCH' : 'DEALER'})
+                            </button>
+                        `;
+                    }
+
+                    html += `
+                        <div class="text-center mb-6 bg-[#050505] rounded-lg border border-[#333] p-4 shadow-inner">
+                            <div class="font-mafia text-[13px] text-[#d4af37] font-bold uppercase tracking-widest mb-3">${blindText}</div>
+                            <div class="font-digital text-6xl font-bold ${isBreak ? 'text-[#ff4c4c]' : 'text-emerald-400'} drop-shadow-[0_0_10px_currentColor] tracking-widest">${formatTime(tour.time_remaining)}</div>
+                        </div>
+
+                        <div class="flex justify-between text-[11px] uppercase tracking-widest border-t border-[#333] pt-4 mb-3 font-bold text-gray-500">
+                            <div>Khách (Alive/Total): <span class="text-gray-200">${alivePlayers}/${tour.entries}</span></div>
+                            <div>Dealer: <span class="${dealerOk ? 'text-emerald-500' : 'text-red-500'}">${dealerOk ? 'Đã gán' : 'Trống'}</span></div>
+                        </div>
+                        <div class="flex justify-between text-[11px] uppercase tracking-widest border-b border-[#333] pb-4 mb-2 font-bold text-gray-500">
+                            <div>Start Stack: <span class="text-[#d4af37]">${formatMoney(tour.starting_stack).replace('₫','').trim()}</span></div>
+                            <div>Avg Stack: <span class="text-blue-400">${formatMoney(avgStack).replace('₫','').trim()}</span></div>
+                        </div>
+
+                        <div class="mt-auto">
+                            ${controlButtons}
+                            <button class="w-full py-2 mt-3 bg-[#111] text-[#800020] border border-[#800020]/30 hover:bg-[#800020] hover:text-white rounded text-[10px] uppercase tracking-widest font-bold transition" onclick="if(confirm('Chốt sổ giải này?')) socket.emit('end_tour', '${tour.id}')">🛑 Chốt Sổ (End Tour)</button>
+                        </div>
+                    `;
+                }
+                card.innerHTML = html;
+                grid.appendChild(card);
+            });
+        }
+
+        socket.on('update_tables', (tables) => {
+            currentTables = tables;
+            tables.forEach(t => { if (t.is_locked && selectedTables.has(t.id)) selectedTables.delete(t.id); });
+            renderTables();
+        });
+        
+        socket.on('update_tours', (tours) => { currentTours = tours; renderTours(); });
+        socket.on('error_message', (msg) => alert("HỆ THỐNG: " + msg));
+    </script>
+</body>
+</html>

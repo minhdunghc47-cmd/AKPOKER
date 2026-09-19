@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker TMS 2.0 - MAIN TV (Mafia Edition)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #030303; color: #fff; overflow: hidden; }
+        .font-mafia { font-family: 'Playfair Display', serif; }
+        .font-digital { font-family: 'Share Tech Mono', monospace; }
+        .text-gold { color: #d4af37; }
+        .glow-gold { text-shadow: 0 0 20px rgba(212, 175, 55, 0.7); }
+        .glow-red { text-shadow: 0 0 40px rgba(255, 0, 50, 0.9); }
+        .text-burgundy { color: #800020; }
+        
+        .flash-red { animation: flash-border 1s 5; }
+        @keyframes flash-border {
+            0% { box-shadow: inset 0 0 0px 0px rgba(128,0,32,0); }
+            50% { box-shadow: inset 0 0 150px 30px rgba(255,0,50,0.9); border-color: red;}
+            100% { box-shadow: inset 0 0 0px 0px rgba(128,0,32,0); }
+        }
+
+        #setup-menu { background: rgba(10,10,10,0.98); }
+        .select-mafia { background: #111; border: 2px solid #d4af37; color: #fff; padding: 25px; border-radius: 12px; width: 100%; font-size: 28px; font-weight: bold; }
+        .btn-gold { background: linear-gradient(to bottom, #e5c158, #d4af37); color: #000; font-weight: bold; border-radius: 12px; transition: 0.2s; font-size: 28px; padding: 25px; cursor: pointer; }
+        .btn-gold:hover { filter: brightness(1.2); }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col relative transition-all duration-300 border-[10px] border-transparent" id="tv-body">
+
+    <!-- AUDIO ELEMENT -->
+    <audio id="alert-sound" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" preload="auto"></audio>
+
+    <!-- SETUP MENU -->
+    <div id="setup-menu" class="absolute inset-0 z-50 flex items-center justify-center flex-col p-10">
+        <h1 class="font-mafia text-[5rem] text-gold mb-16 glow-gold text-center leading-tight">MẠNG LƯỚI TIVI<br>PHÁT SÓNG SẢNH TRUNG TÂM</h1>
+        <div class="w-full max-w-4xl flex flex-col gap-10">
+            <select id="tour-select" class="select-mafia">
+                <option value="">-- KẾT NỐI VỚI GIẢI ĐẤU --</option>
+            </select>
+            <button class="btn-gold uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(212,175,55,0.6)]" onclick="startBroadcast()"><i class="fa-solid fa-satellite-dish mr-4"></i>BẮT ĐẦU PHÁT SÓNG TIVI</button>
+        </div>
+    </div>
+
+    <!-- MAIN TV INTERFACE -->
+    <div id="main-tv" class="hidden h-full flex-col p-10">
+        <!-- HEADER -->
+        <header class="flex justify-between items-end border-b-8 border-[#d4af37]/40 pb-8 mb-10">
+            <h1 class="font-mafia text-[5.5rem] text-gray-200 tracking-wider truncate max-w-[65%]" id="tv-tour-name">MAFIA MAIN EVENT</h1>
+            <div class="text-right">
+                <div class="text-gray-500 font-bold uppercase tracking-[0.3em] text-3xl mb-3">PRIZE POOL</div>
+                <div class="font-digital text-[6rem] text-gold glow-gold font-bold" id="tv-pool">0 ₫</div>
+            </div>
+        </header>
+
+        <!-- CENTER -->
+        <main class="flex-1 flex flex-col items-center justify-center py-10 relative">
+            <!-- Background Watermark -->
+            <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+                <i class="fa-solid fa-crown text-[600px] text-white"></i>
+            </div>
+            
+            <div class="font-mafia text-[4rem] text-[#d4af37] tracking-[0.4em] uppercase mb-8 font-bold" id="tv-level-name">LEVEL 1</div>
+            
+            <div class="font-digital text-[22rem] leading-none font-bold text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.6)] transition-all duration-700" id="tv-clock">20:00</div>
+            
+            <div class="flex flex-col items-center mt-16" id="tv-blinds-container">
+                <div class="font-mafia text-gray-400 uppercase tracking-[0.4em] text-4xl mb-4 font-bold">BLINDS</div>
+                <div class="font-digital text-[9rem] leading-none font-bold text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.5)]" id="tv-blinds">100 / 200</div>
+                <div class="font-mafia text-[#d4af37] text-[4rem] mt-8 font-bold tracking-widest drop-shadow-md bg-[#111] px-8 py-3 rounded-2xl border-2 border-[#d4af37]/30" id="tv-ante">BBA: 200</div>
+            </div>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="grid grid-cols-3 gap-10 border-t-8 border-[#222] pt-10 mt-6">
+            <!-- COL 1 -->
+            <div class="bg-gradient-to-t from-[#111] to-[#1a1a1a] border-2 border-[#333] rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl">
+                <div class="text-gray-500 uppercase tracking-[0.2em] text-3xl font-bold mb-6">PLAYERS (ALIVE / TOTAL)</div>
+                <div class="text-white font-digital text-[5.5rem] font-bold">
+                    <span id="tv-alive" class="text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]">0</span> 
+                    <span class="text-gray-700 mx-4">/</span> 
+                    <span id="tv-entries" class="text-gray-400">0</span>
+                </div>
+            </div>
+            <!-- COL 2 -->
+            <div class="bg-gradient-to-t from-[#111] to-[#1a1a1a] border-2 border-[#333] rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl">
+                <div class="text-gray-500 uppercase tracking-[0.2em] text-3xl font-bold mb-6">AVERAGE STACK</div>
+                <div class="font-digital text-[5.5rem] font-bold text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.6)]" id="tv-avg">0</div>
+            </div>
+            <!-- COL 3 -->
+            <div class="bg-gradient-to-t from-[#111] to-[#1a1a1a] border-2 border-[#333] rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl">
+                <div class="text-gray-500 uppercase tracking-[0.2em] text-3xl font-bold mb-6">NEXT LEVEL</div>
+                <div class="font-digital text-[4.5rem] font-bold text-gray-300" id="tv-next">200/400</div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:3000');
+        let currentTours = [];
+        let broadcastTourId = null;
+
+        function formatMoney(amount) { return new Intl.NumberFormat('vi-VN').format(amount).replace('₫', '').trim(); }
+        
+        function formatTime(seconds) {
+            if(seconds < 0) seconds = 0;
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        socket.on('update_tours', (tours) => { 
+            currentTours = tours; 
+            if (!broadcastTourId) {
+                const select = document.getElementById('tour-select');
+                const selVal = select.value;
+                select.innerHTML = '<option value="">-- KẾT NỐI VỚI GIẢI ĐẤU --</option>';
+                tours.forEach(tour => {
+                    const opt = document.createElement('option');
+                    opt.value = tour.id; opt.innerText = `[${tour.status.toUpperCase()}] ${tour.name}`;
+                    if(tour.id === selVal) opt.selected = true;
+                    select.appendChild(opt);
+                });
+            } else {
+                renderMainTV();
+            }
+        });
+
+        function startBroadcast() {
+            const val = document.getElementById('tour-select').value;
+            if(!val) return alert("Vui lòng chọn giải đấu!");
+            
+            // Yêu cầu User tương tác để Audio có thể Play được
+            document.getElementById('alert-sound').load();
+            document.getElementById('alert-sound').volume = 1.0;
+            
+            broadcastTourId = val;
+            document.getElementById('setup-menu').classList.add('hidden');
+            document.getElementById('main-tv').classList.remove('hidden');
+            document.getElementById('main-tv').classList.add('flex');
+            
+            renderMainTV();
+            
+            // Bật Fullscreen để giống Tivi thật
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(e => console.log("Không thể tự động bật Fullscreen:", e));
+            }
+        }
+
+        function renderMainTV() {
+            if(!broadcastTourId) return;
+            const tour = currentTours.find(t => t.id === broadcastTourId);
+            if(!tour) return; 
+
+            // Cập nhật Header
+            document.getElementById('tv-tour-name').innerText = tour.name;
+            const prizePool = tour.fund.payout_pool || (tour.fund.total_paid * 0.85);
+            document.getElementById('tv-pool').innerText = formatMoney(prizePool) + ' ₫';
+
+            const blind = tour.blinds_structure[tour.current_level_idx];
+            const isBreak = blind.is_break;
+
+            // Cập nhật Đồng hồ
+            document.getElementById('tv-level-name').innerText = isBreak ? 'BREAK TIME' : `LEVEL ${blind.level}`;
+            const clockEl = document.getElementById('tv-clock');
+            clockEl.innerText = formatTime(tour.time_remaining);
+            
+            // Logic đổi màu đỏ khi < 60s
+            if (tour.time_remaining <= 60 && !isBreak && tour.status === 'running') {
+                clockEl.classList.remove('text-white', 'drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]');
+                clockEl.classList.add('text-[#ff2a4b]', 'glow-red');
+            } else {
+                clockEl.classList.remove('text-[#ff2a4b]', 'glow-red');
+                clockEl.classList.add('text-white', 'drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]');
+            }
+
+            // Cập nhật Blinds Center
+            const blindsContainer = document.getElementById('tv-blinds-container');
+            if (isBreak) {
+                blindsContainer.classList.add('hidden');
+            } else {
+                blindsContainer.classList.remove('hidden');
+                document.getElementById('tv-blinds').innerText = `${formatMoney(blind.sb)} / ${formatMoney(blind.bb)}`;
+                document.getElementById('tv-ante').innerText = `BBA: ${formatMoney(blind.ante)}`;
+            }
+
+            // Cập nhật Footer (Thống kê)
+            const alivePlayers = tour.players.filter(p => p.status === 'alive').length;
+            document.getElementById('tv-alive').innerText = alivePlayers;
+            document.getElementById('tv-entries').innerText = tour.entries;
+
+            const totalChips = tour.entries * tour.starting_stack;
+            const avgStack = alivePlayers > 0 ? Math.floor(totalChips / alivePlayers) : 0;
+            document.getElementById('tv-avg').innerText = formatMoney(avgStack);
+
+            // Cập nhật Next Level
+            const nextBlind = tour.blinds_structure[tour.current_level_idx + 1];
+            if (nextBlind) {
+                document.getElementById('tv-next').innerText = nextBlind.is_break ? 'BREAK' : `${formatMoney(nextBlind.sb)} / ${formatMoney(nextBlind.bb)}`;
+            } else {
+                document.getElementById('tv-next').innerText = 'END';
+            }
+        }
+
+        // Lắng nghe tín hiệu âm thanh cảnh báo chuyển Level
+        socket.on('level_changed', (data) => {
+            if (data.tour_id === broadcastTourId) {
+                console.log("[AUDIO ALERT] Triggered Level Change");
+                
+                // Play âm thanh cảnh báo
+                const audio = document.getElementById('alert-sound');
+                audio.currentTime = 0;
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => { console.log('Trình duyệt chặn autoplay âm thanh:', error); });
+                }
+
+                // Nhấp nháy viền đỏ màn hình (Flash Red Glow)
+                const body = document.getElementById('tv-body');
+                body.classList.remove('flash-red');
+                void body.offsetWidth; // Kích hoạt reflow để reset animation
+                body.classList.add('flash-red');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker TMS 2.0 - Cashier (Mafia Edition)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111; color: #d1d5db; }
+        .font-mafia { font-family: 'Playfair Display', serif; }
+        .text-gold { color: #d4af37; }
+        
+        .card-mafia { background: #1a1a1a; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.8); border-left: 4px solid #d4af37; }
+        .card-mafia.running { border-left-color: #800020; box-shadow: -4px 0 15px rgba(128, 0, 32, 0.6); }
+        
+        .input-mafia { background: #111; border: 1px solid #444; color: #fff; padding: 14px; border-radius: 4px; width: 100%; focus:outline-none; focus:border-[#d4af37]; }
+        .btn-gold { background: linear-gradient(to bottom, #e5c158, #d4af37); color: #000; font-weight: bold; border-radius: 4px; border: 1px solid #b5952f; transition: 0.2s; }
+        .btn-gold:hover:not(:disabled) { background: linear-gradient(to bottom, #d4af37, #b5952f); }
+        .btn-gold:disabled { background: #333; color: #777; border-color: #222; cursor: not-allowed; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
+        
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; cursor: pointer; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+    <!-- LEFT PANEL -->
+    <div class="flex-1 p-8 overflow-y-auto bg-[#0a0a0a] border-r border-[#d4af37]/30">
+        <h2 class="text-2xl font-mafia text-gray-500 mb-8 tracking-widest uppercase border-b border-gray-800 pb-3"><i class="fa-solid fa-tv mr-2 text-[#800020]"></i> THEO DÕI GIẢI ĐẤU</h2>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6" id="tv-grid"></div>
+    </div>
+    
+    <!-- RIGHT PANEL -->
+    <div class="w-[480px] p-8 bg-[#161616] flex flex-col shadow-[-10px_0_20px_rgba(0,0,0,0.8)] z-10 overflow-y-auto">
+        <div class="flex justify-between items-center w-full mb-8 border-b border-[#d4af37]/30 pb-5">
+            <h2 class="text-2xl font-mafia text-gold tracking-wider drop-shadow-md"><i class="fa-solid fa-cash-register mr-2"></i> POS THU NGÂN</h2>
+            <button class="bg-[#1f1f1f] border border-[#d4af37]/50 text-[#d4af37] px-3 py-2 rounded font-bold uppercase tracking-widest text-[10px] hover:bg-[#d4af37]/20 transition shadow-md whitespace-nowrap" onclick="openMembersModal()">
+                <i class="fa-solid fa-address-book mr-1"></i> KHO HỘI VIÊN
+            </button>
+        </div>
+        
+        <div id="alert-box" class="hidden p-4 mb-6 rounded border font-bold text-sm text-center uppercase tracking-wider"></div>
+
+        <div class="space-y-6">
+            <div>
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Chọn Giải Đấu:</label>
+                <select id="tour-select" class="input-mafia text-sm" onchange="filterMembers()"><option value="">-- Vui lòng chọn giải --</option></select>
+            </div>
+            
+            <div class="relative">
+                <div class="flex justify-between items-end mb-2">
+                    <label class="block text-[11px] font-bold text-[#d4af37] uppercase tracking-widest">SĐT Hoặc Tên Hội Viên:</label>
+                    <button class="bg-emerald-900/40 border border-emerald-500 text-emerald-400 px-2 py-1 rounded text-[9px] font-bold uppercase hover:bg-emerald-900/60 transition shadow-md" onclick="showRegisterModal('', false)">
+                        <i class="fa-solid fa-plus mr-1"></i> TẠO MỚI
+                    </button>
+                </div>
+                <input type="text" id="player-search" class="input-mafia text-sm font-bold" placeholder="Nhập SĐT hoặc Tên..." autocomplete="off" onkeyup="filterMembers()" onfocus="filterMembers()">
+                <!-- AUTOCOMPLETE DROPDOWN -->
+                <div id="autocomplete-list" class="absolute z-20 w-full bg-[#1f1f1f] border border-[#d4af37]/30 rounded mt-1 hidden max-h-48 overflow-y-auto shadow-xl"></div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Mức Phí / Buy-in (VNĐ):</label>
+                <input type="number" id="buy-in" class="input-mafia text-sm font-bold text-emerald-400" placeholder="5000000" value="5000000">
+            </div>
+            <div class="flex items-center space-x-3 p-4 bg-[#800020]/20 border border-[#800020]/50 rounded cursor-pointer" onclick="document.getElementById('unpaid-checkbox').click()">
+                <input type="checkbox" id="unpaid-checkbox" class="w-5 h-5 accent-[#800020] cursor-pointer">
+                <label class="text-[#e74c3c] font-bold text-[11px] cursor-pointer uppercase tracking-widest">Khách Ghi Nợ (Chưa thu tiền)</label>
+            </div>
+        </div>
+
+        <button class="btn-gold py-5 w-full uppercase tracking-widest text-lg mt-10 shadow-lg" id="btn-sell" onclick="sellTicket()">
+            <i class="fa-solid fa-ticket mr-2"></i> IN VÉ & GHI NHẬN
+        </button>
+    </div>
+
+    <!-- MODAL ĐĂNG KÝ HỘI VIÊN NHANH & KYC -->
+    <div id="reg-modal" class="fixed inset-0 z-50 bg-black/90 hidden items-center justify-center backdrop-blur-md">
+        <div class="bg-[#111] border border-[#d4af37]/50 rounded-xl p-8 w-full max-w-4xl shadow-[0_0_50px_rgba(212,175,55,0.3)] flex flex-col max-h-[90vh]">
+            <h3 class="font-mafia text-3xl text-[#ff4c4c] mb-2 text-center uppercase tracking-widest"><i class="fa-solid fa-triangle-exclamation mr-2"></i> KÍCH HOẠT HỒ SƠ HỘI VIÊN</h3>
+            <p class="text-gray-400 text-xs text-center mb-8 uppercase tracking-widest border-b border-[#333] pb-4">Yêu cầu KYC bằng khuôn mặt để xuất vé</p>
+            
+            <div class="flex gap-8 overflow-y-auto pr-2 pb-2">
+                <!-- Cột thông tin -->
+                <div class="flex-1 space-y-5">
+                    <div class="flex gap-4">
+                        <div class="flex-[1.5]">
+                            <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">SĐT Hội Viên:</label>
+                            <input type="text" id="reg-phone" class="input-mafia text-sm font-bold text-gray-300">
+                        </div>
+                        <div class="flex-[2]">
+                            <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Tên Khách Hàng:</label>
+                            <input type="text" id="reg-name" class="input-mafia text-sm font-bold" placeholder="Nhập tên khách...">
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Ngày Sinh:</label>
+                            <input type="date" id="reg-dob" class="input-mafia text-sm text-gray-400 uppercase tracking-widest">
+                        </div>
+                        <div class="flex-[2]">
+                            <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Địa Chỉ:</label>
+                            <input type="text" id="reg-address" class="input-mafia text-sm" placeholder="VD: Quận 1, TP.HCM...">
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Ngân Hàng (Bank Name):</label>
+                            <input type="text" id="reg-bank-name" class="input-mafia text-sm" placeholder="VD: Vietcombank">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Số Tài Khoản:</label>
+                            <input type="text" id="reg-bank-account" class="input-mafia text-sm font-mono text-blue-400" placeholder="Số TK trả thưởng...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cột Webcam KYC -->
+                <div class="w-[300px] flex flex-col items-center border-l border-[#333] pl-8">
+                    <label class="block text-[11px] font-bold text-[#d4af37] mb-4 uppercase tracking-widest text-center w-full">Định Danh Khuôn Mặt (KYC)</label>
+                    <div class="relative w-48 h-48 rounded-2xl border-2 border-dashed border-gray-600 overflow-hidden bg-[#0a0a0a] flex items-center justify-center mb-6 shadow-inner" id="webcam-container">
+                        <video id="kyc-video" autoplay playsinline class="w-full h-full object-cover hidden scale-x-[-1]"></video>
+                        <img id="kyc-preview" class="w-full h-full object-cover hidden">
+                        <div id="cam-error" class="text-[10px] text-red-500 text-center p-2 hidden"></div>
+                        <i class="fa-solid fa-camera text-5xl text-gray-700" id="cam-icon"></i>
+                    </div>
+                    <div class="flex gap-3 w-full">
+                        <button class="flex-1 bg-[#1a1a1a] border border-[#333] text-gray-300 py-3 rounded text-[10px] font-bold uppercase hover:bg-[#222] transition shadow-md" onclick="startCamera()"><i class="fa-solid fa-video text-blue-400 mr-1"></i> Bật Mâm</button>
+                        <button class="flex-1 bg-emerald-900/30 border border-emerald-500 text-emerald-400 py-3 rounded text-[10px] font-bold uppercase hover:bg-emerald-900/60 transition shadow-md" onclick="captureKYC()"><i class="fa-solid fa-camera mr-1"></i> Chụp</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-4 mt-8 pt-6 border-t border-[#333]">
+                <button class="flex-1 bg-[#1a1a1a] border border-[#333] text-gray-400 py-4 rounded font-bold uppercase tracking-widest text-xs hover:bg-[#222]" onclick="closeRegisterModal()">Hủy Bỏ</button>
+                <button id="btn-submit-register" class="flex-[2] btn-gold py-4 rounded font-bold uppercase tracking-widest text-xs shadow-lg" onclick="registerAndSubmit()"><i class="fa-solid fa-bolt mr-2"></i> Ký Duyệt & Xuất Vé</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KHO HỘI VIÊN -->
+    <div id="members-modal" class="fixed inset-0 z-[55] bg-black/85 hidden items-center justify-center backdrop-blur-sm">
+        <div class="bg-[#161616] border border-[#d4af37]/50 rounded-xl p-8 w-full max-w-2xl shadow-[0_0_30px_rgba(212,175,55,0.3)] flex flex-col h-[80vh]">
+            <div class="flex justify-between items-center border-b border-[#333] pb-4 mb-4">
+                <div class="flex items-center gap-4">
+                    <h3 class="font-mafia text-2xl text-gold uppercase tracking-widest"><i class="fa-solid fa-users mr-2"></i> KHO HỘI VIÊN</h3>
+                    <button class="bg-emerald-900/40 border border-emerald-500 text-emerald-400 px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:bg-emerald-900/60 transition shadow-md" onclick="openCreateMemberFromList()">
+                        <i class="fa-solid fa-plus mr-1"></i> THÊM MỚI
+                    </button>
+                </div>
+                <button class="text-gray-500 hover:text-white transition" onclick="document.getElementById('members-modal').classList.replace('flex','hidden')"><i class="fa-solid fa-xmark text-3xl"></i></button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto pr-2">
+                <table class="w-full text-left text-xs text-gray-300">
+                    <thead class="bg-[#1f1f1f] sticky top-0 text-[#d4af37] border-b border-[#333] z-10">
+                        <tr>
+                            <th class="p-4 font-bold uppercase tracking-wider">Số Điện Thoại</th>
+                            <th class="p-4 font-bold uppercase tracking-wider">Tên Hội Viên</th>
+                            <th class="p-4 font-bold uppercase tracking-wider text-center">Tổng Giải Tham Gia</th>
+                        </tr>
+                    </thead>
+                    <tbody id="members-list-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PROFILE HỘI VIÊN -->
+    <div id="profile-modal" class="fixed inset-0 z-[60] bg-black/90 hidden items-center justify-center backdrop-blur-md">
+        <div class="bg-[#111] border border-[#d4af37]/50 rounded-xl w-full max-w-5xl shadow-[0_0_50px_rgba(212,175,55,0.2)] flex flex-col max-h-[85vh] overflow-hidden relative">
+            <div class="flex justify-between items-center border-b border-[#333] p-6 bg-[#161616]">
+                <h3 class="font-mafia text-2xl text-gold uppercase tracking-widest"><i class="fa-solid fa-id-card-clip mr-2"></i> HỒ SƠ HỘI VIÊN VIP</h3>
+                <button class="text-gray-500 hover:text-white transition" onclick="document.getElementById('profile-modal').classList.replace('flex','hidden')"><i class="fa-solid fa-xmark text-3xl"></i></button>
+            </div>
+            
+            <div class="flex flex-1 overflow-hidden">
+                <!-- Trái: Info -->
+                <div class="w-[380px] bg-[#0a0a0a] border-r border-[#333] p-8 flex flex-col items-center overflow-y-auto relative">
+                    
+                    <!-- Edit Actions -->
+                    <div id="profile-btn-group" class="absolute top-5 right-5 z-10">
+                        <button class="bg-[#1f1f1f] border border-[#d4af37]/50 text-[#d4af37] px-3 py-1.5 rounded font-bold uppercase tracking-widest text-[10px] hover:bg-[#d4af37]/20 transition shadow-md" onclick="toggleEditProfile(true)">
+                            <i class="fa-solid fa-pen mr-1"></i> CHỈNH SỬA
+                        </button>
+                    </div>
+                    <div id="profile-edit-actions" class="absolute top-5 right-5 z-10 hidden gap-2">
+                        <button class="bg-[#1f1f1f] border border-red-500 text-red-500 px-3 py-1.5 rounded font-bold uppercase tracking-widest text-[10px] hover:bg-red-900/40 transition shadow-md" onclick="toggleEditProfile(false)"><i class="fa-solid fa-xmark mr-1"></i> HỦY BỎ</button>
+                        <button class="bg-emerald-900/50 border border-emerald-500 text-emerald-400 px-3 py-1.5 rounded font-bold uppercase tracking-widest text-[10px] hover:bg-emerald-900/80 transition shadow-md" onclick="saveProfile()"><i class="fa-solid fa-floppy-disk mr-1"></i> LƯU THAY ĐỔI</button>
+                    </div>
+
+                    <!-- Avatar Area -->
+                    <div class="w-40 h-40 rounded-full border-4 border-[#d4af37] overflow-hidden mb-4 shadow-[0_0_20px_rgba(212,175,55,0.4)] bg-black relative flex items-center justify-center">
+                        <img id="profile-avatar" src="https://via.placeholder.com/150/1a1a1a/d4af37?text=NO+IMAGE" class="w-full h-full object-cover">
+                        <video id="profile-video" autoplay playsinline class="w-full h-full object-cover hidden scale-x-[-1]"></video>
+                    </div>
+                    
+                    <!-- Camera Capture for Edit Mode -->
+                    <button id="btn-recapture" class="hidden mb-6 bg-[#1a1a1a] border border-[#333] text-gray-300 px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:bg-[#222] transition shadow-md" onclick="startProfileCamera()">
+                        <i class="fa-solid fa-camera text-[#d4af37] mr-1"></i> CHỤP LẠI ẢNH
+                    </button>
+                    <div id="profile-cam-error" class="hidden text-red-500 text-[10px] mb-4 text-center border border-red-500/30 bg-red-900/20 p-2 rounded w-full"></div>
+
+                    <!-- Info View Mode -->
+                    <div id="profile-view-mode" class="w-full flex flex-col items-center">
+                        <div class="text-3xl font-mafia text-white mb-2 tracking-wider text-center drop-shadow" id="profile-name"></div>
+                        <div class="text-emerald-400 font-mono text-sm font-bold mb-1 tracking-widest" id="profile-phone"></div>
+                        <div class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-6">DOB: <span id="profile-dob" class="text-gray-200"></span></div>
+                        
+                        <div class="w-full space-y-4 text-[11px]">
+                            <div class="bg-[#161616] p-4 rounded border border-[#222]">
+                                <div class="text-gray-500 font-bold uppercase tracking-widest mb-2"><i class="fa-solid fa-map-location-dot mr-1 text-[#d4af37]"></i> Địa Chỉ</div>
+                                <div class="text-gray-300 font-medium" id="profile-address"></div>
+                            </div>
+                            <div class="bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] p-5 rounded border border-[#d4af37]/30 relative overflow-hidden shadow-inner">
+                                <i class="fa-solid fa-building-columns absolute -bottom-4 -right-2 text-6xl text-[#d4af37]/10"></i>
+                                <div class="text-[#d4af37] font-bold uppercase tracking-widest mb-3">Thông Tin Trả Thưởng</div>
+                                <div class="text-gray-400 uppercase font-bold text-[10px] mb-1">Ngân Hàng:</div>
+                                <div class="text-white font-bold text-sm mb-3" id="profile-bank-name"></div>
+                                <div class="text-gray-400 uppercase font-bold text-[10px] mb-1">Số Tài Khoản:</div>
+                                <div class="text-blue-400 font-mono text-lg font-bold drop-shadow" id="profile-bank-account"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info Edit Mode -->
+                    <div id="profile-edit-mode" class="w-full hidden flex-col gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-[#d4af37] mb-1 uppercase tracking-widest">Tên Khách Hàng</label>
+                            <input type="text" id="edit-name" class="w-full bg-[#161616] border border-[#333] text-white p-2.5 rounded text-sm focus:outline-none focus:border-[#d4af37] shadow-inner font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-[#d4af37] mb-1 uppercase tracking-widest">Ngày Sinh (DOB)</label>
+                            <input type="date" id="edit-dob" class="w-full bg-[#161616] border border-[#333] text-gray-300 p-2.5 rounded text-sm focus:outline-none focus:border-[#d4af37] shadow-inner uppercase tracking-widest">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-[#d4af37] mb-1 uppercase tracking-widest">Địa Chỉ</label>
+                            <input type="text" id="edit-address" class="w-full bg-[#161616] border border-[#333] text-gray-300 p-2.5 rounded text-sm focus:outline-none focus:border-[#d4af37] shadow-inner">
+                        </div>
+                        <div class="border-t border-[#333] pt-4 mt-2">
+                            <label class="block text-[10px] font-bold text-[#d4af37] mb-1 uppercase tracking-widest">Tên Ngân Hàng</label>
+                            <input type="text" id="edit-bank-name" class="w-full bg-[#161616] border border-[#333] text-gray-300 p-2.5 rounded text-sm focus:outline-none focus:border-[#d4af37] shadow-inner mb-4">
+                            
+                            <label class="block text-[10px] font-bold text-[#d4af37] mb-1 uppercase tracking-widest">Số Tài Khoản</label>
+                            <input type="text" id="edit-bank-account" class="w-full bg-[#161616] border border-[#333] text-blue-400 font-mono font-bold p-2.5 rounded text-sm focus:outline-none focus:border-[#d4af37] shadow-inner">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Phải: History -->
+                <div class="flex-1 p-8 flex flex-col bg-[#111]">
+                    <div class="text-[#d4af37] font-bold uppercase tracking-widest mb-6 flex items-center text-sm border-b border-[#333] pb-3">
+                        <i class="fa-solid fa-clock-rotate-left mr-2"></i> Lịch Sử Thi Đấu
+                        <span class="ml-auto bg-[#1a1a1a] px-3 py-1 rounded text-gray-400 border border-[#333]">Tổng giải tham gia: <span class="text-emerald-400 text-lg ml-1" id="profile-total-tours">0</span></span>
+                    </div>
+                    <div class="flex-1 overflow-y-auto pr-2">
+                        <table class="w-full text-left text-[11px] text-gray-300">
+                            <thead class="bg-[#1f1f1f] sticky top-0 text-[#d4af37] border-b border-[#333]">
+                                <tr>
+                                    <th class="p-4 font-bold uppercase tracking-wider">Thời Gian</th>
+                                    <th class="p-4 font-bold uppercase tracking-wider">Giải Đấu</th>
+                                    <th class="p-4 font-bold uppercase tracking-wider text-right">Phí Buy-in</th>
+                                </tr>
+                            </thead>
+                            <tbody id="profile-history-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:3000');
+        let currentTours = [];
+        let currentMembers = [];
+        const alertBox = document.getElementById('alert-box');
+
+        // WEBCAM KY LOGIC
+        let stream = null;
+        let avatarBase64 = null;
+        
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                const video = document.getElementById('kyc-video');
+                video.srcObject = stream;
+                video.classList.remove('hidden');
+                document.getElementById('kyc-preview').classList.add('hidden');
+                document.getElementById('cam-icon').classList.add('hidden');
+                document.getElementById('cam-error').classList.add('hidden');
+                document.getElementById('webcam-container').classList.add('border-emerald-500');
+            } catch (err) {
+                console.error("Camera Error:", err);
+                document.getElementById('cam-error').classList.remove('hidden');
+                document.getElementById('cam-error').innerHTML = "<i class='fa-solid fa-triangle-exclamation mb-1'></i><br>Trình duyệt chặn Camera";
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+
+        function captureKYC() {
+            const video = document.getElementById('kyc-video');
+            if(!stream || video.classList.contains('hidden')) return alert("Vui lòng Bật Mâm (Camera) trước khi chụp!");
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            // Handle mirroring in canvas to match display
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0);
+            
+            avatarBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            
+            const preview = document.getElementById('kyc-preview');
+            preview.src = avatarBase64;
+            preview.classList.remove('hidden');
+            video.classList.add('hidden');
+            document.getElementById('webcam-container').classList.replace('border-emerald-500', 'border-[#d4af37]');
+            
+            stopCamera();
+        }
+
+        function formatMoney(amount) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount); }
+
+        function showAlert(msg, isError) {
+            alertBox.classList.remove('hidden', 'bg-emerald-900/30', 'text-emerald-500', 'border-emerald-800', 'bg-red-900/30', 'text-red-500', 'border-red-800');
+            alertBox.classList.add('block');
+            if(isError) alertBox.classList.add('bg-red-900/30', 'text-red-500', 'border-red-800');
+            else alertBox.classList.add('bg-emerald-900/30', 'text-emerald-500', 'border-emerald-800');
+            alertBox.innerText = msg;
+            setTimeout(() => alertBox.classList.add('hidden'), 4000);
+        }
+
+        function filterMembers() {
+            const val = document.getElementById('player-search').value.toLowerCase().trim();
+            const list = document.getElementById('autocomplete-list');
+            list.innerHTML = '';
+            
+            if (!val) { list.classList.add('hidden'); return; }
+
+            const alivePhones = new Set();
+            currentTours.forEach(tour => {
+                if (tour.players) {
+                    tour.players.forEach(p => {
+                        if (p.status === 'alive') alivePhones.add(p.phone);
+                    });
+                }
+            });
+            
+            const filtered = currentMembers.filter(m => {
+                const isMatch = m.name.toLowerCase().includes(val) || m.phone.includes(val);
+                const isNotAlive = !alivePhones.has(m.phone);
+                return isMatch && isNotAlive;
+            });
+
+            if (filtered.length === 0) { list.classList.add('hidden'); return; }
+            
+            filtered.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'p-3 border-b border-[#333] hover:bg-[#d4af37]/20 cursor-pointer text-sm font-bold text-gray-200 transition';
+                div.innerHTML = `<span class="text-[#d4af37]">${m.phone}</span> - ${m.name}`;
+                div.onclick = () => {
+                    document.getElementById('player-search').value = m.phone; // Stick to phone
+                    list.classList.add('hidden');
+                };
+                list.appendChild(div);
+            });
+            list.classList.remove('hidden');
+        }
+
+        document.addEventListener('click', (e) => {
+            if(e.target.id !== 'player-search') document.getElementById('autocomplete-list').classList.add('hidden');
+        });
+
+        // CRM KHO HỘI VIÊN & PROFILE
+        function openMembersModal() {
+            const tbody = document.getElementById('members-list-body');
+            tbody.innerHTML = '';
+            currentMembers.forEach(m => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-[#222] hover:bg-[#1a1a1a] transition cursor-pointer';
+                tr.onclick = () => openProfileModal(m.phone);
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-[#d4af37]">${m.phone}</td>
+                    <td class="p-4 font-bold text-white">${m.name}</td>
+                    <td class="p-4 font-bold text-emerald-400 text-center text-lg">${m.total_tours}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('members-modal').classList.remove('hidden');
+            document.getElementById('members-modal').classList.add('flex');
+        }
+
+        function openCreateMemberFromList() {
+            document.getElementById('members-modal').classList.replace('flex', 'hidden');
+            showRegisterModal('', false);
+        }
+
+        let editingPhone = null;
+        let currentEditingMember = null;
+        let profileStream = null;
+        let editAvatarBase64 = null;
+
+        function openProfileModal(phone) {
+            const member = currentMembers.find(m => m.phone === phone);
+            if(!member) return;
+            
+            currentEditingMember = member;
+            editingPhone = phone;
+
+            // Render view mode
+            document.getElementById('profile-avatar').src = member.avatar_base64 || 'https://via.placeholder.com/150/1a1a1a/d4af37?text=NO+IMAGE';
+            document.getElementById('profile-name').innerText = member.name;
+            document.getElementById('profile-phone').innerText = member.phone;
+            document.getElementById('profile-dob').innerText = member.dob ? new Date(member.dob).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
+            document.getElementById('profile-address').innerText = member.address || 'Chưa cập nhật...';
+            document.getElementById('profile-bank-name').innerText = member.bank_name || 'Chưa cập nhật...';
+            document.getElementById('profile-bank-account').innerText = member.bank_account || 'Chưa cập nhật...';
+            document.getElementById('profile-total-tours').innerText = member.total_tours;
+
+            // Reset UI state to view mode
+            toggleEditProfile(false);
+
+            const tbody = document.getElementById('profile-history-body');
+            tbody.innerHTML = '';
+            const history = (member.play_history || []).slice().sort((a,b) => b.time - a.time);
+            
+            if(history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center p-8 text-gray-600 font-bold uppercase tracking-widest bg-[#161616]">Chưa có lịch sử thi đấu</td></tr>`;
+            } else {
+                history.forEach(h => {
+                    const date = new Date(h.time).toLocaleString('vi-VN');
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-[#222] hover:bg-[#1a1a1a] transition';
+                    tr.innerHTML = `
+                        <td class="p-4 text-gray-400">${date}</td>
+                        <td class="p-4 font-bold text-white">${h.tour_name}</td>
+                        <td class="p-4 font-bold text-emerald-400 text-right font-mono">${formatMoney(h.buy_in_amount)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById('profile-modal').classList.remove('hidden');
+            document.getElementById('profile-modal').classList.add('flex');
+        }
+
+        // --- CHỈNH SỬA HỒ SƠ ---
+        function toggleEditProfile(isEdit) {
+            if (isEdit) {
+                // Đổ dữ liệu vào input
+                document.getElementById('edit-name').value = currentEditingMember.name;
+                document.getElementById('edit-dob').value = currentEditingMember.dob || '';
+                document.getElementById('edit-address').value = currentEditingMember.address || '';
+                document.getElementById('edit-bank-name').value = currentEditingMember.bank_name || '';
+                document.getElementById('edit-bank-account').value = currentEditingMember.bank_account || '';
+                
+                editAvatarBase64 = null;
+
+                document.getElementById('profile-btn-group').classList.add('hidden');
+                document.getElementById('profile-edit-actions').classList.remove('hidden');
+                document.getElementById('profile-edit-actions').classList.add('flex');
+                
+                document.getElementById('profile-view-mode').classList.add('hidden');
+                document.getElementById('profile-edit-mode').classList.remove('hidden');
+                document.getElementById('profile-edit-mode').classList.add('flex');
+                
+                document.getElementById('btn-recapture').classList.remove('hidden');
+            } else {
+                stopProfileCamera();
+                document.getElementById('profile-btn-group').classList.remove('hidden');
+                document.getElementById('profile-edit-actions').classList.add('hidden');
+                document.getElementById('profile-edit-actions').classList.remove('flex');
+                
+                document.getElementById('profile-view-mode').classList.remove('hidden');
+                document.getElementById('profile-edit-mode').classList.add('hidden');
+                document.getElementById('profile-edit-mode').classList.remove('flex');
+                
+                document.getElementById('btn-recapture').classList.add('hidden');
+                document.getElementById('profile-cam-error').classList.add('hidden');
+                
+                if(currentEditingMember) {
+                    document.getElementById('profile-avatar').src = currentEditingMember.avatar_base64 || 'https://via.placeholder.com/150/1a1a1a/d4af37?text=NO+IMAGE';
+                }
+                document.getElementById('profile-avatar').classList.remove('hidden');
+                document.getElementById('profile-video').classList.add('hidden');
+            }
+        }
+
+        async function startProfileCamera() {
+            try {
+                profileStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                const video = document.getElementById('profile-video');
+                video.srcObject = profileStream;
+                video.classList.remove('hidden');
+                document.getElementById('profile-avatar').classList.add('hidden');
+                document.getElementById('profile-cam-error').classList.add('hidden');
+                
+                // Đổi nút thành nút Chụp Ngay
+                const btn = document.getElementById('btn-recapture');
+                btn.innerHTML = '<i class="fa-solid fa-camera mr-1"></i> CHỤP NGAY';
+                btn.onclick = captureProfileKYC;
+                btn.classList.replace('bg-[#1a1a1a]', 'bg-emerald-900/50');
+                btn.classList.replace('border-[#333]', 'border-emerald-500');
+                btn.classList.replace('text-gray-300', 'text-emerald-400');
+            } catch (err) {
+                console.error("Camera Error:", err);
+                document.getElementById('profile-cam-error').classList.remove('hidden');
+                document.getElementById('profile-cam-error').innerText = "Trình duyệt chặn truy cập Camera";
+            }
+        }
+
+        function stopProfileCamera() {
+            if (profileStream) {
+                profileStream.getTracks().forEach(track => track.stop());
+                profileStream = null;
+            }
+            // Khôi phục nút
+            const btn = document.getElementById('btn-recapture');
+            btn.innerHTML = '<i class="fa-solid fa-camera text-[#d4af37] mr-1"></i> CHỤP LẠI ẢNH';
+            btn.onclick = startProfileCamera;
+            btn.classList.replace('bg-emerald-900/50', 'bg-[#1a1a1a]');
+            btn.classList.replace('border-emerald-500', 'border-[#333]');
+            btn.classList.replace('text-emerald-400', 'text-gray-300');
+        }
+
+        function captureProfileKYC() {
+            const video = document.getElementById('profile-video');
+            if(!profileStream || video.classList.contains('hidden')) return;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0);
+            
+            editAvatarBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            
+            const img = document.getElementById('profile-avatar');
+            img.src = editAvatarBase64;
+            img.classList.remove('hidden');
+            video.classList.add('hidden');
+            
+            stopProfileCamera();
+        }
+
+        function saveProfile() {
+            const name = document.getElementById('edit-name').value.trim();
+            const dob = document.getElementById('edit-dob').value;
+            const address = document.getElementById('edit-address').value.trim();
+            const bank_name = document.getElementById('edit-bank-name').value.trim();
+            const bank_account = document.getElementById('edit-bank-account').value.trim();
+
+            if (!name) return alert('Tên không được để trống!');
+
+            const payload = {
+                phone: editingPhone,
+                name, dob, address, bank_name, bank_account, 
+                avatar_base64: editAvatarBase64 || undefined
+            };
+
+            socket.emit('update_member', payload, (res) => {
+                if(res.success) {
+                    // Cập nhật UI nhanh để tránh giật lag khi đợi socket
+                    currentEditingMember.name = name;
+                    currentEditingMember.dob = dob;
+                    currentEditingMember.address = address;
+                    currentEditingMember.bank_name = bank_name;
+                    currentEditingMember.bank_account = bank_account;
+                    if(editAvatarBase64) currentEditingMember.avatar_base64 = editAvatarBase64;
+                    
+                    openProfileModal(editingPhone); // Gọi lại để render trạng thái View
+                } else {
+                    alert(res.message);
+                }
+            });
+        }
+
+
+        // TICKET SELLING & REGISTER LOGIC
+        function sellTicket() {
+            const tId = document.getElementById('tour-select').value;
+            const phoneVal = document.getElementById('player-search').value.trim();
+            
+            if(!tId) return showAlert('Chọn giải đấu!', true);
+            if(!phoneVal) return showAlert('Nhập SĐT hội viên!', true);
+
+            const payload = { 
+                tour_id: tId, 
+                member_phone: phoneVal, 
+                buy_in_amount: Number(document.getElementById('buy-in').value), 
+                is_paid: !document.getElementById('unpaid-checkbox').checked 
+            };
+            
+            const btn = document.getElementById('btn-sell');
+            btn.disabled = true;
+            socket.emit('sell_ticket', payload, (res) => {
+                btn.disabled = false;
+                if(res.success) { 
+                    showAlert(res.message, false); 
+                    document.getElementById('player-search').value=''; 
+                    document.getElementById('unpaid-checkbox').checked=false; 
+                } else {
+                    if (res.code === 'MEMBER_NOT_FOUND') {
+                        showRegisterModal(phoneVal);
+                    } else {
+                        showAlert(res.message, true);
+                    }
+                }
+            });
+        }
+
+        let autoSellAfterRegister = true;
+
+        function showRegisterModal(phone, autoSell = true) {
+            autoSellAfterRegister = autoSell;
+            document.getElementById('reg-modal').classList.remove('hidden');
+            document.getElementById('reg-modal').classList.add('flex');
+            document.getElementById('reg-phone').value = phone;
+            document.getElementById('reg-name').value = '';
+            document.getElementById('reg-dob').value = '';
+            document.getElementById('reg-address').value = '';
+            document.getElementById('reg-bank-name').value = '';
+            document.getElementById('reg-bank-account').value = '';
+            
+            const btnSubmit = document.getElementById('btn-submit-register');
+            if (autoSell) {
+                btnSubmit.innerHTML = '<i class="fa-solid fa-bolt mr-2"></i> Ký Duyệt & Xuất Vé';
+            } else {
+                btnSubmit.innerHTML = '<i class="fa-solid fa-user-plus mr-2"></i> Tạo Hội Viên';
+            }
+
+            // Reset Webcam UI
+            avatarBase64 = null;
+            stopCamera();
+            document.getElementById('kyc-preview').classList.add('hidden');
+            document.getElementById('kyc-video').classList.add('hidden');
+            document.getElementById('cam-error').classList.add('hidden');
+            document.getElementById('cam-icon').classList.remove('hidden');
+            document.getElementById('webcam-container').classList.remove('border-emerald-500', 'border-[#d4af37]');
+
+            setTimeout(() => document.getElementById('reg-name').focus(), 100);
+        }
+
+        function closeRegisterModal() {
+            document.getElementById('reg-modal').classList.add('hidden');
+            document.getElementById('reg-modal').classList.remove('flex');
+            stopCamera();
+        }
+
+        function registerAndSubmit() {
+            const phone = document.getElementById('reg-phone').value.trim();
+            const name = document.getElementById('reg-name').value.trim();
+            const dob = document.getElementById('reg-dob').value;
+            const address = document.getElementById('reg-address').value.trim();
+            const bank_name = document.getElementById('reg-bank-name').value.trim();
+            const bank_account = document.getElementById('reg-bank-account').value.trim();
+            
+            if (!phone || !name) return alert('Vui lòng điền đủ SĐT và Tên khách hàng!');
+
+            const payload = {
+                phone, name, dob, address, bank_name, bank_account, avatar_base64: avatarBase64
+            };
+
+            socket.emit('register_member', payload, (res) => {
+                if (res.success) {
+                    closeRegisterModal();
+                    // Autofill the phone number
+                    document.getElementById('player-search').value = phone;
+                    
+                    if (autoSellAfterRegister) {
+                        sellTicket();
+                    } else {
+                        showAlert('Tạo hội viên thành công!', false);
+                    }
+                } else {
+                    alert(res.message);
+                }
+            });
+        }
+
+        // SOCKET LISTENERS
+        socket.on('update_members', (members) => {
+            currentMembers = members;
+        });
+
+        socket.on('update_tours', (tours) => { 
+            currentTours = tours; 
+            const select = document.getElementById('tour-select');
+            const grid = document.getElementById('tv-grid');
+            const selVal = select.value;
+            
+            select.innerHTML = '<option value="">-- Vui lòng chọn giải --</option>';
+            grid.innerHTML = '';
+
+            currentTours.forEach(tour => {
+                const opt = document.createElement('option');
+                opt.value = tour.id; opt.innerText = `${tour.name} [${tour.status.toUpperCase()}]`;
+                if(tour.id === selVal) opt.selected = true;
+                select.appendChild(opt);
+
+                const card = document.createElement('div');
+                card.className = `card-mafia p-5 flex flex-col ${tour.status === 'running' ? 'running' : ''}`;
+                card.innerHTML = `
+                    <div class="font-mafia text-gold text-xl mb-1 truncate">${tour.name}</div>
+                    <div class="text-[10px] text-gray-500 mb-4 font-bold uppercase tracking-widest border-b border-[#333] pb-2">Entries: <span class="text-white">${tour.entries}</span></div>
+                    <div class="bg-[#111] p-4 rounded border border-[#222] flex flex-col gap-2 text-xs font-bold uppercase tracking-widest">
+                        <div class="flex justify-between text-emerald-500"><span class="text-gray-400">Quỹ Két:</span> <span>${formatMoney(tour.fund.net_fund)}</span></div>
+                        <div class="flex justify-between text-red-500"><span class="text-gray-400">Nợ:</span> <span>${formatMoney(tour.fund.debt)}</span></div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            
+            filterMembers();
+        });
+    </script>
+</body>
+</html>

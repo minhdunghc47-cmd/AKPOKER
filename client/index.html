@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker TMS 2.0 - Client Test</title>
+</head>
+<body>
+    <h1>Poker TMS 2.0 - Connection Status</h1>
+    <div id="status">Connecting...</div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const statusDiv = document.getElementById('status');
+        
+        // Connect to the local server
+        const socket = io('http://localhost:3000');
+
+        socket.on('connect', () => {
+            statusDiv.innerHTML = `<span style="color: green;">Connected! Socket ID: ${socket.id}</span>`;
+            console.log("Connected to server:", socket.id);
+        });
+
+        socket.on('initial_state', (data) => {
+            console.log("Received initial state from server:", data);
+        });
+
+        socket.on('disconnect', () => {
+            statusDiv.innerHTML = '<span style="color: red;">Disconnected from server.</span>';
+            console.log("Disconnected from server.");
+        });
+    </script>
+</body>
+</html>
