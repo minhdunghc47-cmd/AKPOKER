@@ -1,8 +1,0 @@
-{
-  "name": "akpoker-frontend",
-  "version": "1.0.0",
-  "description": "Poker TMS Frontend Auto-deploy for Vercel",
-  "scripts": {
-    "build": "mkdir -p public && cp -r client/* public/"
-  }
-}
