@@ -61,7 +61,7 @@
             <p class="text-gray-400 text-sm md:text-base uppercase tracking-[0.4em] font-bold">Sảnh Điều Hướng Trung Tâm</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
             
             <div onclick="openPinModal('./cashier.html', 'cashier')" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
                 <i class="fa-solid fa-money-bill-wave text-5xl text-[#d4af37] mb-4 group-hover:scale-110 transition-transform"></i>
@@ -79,6 +79,18 @@
                 <i class="fa-solid fa-tablet-screen-button text-5xl text-[#d4af37] mb-4 group-hover:scale-110 transition-transform"></i>
                 <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-[#d4af37] transition-colors">Floor iPad</h2>
                 <p class="text-gray-500 text-xs uppercase tracking-wider">Sơ đồ bàn & Nhân sự</p>
+            </div>
+
+            <div onclick="window.location.href='./hr_kiosk.html'" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer border-blue-900/40 hover:border-blue-500">
+                <i class="fa-solid fa-clock text-5xl text-blue-500 mb-4 group-hover:scale-110 transition-transform"></i>
+                <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-blue-500 transition-colors">Kiosk Chấm Công</h2>
+                <p class="text-gray-500 text-xs uppercase tracking-wider">Máy chấm công PIN kép</p>
+            </div>
+
+            <div onclick="window.location.href='./main_tv.html'" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer border-green-900/40 hover:border-green-500">
+                <i class="fa-solid fa-tv text-5xl text-green-500 mb-4 group-hover:scale-110 transition-transform"></i>
+                <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-green-500 transition-colors">Main TV</h2>
+                <p class="text-gray-500 text-xs uppercase tracking-wider">Màn hình hiển thị sảnh</p>
             </div>
 
             <div onclick="openPinModal('./god_mode.html', 'god')" class="glass-panel border-[#800020]/40 hover:border-[#800020] rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
