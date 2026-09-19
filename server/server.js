@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const admin = require('firebase-admin');
+let isFirebaseLoaded = false;
 
 // 1. KHỞI TẠO FIREBASE ADMIN SDK
 
@@ -55,10 +56,16 @@ if (fdb) {
     if (data) {
       if (data.tournaments) db.tournaments = data.tournaments;
       if (data.members) db.members = data.members;
+      if (data.staff) db.staff = data.staff;
+      if (data.time_logs) db.time_logs = data.time_logs;
       console.log('[FIREBASE] Đã load dữ liệu toàn sòng từ Cloud xuống RAM!');
+    } else {
+      console.log('[FIREBASE] Database trống, sử dụng RAM rỗng.');
     }
+    isFirebaseLoaded = true;
   });
 } else {
+  isFirebaseLoaded = true;
   // Generate 20 test accounts if no DB
   for (let i = 1; i <= 20; i++) {
     db.members.push({
@@ -76,7 +83,7 @@ if (fdb) {
 }
 
 function saveToFirebase(path, data) {
-  if (fdb) {
+  if (fdb && isFirebaseLoaded) {
     fdb.ref(path).set(data).catch(err => console.error('[FIREBASE] Lỗi ghi data:', err));
   }
 }
