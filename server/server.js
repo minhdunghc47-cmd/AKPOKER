@@ -172,7 +172,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('add_staff', (payload, callback) => {
-    const { id, name, pin, role, base_salary } = payload;
+    const { id, name, pin, role, base_salary, dob, cccd, cccd_date, address, photo } = payload;
     if (db.staff.find(s => s.id === id)) {
       if (callback) callback({ success: false, message: 'Mã nhân viên đã tồn tại!' });
       return;
@@ -180,6 +180,7 @@ io.on('connection', (socket) => {
     db.staff.push({
       id, name, pin, role,
       base_salary: Number(base_salary) || 50000,
+      dob, cccd, cccd_date, address, photo,
       status: 'offline',
       total_minutes: 0,
       last_in: null
@@ -191,7 +192,7 @@ io.on('connection', (socket) => {
 
   
   socket.on('update_staff', (payload, callback) => {
-    const { id, name, pin, role, base_salary } = payload;
+    const { id, name, pin, role, base_salary, dob, cccd, cccd_date, address, photo } = payload;
     const staffIndex = db.staff.findIndex(s => s.id === id);
     if (staffIndex === -1) {
       if (callback) callback({ success: false, message: 'Không tìm thấy nhân viên!' });
@@ -201,6 +202,11 @@ io.on('connection', (socket) => {
     if(pin) db.staff[staffIndex].pin = pin;
     db.staff[staffIndex].role = role;
     db.staff[staffIndex].base_salary = Number(base_salary) || 50000;
+    if(dob) db.staff[staffIndex].dob = dob;
+    if(cccd) db.staff[staffIndex].cccd = cccd;
+    if(cccd_date) db.staff[staffIndex].cccd_date = cccd_date;
+    if(address) db.staff[staffIndex].address = address;
+    if(photo !== undefined) db.staff[staffIndex].photo = photo;
     
     stateChanged = true;
     broadcastState();

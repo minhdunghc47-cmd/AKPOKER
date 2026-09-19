@@ -36,7 +36,7 @@
 
     <div class="flex gap-6 flex-1 overflow-hidden">
         <!-- FORM BỔ NHIỆM -->
-        <div class="w-1/3 glass-panel p-6 rounded-lg flex flex-col gap-4">
+        <div class="w-1/3 glass-panel p-6 rounded-lg flex flex-col gap-4 overflow-y-auto">
             <div class="flex justify-between items-center mb-4 border-b border-[#333] pb-2">
                 <h2 class="text-xl font-mafia text-[#d4af37] uppercase tracking-widest"><i class="fa-solid fa-user-plus mr-2"></i>Bổ Nhiệm</h2>
                 <button onclick="resetStaffForm()" class="px-3 py-1 border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold rounded text-xs uppercase tracking-widest transition-colors">
@@ -56,6 +56,47 @@
                 <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Mã PIN CÁ NHÂN (Mật khẩu)</label>
                 <input type="password" id="hr-pin" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none text-xl tracking-[0.5em]" placeholder="****">
             </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Ngày sinh</label>
+                    <input type="date" id="hr-dob" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Số CCCD</label>
+                    <input type="text" id="hr-cccd" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none" placeholder="0123456789">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Ngày cấp</label>
+                    <input type="date" id="hr-cccd-date" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Địa chỉ</label>
+                    <input type="text" id="hr-address" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none" placeholder="Hà Nội">
+                </div>
+            </div>
+
+            <!-- CAMERA BLOCK -->
+            <div class="border border-[#333] p-3 rounded bg-[#151515]">
+                <label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">📸 Ảnh Nhận Diện</label>
+                <div class="flex gap-4 items-center">
+                    <div class="relative w-24 h-24 bg-[#111] border border-[#333] rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        <video id="camera-stream" autoplay playsinline class="hidden w-full h-full object-cover"></video>
+                        <img id="photo-preview" class="hidden w-full h-full object-cover">
+                        <i id="photo-placeholder" class="fa-solid fa-user text-3xl text-gray-600"></i>
+                    </div>
+                    <div class="flex flex-col gap-2 flex-1">
+                        <button id="btn-start-camera" onclick="startCamera()" class="w-full bg-[#222] hover:bg-[#333] border border-[#d4af37]/50 text-[#d4af37] py-2 rounded text-xs uppercase font-bold transition-colors">
+                            <i class="fa-solid fa-camera mr-1"></i> Bật Camera
+                        </button>
+                        <button id="btn-take-photo" onclick="takePhoto()" class="hidden w-full bg-blue-700 hover:bg-blue-600 text-white py-2 rounded text-xs uppercase font-bold transition-colors">
+                            <i class="fa-solid fa-circle-dot mr-1"></i> Chụp Ảnh
+                        </button>
+                    </div>
+                </div>
+                <canvas id="photo-canvas" class="hidden" width="300" height="300"></canvas>
+            </div>
+
             <div>
                 <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Chức Danh</label>
                 <select id="hr-role" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none">
@@ -141,7 +182,7 @@
                     }
                     
                     tbody.innerHTML += `
-                        <tr class="${rowClass}" onclick="editStaff('${s.id}', '${s.name}', '${s.pin}', '${s.role}', ${s.base_salary})">
+                        <tr class="${rowClass}" onclick='editStaff(this.getAttribute("data-staff"))' data-staff='${JSON.stringify(s).replace(/'/g, "&apos;").replace(/"/g, "&quot;")}'>
                             <td class="p-3 text-gray-400 font-bold">${s.id}</td>
                             <td class="p-3 ${textNameClass}">${s.name}</td>
                             <td class="p-3 text-[#d4af37]">${s.role}</td>
@@ -154,18 +195,90 @@
             }
         });
 
+        
         let isEditing = false;
+        let currentPhotoBase64 = '';
+        let stream = null;
 
-        function editStaff(id, name, pin, role, base_salary) {
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const video = document.getElementById('camera-stream');
+                video.srcObject = stream;
+                video.classList.remove('hidden');
+                document.getElementById('photo-preview').classList.add('hidden');
+                document.getElementById('photo-placeholder').classList.add('hidden');
+                
+                document.getElementById('btn-start-camera').classList.add('hidden');
+                document.getElementById('btn-take-photo').classList.remove('hidden');
+            } catch (err) {
+                alert("Không thể truy cập Camera: " + err.message);
+            }
+        }
+
+        function takePhoto() {
+            if (!stream) return;
+            const video = document.getElementById('camera-stream');
+            const canvas = document.getElementById('photo-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Draw video frame to 300x300 canvas
+            ctx.drawImage(video, 0, 0, 300, 300);
+            currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            
+            // Stop camera
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+            
+            // Show preview
+            video.classList.add('hidden');
+            const preview = document.getElementById('photo-preview');
+            preview.src = currentPhotoBase64;
+            preview.classList.remove('hidden');
+            
+            document.getElementById('btn-start-camera').classList.remove('hidden');
+            document.getElementById('btn-start-camera').innerHTML = '<i class="fa-solid fa-camera mr-1"></i> Chụp Lại';
+            document.getElementById('btn-take-photo').classList.add('hidden');
+        }
+
+        function editStaff(staffStr) {
+            const s = JSON.parse(staffStr);
             isEditing = true;
-            document.getElementById('hr-id').value = id;
+            document.getElementById('hr-id').value = s.id;
             document.getElementById('hr-id').disabled = true;
             document.getElementById('hr-id').classList.add('opacity-50', 'cursor-not-allowed');
             
-            document.getElementById('hr-name').value = name;
-            document.getElementById('hr-pin').value = pin;
-            document.getElementById('hr-role').value = role;
-            document.getElementById('hr-salary').value = base_salary;
+            document.getElementById('hr-name').value = s.name;
+            document.getElementById('hr-pin').value = s.pin || '';
+            document.getElementById('hr-role').value = s.role;
+            document.getElementById('hr-salary').value = s.base_salary;
+            
+            document.getElementById('hr-dob').value = s.dob || '';
+            document.getElementById('hr-cccd').value = s.cccd || '';
+            document.getElementById('hr-cccd-date').value = s.cccd_date || '';
+            document.getElementById('hr-address').value = s.address || '';
+            
+            if (s.photo) {
+                currentPhotoBase64 = s.photo;
+                const preview = document.getElementById('photo-preview');
+                preview.src = s.photo;
+                preview.classList.remove('hidden');
+                document.getElementById('photo-placeholder').classList.add('hidden');
+                document.getElementById('btn-start-camera').innerHTML = '<i class="fa-solid fa-camera mr-1"></i> Chụp Lại';
+            } else {
+                currentPhotoBase64 = '';
+                document.getElementById('photo-preview').classList.add('hidden');
+                document.getElementById('photo-placeholder').classList.remove('hidden');
+                document.getElementById('btn-start-camera').innerHTML = '<i class="fa-solid fa-camera mr-1"></i> Bật Camera';
+            }
+            
+            if(stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+                document.getElementById('camera-stream').classList.add('hidden');
+                document.getElementById('btn-start-camera').classList.remove('hidden');
+                document.getElementById('btn-take-photo').classList.add('hidden');
+            }
             
             document.getElementById('btn-submit').innerHTML = '<i class="fa-solid fa-save mr-2"></i> CẬP NHẬT';
             document.getElementById('btn-submit').classList.replace('bg-[#d4af37]', 'bg-blue-600');
@@ -185,6 +298,24 @@
             document.getElementById('hr-pin').value = '';
             document.getElementById('hr-role').value = 'Dealer';
             document.getElementById('hr-salary').value = '50000';
+            document.getElementById('hr-dob').value = '';
+            document.getElementById('hr-cccd').value = '';
+            document.getElementById('hr-cccd-date').value = '';
+            document.getElementById('hr-address').value = '';
+            
+            currentPhotoBase64 = '';
+            document.getElementById('photo-preview').classList.add('hidden');
+            document.getElementById('photo-placeholder').classList.remove('hidden');
+            document.getElementById('btn-start-camera').innerHTML = '<i class="fa-solid fa-camera mr-1"></i> Bật Camera';
+            
+            if(stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+                document.getElementById('camera-stream').classList.add('hidden');
+                document.getElementById('btn-start-camera').classList.remove('hidden');
+                document.getElementById('btn-take-photo').classList.add('hidden');
+            }
+
             
             document.getElementById('btn-submit').innerHTML = '<i class="fa-solid fa-save mr-2"></i> LƯU HỒ SƠ';
             document.getElementById('btn-submit').classList.replace('bg-blue-600', 'bg-[#d4af37]');
@@ -201,7 +332,14 @@
                 name: document.getElementById('hr-name').value,
                 pin: document.getElementById('hr-pin').value,
                 role: document.getElementById('hr-role').value,
-                base_salary: document.getElementById('hr-salary').value
+                base_salary: document.getElementById('hr-salary').value,
+
+                dob: document.getElementById('hr-dob').value,
+                cccd: document.getElementById('hr-cccd').value,
+                cccd_date: document.getElementById('hr-cccd-date').value,
+                address: document.getElementById('hr-address').value,
+                photo: currentPhotoBase64
+
             };
             if(!payload.id || !payload.name || ( !isEditing && !payload.pin )) return alert("Vui lòng nhập đủ thông tin ID, Tên, và PIN");
             
