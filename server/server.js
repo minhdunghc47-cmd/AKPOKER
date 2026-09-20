@@ -45,11 +45,13 @@ const defaultBlinds = [
 
 let db = {
   tournaments: [],
+  tour_templates: [],
   tables: Array.from({ length: 8 }, (_, i) => ({ id: i + 1, is_locked: false, tour_id: null, dealer_name: null, dealer_time: null })),
   players: {},
   staff: [], 
   time_logs: [],
-  members: []
+  members: [],
+  financial: { net_cash: 0, total_debt: 0, total_rake: 0 }
 };
 
 if (fdb) {
@@ -71,6 +73,7 @@ if (fdb) {
         if (data.tournaments) {
           db.tournaments = data.tournaments.map(t => ({ ...t, players: t.players || [] }));
         }
+        if (data.tour_templates) db.tour_templates = data.tour_templates;
         if (data.members) db.members = data.members;
         if (data.time_logs) db.time_logs = data.time_logs;
         if (data.staff) db.staff = data.staff;
@@ -166,6 +169,7 @@ io.on('connection', (socket) => {
   if(isFirebaseLoaded) {
     const activeTours = db.tournaments.filter(t => t.status !== 'archived');
     socket.emit('update_tours', activeTours);
+    socket.emit('update_tour_templates', db.tour_templates);
     socket.emit('update_tables', db.tables);
     socket.emit('update_staff_list', db.staff);
     socket.emit('update_members', db.members);
@@ -177,6 +181,7 @@ io.on('connection', (socket) => {
     if(isFirebaseLoaded) {
       const activeTours = db.tournaments.filter(t => t.status !== 'archived');
       socket.emit('update_tours', activeTours);
+      socket.emit('update_tour_templates', db.tour_templates);
       socket.emit('update_tables', db.tables);
       socket.emit('update_staff_list', db.staff);
       socket.emit('update_members', db.members);
@@ -202,6 +207,19 @@ io.on('connection', (socket) => {
     });
     broadcastState();
     if (callback) callback({ success: true, message: 'Bổ nhiệm nhân sự thành công!' });
+  });
+
+  socket.on('save_template', (templateData, callback) => {
+    // Generate an ID for the template
+    const templateId = 'tpl_' + Date.now();
+    const newTemplate = { id: templateId, ...templateData };
+    if (!db.tour_templates) db.tour_templates = [];
+    db.tour_templates.push(newTemplate);
+    
+    broadcastState(); // Save to firebase
+    io.emit('update_tour_templates', db.tour_templates); // Broadcast to all connected clients
+    
+    if (callback) callback({ success: true, message: 'Đã lưu mẫu giải đấu thành công!' });
   });
 
   socket.on('update_staff', (payload, callback) => {
