@@ -43,6 +43,8 @@ const defaultBlinds = [
   { level: 2, sb: 200, bb: 400, ante: 400, duration_minutes: 20, is_break: false }
 ];
 
+
+const PREFERRED_SEAT_ORDER = [1, 3, 5, 7, 9, 2, 4, 6, 8];
 let db = {
   tournaments: [],
   tour_templates: [],
@@ -461,7 +463,7 @@ console.log('CREATE_TOUR DATA:', data);
         if (alivePlayers.length === minPlayers) {
             assigned_table = tableId;
             const occupiedSeats = alivePlayers.map(p => p.seat);
-            for (let i = 1; i <= 9; i++) {
+            for (let i of PREFERRED_SEAT_ORDER) {
                 if (!occupiedSeats.includes(i)) {
                     assigned_seat = i;
                     break;
@@ -566,7 +568,7 @@ console.log('CREATE_TOUR DATA:', data);
         let new_seat = 1;
         const playersAtNewTable = t.players.filter(x => x.table_id === p.table_id && x.status === 'alive' && x.phone !== p.phone);
         const occupiedSeats = playersAtNewTable.map(x => x.seat);
-        for(let i=1; i<=9; i++){
+        for (let i of PREFERRED_SEAT_ORDER) {
             if(!occupiedSeats.includes(i)) { new_seat = i; break; }
         }
         p.seat = new_seat;
