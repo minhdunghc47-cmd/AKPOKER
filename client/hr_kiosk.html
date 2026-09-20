@@ -78,12 +78,6 @@
                 renderStaffDropdown();
             }
         });
-        
-        // Listen to old update_staff_list for backward compatibility
-        socket.on('update_staff_list', (staffList) => {
-            currentStaffList = staffList;
-            renderStaffDropdown();
-        });
 
         function renderStaffDropdown() {
             const select = document.getElementById('kiosk-staff');

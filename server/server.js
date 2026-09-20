@@ -3,9 +3,9 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const admin = require('firebase-admin');
-let isFirebaseLoaded = false;
+const fs = require('fs');
 
-// 1. KHỞI TẠO FIREBASE ADMIN SDK
+let isFirebaseLoaded = false;
 
 try {
   let serviceAccount;
@@ -21,7 +21,7 @@ try {
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://<YOUR_DATABASE_NAME>.firebaseio.com" // Hãy thay bằng URL thật của sòng
+    databaseURL: "https://<YOUR_DATABASE_NAME>.firebaseio.com"
   });
   console.log('[FIREBASE] Đã kết nối Firebase thành công!');
 } catch (error) {
@@ -45,11 +45,11 @@ let db = {
   tournaments: [],
   tables: Array.from({ length: 8 }, (_, i) => ({ id: i + 1, is_locked: false, tour_id: null, dealer_name: null, dealer_time: null })),
   players: {},
-  staff: [], time_logs: [],
+  staff: [], 
+  time_logs: [],
   members: []
 };
 
-// 2. ĐỒNG BỘ TỪ FIREBASE XUỐNG RAM KHI KHỞI ĐỘNG
 if (fdb) {
   function loadFromFirebase() {
     fdb.ref('/').once('value', (snapshot) => {
@@ -59,35 +59,15 @@ if (fdb) {
         if (data.members) db.members = data.members;
         if (data.time_logs) db.time_logs = data.time_logs;
         if (data.staff) db.staff = data.staff;
-        console.log('[FIREBASE] Đã nạp dữ liệu từ Cloud thành công (READ-ONLY).');
-      } else {
-        console.log('[FIREBASE] Database hoàn toàn trống rỗng.');
       }
-      
-      console.log('[FIREBASE] Đã load dữ liệu toàn sòng từ Cloud xuống RAM!');
       isFirebaseLoaded = true;
       broadcastState(true);
       io.emit('staff_data_updated', db.staff);
     });
   }
-  
   loadFromFirebase();
 } else {
   isFirebaseLoaded = true;
-  // Generate 20 test accounts if no DB
-  for (let i = 1; i <= 20; i++) {
-    db.members.push({
-      phone: '09990000' + (i < 10 ? '0' + i : i),
-      name: 'Test ' + i,
-      dob: '1990-01-01',
-      address: 'Casino Resort',
-      bank_account: '123123123',
-      bank_name: 'VPBank',
-      avatar_base64: null,
-      play_history: [],
-      total_tours: 0
-    });
-  }
 }
 
 function saveToFirebase(path, data) {
@@ -116,7 +96,6 @@ function broadcastState(skipSave = false) {
   }
 }
 
-// TIMER ENGINE (Đã tối ưu không ghi đè Firebase mỗi giây)
 setInterval(() => {
   let stateChanged = false;
   db.tournaments.forEach(t => {
@@ -145,14 +124,12 @@ setInterval(() => {
   });
 
   if (stateChanged) {
-    broadcastState(); // Sự kiện lớn (đổi level) mới broadcast và sync Firebase
+    broadcastState();
   } else {
-    // Chỉ broadcast socket để cập nhật UI, không sync DB
     const activeTours = db.tournaments.filter(t => t.status !== 'archived');
     io.emit('update_tours', activeTours);
   }
 }, 1000);
-
 
 io.on('connection', (socket) => {
   socket.on('request_initial_data', () => {
@@ -162,7 +139,6 @@ io.on('connection', (socket) => {
       socket.emit('update_god_mode', { financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 }, staff: db.staff, all_tours: db.tournaments });
     }
   });
-  // Removed broadcastState(); to prevent write on connect
 
   socket.on('seed_staff_data', (callback) => {
     db.staff = [];
@@ -190,18 +166,10 @@ io.on('connection', (socket) => {
       fdb.ref('/staff').set(db.staff);
     }
     
-    stateChanged = true;
     broadcastState();
-    
-    // Explicitly emit what the user requested
     io.emit('staff_data_updated', db.staff);
     
     if (callback) callback({ success: true, message: 'Đã seed 20 nhân viên chuẩn form mới!' });
-  });
-    }
-    stateChanged = true;
-    broadcastState();
-    if (callback) callback({ success: true, message: 'Đã seed 20 nhân viên thành công!' });
   });
 
   socket.on('add_staff', (payload, callback) => {
@@ -215,15 +183,14 @@ io.on('connection', (socket) => {
       base_salary: Number(base_salary) || 50000,
       dob, cccd, cccd_date, address, photo,
       status: 'offline',
+      work_status: 'ACTIVE',
       total_minutes: 0,
       last_in: null
     });
-    stateChanged = true;
     broadcastState();
     if (callback) callback({ success: true, message: 'Bổ nhiệm nhân sự thành công!' });
   });
 
-  
   socket.on('update_staff', (payload, callback) => {
     const { id, name, pin, role, base_salary, dob, cccd, cccd_date, address, photo } = payload;
     const staffIndex = db.staff.findIndex(s => s.id === id);
@@ -241,12 +208,10 @@ io.on('connection', (socket) => {
     if(address) db.staff[staffIndex].address = address;
     if(photo !== undefined) db.staff[staffIndex].photo = photo;
     
-    stateChanged = true;
     broadcastState();
     if (callback) callback({ success: true, message: 'Cập nhật nhân sự thành công!' });
   });
 
-  
   socket.on('resign_staff', (staffId, callback) => {
     const s = db.staff.find(s => s.id === staffId);
     if (!s) {
@@ -264,7 +229,6 @@ io.on('connection', (socket) => {
         s.last_in = null;
         db.time_logs.push({ staff_id: s.id, name: s.name, type: 'OUT', time: now });
     }
-    stateChanged = true;
     broadcastState();
     if(callback) callback({ success: true, message: 'Đã cập nhật trạng thái Thôi Việc!' });
   });
@@ -281,7 +245,6 @@ io.on('connection', (socket) => {
     s.last_in = Date.now();
     db.time_logs.push({ staff_id, name: s.name, type: 'IN', time: s.last_in });
     
-    stateChanged = true;
     broadcastState();
     if (callback) callback({ success: true, message: 'Check-IN thành công!' });
   });
@@ -303,11 +266,9 @@ io.on('connection', (socket) => {
     s.last_in = null;
     db.time_logs.push({ staff_id, name: s.name, type: 'OUT', time: now });
     
-    stateChanged = true;
     broadcastState();
     if (callback) callback({ success: true, message: 'Check-OUT thành công!' });
   });
-
 
   socket.on('register_member', (payload, callback) => {
     const { phone, name, dob, address, bank_account, bank_name, avatar_base64 } = payload;
@@ -408,14 +369,12 @@ io.on('connection', (socket) => {
     const t = db.tournaments.find(t => t.id === tour_id);
     if (!t) return;
 
-    // CRM Rule
     const member = db.members.find(m => m.phone === member_phone);
     if (!member) {
       if(callback) callback({ success: false, code: 'MEMBER_NOT_FOUND', message: 'KHÁCH CHƯA ĐĂNG KÝ HỘI VIÊN' });
       return;
     }
 
-    // Global Anti-Ghosting Rule
     let ghostingTour = null;
     db.tournaments.forEach(tour => {
       if (tour.status !== 'archived' && tour.status !== 'finished') {
@@ -430,25 +389,21 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // Assign table
     const assigned_table = t.tables[t.entries % t.tables.length];
     t.players.push({ phone: member_phone, name: member.name, status: 'alive', table_id: assigned_table });
     
     t.entries += 1;
     const amount = Number(buy_in_amount) || 0;
     
-    // Update CRM Play History
     member.total_tours += 1;
     member.play_history = member.play_history || [];
     member.play_history.push({ tour_name: t.name, buy_in_amount: amount, time: Date.now() });
 
-    // CRITICAL RULE: QUỸ & CÔNG NỢ (Bóc tách Paid và Unpaid)
     if (is_paid) {
       t.fund.total_paid += amount;
     } else {
       t.fund.debt += amount;
     }
-    // Net Fund (Quỹ thực tế) = Tiền mặt thực thu - Chi phí tổ chức
     t.fund.net_fund = t.fund.total_paid - t.fund.expenses;
 
     broadcastState();
