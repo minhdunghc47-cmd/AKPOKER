@@ -160,8 +160,20 @@ setInterval(() => {
 }, 1000);
 
 io.on('connection', (socket) => {
+  if(isFirebaseLoaded) {
+    const activeTours = db.tournaments.filter(t => t.status !== 'archived');
+    socket.emit('update_tours', activeTours);
+    socket.emit('update_tables', db.tables);
+    socket.emit('update_staff_list', db.staff);
+    socket.emit('staff_data_updated', db.staff);
+    socket.emit('update_god_mode', { financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 }, staff: db.staff, all_tours: db.tournaments });
+  }
+
   socket.on('request_initial_data', () => {
     if(isFirebaseLoaded) {
+      const activeTours = db.tournaments.filter(t => t.status !== 'archived');
+      socket.emit('update_tours', activeTours);
+      socket.emit('update_tables', db.tables);
       socket.emit('update_staff_list', db.staff);
       socket.emit('staff_data_updated', db.staff);
       socket.emit('update_god_mode', { financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 }, staff: db.staff, all_tours: db.tournaments });
