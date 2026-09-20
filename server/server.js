@@ -61,6 +61,20 @@ if (fdb) {
         if (data.members) db.members = data.members;
         if (data.time_logs) db.time_logs = data.time_logs;
         if (data.staff) db.staff = data.staff;
+        if (data.tables) {
+          db.tables = data.tables;
+        } else {
+          db.tournaments.forEach(t => {
+            if (t.status !== 'archived' && t.status !== 'finished') {
+              if (t.tables && Array.isArray(t.tables)) {
+                t.tables.forEach(tableId => {
+                  const tbl = db.tables.find(x => x.id === tableId);
+                  if (tbl) { tbl.is_locked = true; tbl.tour_id = t.id; }
+                });
+              }
+            }
+          });
+        }
       }
       isFirebaseLoaded = true;
       broadcastState(true);
@@ -95,6 +109,7 @@ function broadcastState(skipSave = false) {
     saveToFirebase('members', db.members);
     saveToFirebase('staff', db.staff);
     saveToFirebase('time_logs', db.time_logs);
+    saveToFirebase('tables', db.tables);
   }
 }
 
