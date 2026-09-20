@@ -82,7 +82,7 @@
     <div class="flex-1 flex overflow-hidden w-full">
         
         <!-- LEFT COL: STATS -->
-        <div class="w-[28%] bg-[#081020]/80 border-r border-[#d4af37]/20 flex flex-col p-8 justify-between z-0">
+        <div class="w-[25%] bg-[#081020]/80 border-r border-[#d4af37]/20 flex flex-col p-8 justify-between z-0">
             <div>
                 <div class="stat-box mt-2">
                     <span class="stat-title">REG. CLOSES</span>
@@ -116,7 +116,7 @@
         </div>
 
         <!-- CENTER COL: CLOCK -->
-        <div class="w-[44%] bg-gradient-to-b from-[#0f172a] to-[#050b14] flex flex-col justify-center items-center relative shadow-[0_0_50px_rgba(0,0,0,0.5)] z-20 border-x-4 border-black">
+        <div class="w-[50%] min-w-0 overflow-hidden bg-gradient-to-b from-[#0f172a] to-[#050b14] flex flex-col justify-center items-center relative shadow-[0_0_50px_rgba(0,0,0,0.5)] z-20 border-x-4 border-black">
             
             <div class="absolute top-8 w-full text-center">
                 <div class="font-mafia text-5xl md:text-[4rem] tracking-widest text-[#d4af37] drop-shadow-[0_0_20px_rgba(212,175,55,0.4)]" id="tv-level-name">LEVEL 1</div>
@@ -124,13 +124,13 @@
 
             <!-- CLOCK -->
             <div class="w-full flex justify-center items-center my-8 mt-24">
-                <div id="tv-clock" class="font-digital text-[15rem] leading-none tracking-widest text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">00:00</div>
+                <div id="tv-clock" class="font-digital text-[clamp(6rem,15vw,16rem)] leading-none tracking-tighter whitespace-nowrap text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">00:00</div>
             </div>
 
             <!-- BLINDS -->
             <div class="w-full text-center mb-12">
                 <div class="text-gray-400 text-2xl font-bold tracking-widest uppercase mb-2">BLINDS</div>
-                <div class="font-teko text-[7rem] leading-none text-emerald-400 font-bold drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)]" id="tv-blinds">1K / 2K</div>
+                <div class="font-teko text-[clamp(4rem,7vw,7rem)] leading-none text-emerald-400 font-bold whitespace-nowrap drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)]" id="tv-blinds">1K / 2K</div>
                 <div class="font-teko text-[3rem] text-[#d4af37] mt-2 font-bold tracking-widest uppercase bg-[#d4af37]/10 inline-block px-8 py-1 rounded border border-[#d4af37]/30" id="tv-ante">BBA 2K</div>
             </div>
 
@@ -147,7 +147,7 @@
         </div>
 
         <!-- RIGHT COL: DYNAMIC PRIZE/WATERMARK -->
-        <div class="w-[28%] bg-[#081020]/80 border-l border-[#d4af37]/20 flex flex-col relative z-0">
+        <div class="w-[25%] bg-[#081020]/80 border-l border-[#d4af37]/20 flex flex-col relative z-0">
             
             <!-- WATERMARK VIEW (Before Late Reg closes) -->
             <div id="tv-late-reg-view" class="absolute inset-0 flex flex-col items-center justify-center opacity-60">
