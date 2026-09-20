@@ -400,15 +400,15 @@
                     
                     let nameHtml = '';
                     if (bustedName) {
-                        nameHtml = `<div class="${nameStyle}">${bustedName}</div>`;
+                        nameHtml = `<div class="${nameStyle}" style="flex: 1 1 0%; min-width: 0;">${bustedName}</div>`;
                     } else {
-                        nameHtml = `<div class="flex-1 mx-4 border-b-2 border-dashed border-[#333] opacity-70"></div>`;
+                        nameHtml = `<div class="mx-4 border-b-2 border-dashed border-[#333] opacity-70" style="flex: 1 1 0%; min-width: 0;"></div>`;
                     }
                     
                     row.innerHTML = `
-                        <div class="${rankStyle}">${rankContent}</div>
+                        <div class="${rankStyle}" style="flex-shrink: 0;">${rankContent}</div>
                         ${nameHtml}
-                        <div class="${amountStyle}">${formatMoney(p.amount)} <span class="${amountSymbolStyle}">₫</span></div>
+                        <div class="${amountStyle}" style="flex-shrink: 0;">${formatMoney(p.amount)} <span class="${amountSymbolStyle}">₫</span></div>
                     `;
                     
                     payoutListEl.appendChild(row);
