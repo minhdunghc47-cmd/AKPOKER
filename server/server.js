@@ -9,14 +9,16 @@ let isFirebaseLoaded = false;
 
 try {
   let serviceAccount;
-  if (fs.existsSync('/etc/secrets/serviceAccountKey.json')) {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else if (fs.existsSync('/etc/secrets/serviceAccountKey.json')) {
     serviceAccount = require('/etc/secrets/serviceAccountKey.json');
   } else if (fs.existsSync('../serviceAccountKey.json')) {
     serviceAccount = require('../serviceAccountKey.json');
   } else if (fs.existsSync('./serviceAccountKey.json')) {
     serviceAccount = require('./serviceAccountKey.json');
   } else {
-    throw new Error('Không tìm thấy file Key hợp lệ trên hệ thống');
+    throw new Error('Không tìm thấy file Key hợp lệ trên hệ thống hoặc biến môi trường FIREBASE_SERVICE_ACCOUNT');
   }
 
   admin.initializeApp({
