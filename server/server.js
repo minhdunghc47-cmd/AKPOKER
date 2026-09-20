@@ -68,7 +68,9 @@ if (fdb) {
       clearTimeout(timeoutTimer);
       const data = snapshot.val();
       if (data) {
-        if (data.tournaments) db.tournaments = data.tournaments;
+        if (data.tournaments) {
+          db.tournaments = data.tournaments.map(t => ({ ...t, players: t.players || [] }));
+        }
         if (data.members) db.members = data.members;
         if (data.time_logs) db.time_logs = data.time_logs;
         if (data.staff) db.staff = data.staff;
