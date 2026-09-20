@@ -290,6 +290,10 @@
                             <input type="text" id="edit-name" class="w-full bg-[#161616] border border-[#333] text-white p-2.5 rounded text-sm focus:outline-none focus:border-[#d4af37] shadow-inner font-bold">
                         </div>
                         <div>
+                            <label class="block text-[10px] font-bold text-[#d4af37] mb-1 uppercase tracking-widest">Số Điện Thoại</label>
+                            <input type="text" id="edit-phone" class="w-full bg-[#161616] border border-[#333] text-emerald-400 p-2.5 rounded text-sm focus:outline-none focus:border-[#d4af37] shadow-inner font-bold">
+                        </div>
+                        <div>
                             <label class="block text-[10px] font-bold text-[#d4af37] mb-1 uppercase tracking-widest">Ngày Sinh (DOB)</label>
                             <input type="date" id="edit-dob" class="w-full bg-[#161616] border border-[#333] text-gray-300 p-2.5 rounded text-sm focus:outline-none focus:border-[#d4af37] shadow-inner uppercase tracking-widest">
                         </div>
@@ -640,6 +644,7 @@
 
         function saveProfile() {
             const name = document.getElementById('edit-name').value.trim();
+            const newPhone = document.getElementById('edit-phone').value.trim();
             const dob = document.getElementById('edit-dob').value;
             const address = document.getElementById('edit-address').value.trim();
             const bank_name = document.getElementById('edit-bank-name').value.trim();
