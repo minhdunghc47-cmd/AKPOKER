@@ -109,6 +109,7 @@ function broadcastState(skipSave = false) {
   io.emit('update_tours', activeTours);
   io.emit('update_tables', db.tables);
   io.emit('update_staff_list', db.staff);
+  io.emit('update_members', db.members);
   io.emit('update_god_mode', {
     financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 },
     staff: db.staff,
@@ -165,6 +166,7 @@ io.on('connection', (socket) => {
     socket.emit('update_tours', activeTours);
     socket.emit('update_tables', db.tables);
     socket.emit('update_staff_list', db.staff);
+    socket.emit('update_members', db.members);
     socket.emit('staff_data_updated', db.staff);
     socket.emit('update_god_mode', { financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 }, staff: db.staff, all_tours: db.tournaments });
   }
@@ -175,6 +177,7 @@ io.on('connection', (socket) => {
       socket.emit('update_tours', activeTours);
       socket.emit('update_tables', db.tables);
       socket.emit('update_staff_list', db.staff);
+      socket.emit('update_members', db.members);
       socket.emit('staff_data_updated', db.staff);
       socket.emit('update_god_mode', { financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 }, staff: db.staff, all_tours: db.tournaments });
     }
