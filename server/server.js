@@ -439,16 +439,34 @@ console.log('CREATE_TOUR DATA:', data);
       return;
     }
 
-    // Áp dụng Balance Seating & Seat Finder
-    const assigned_table = t.tables[t.entries % t.tables.length];
+    // Áp dụng Balance Seating & Seat Finder: Tìm bàn ít người nhất
+    let assigned_table = null;
+    let assigned_seat = null;
+    let minPlayers = 999;
     
-    // Tìm ghế trống đầu tiên từ 1 đến 9 ở bàn assigned_table
-    let assigned_seat = 1;
-    const playersAtTable = t.players.filter(p => p.table_id === assigned_table && p.status === 'alive');
-    const occupiedSeats = playersAtTable.map(p => p.seat);
-    for (let i = 1; i <= 9; i++) {
-        if (!occupiedSeats.includes(i)) {
-            assigned_seat = i;
+    for (let tableId of t.tables) {
+        const aliveCount = t.players.filter(p => p.table_id === tableId && p.status === 'alive').length;
+        if (aliveCount < minPlayers) {
+            minPlayers = aliveCount;
+        }
+    }
+    
+    if (minPlayers >= 9) {
+        if (callback) callback({ success: false, message: "Hệ thống báo: TẤT CẢ CÁC BÀN ĐÃ ĐẦY (9/9)! Hãy yêu cầu Floor mở thêm bàn mới trước khi Thu ngân có thể bán vé!"});
+        return;
+    }
+    
+    for (let tableId of t.tables) {
+        const alivePlayers = t.players.filter(p => p.table_id === tableId && p.status === 'alive');
+        if (alivePlayers.length === minPlayers) {
+            assigned_table = tableId;
+            const occupiedSeats = alivePlayers.map(p => p.seat);
+            for (let i = 1; i <= 9; i++) {
+                if (!occupiedSeats.includes(i)) {
+                    assigned_seat = i;
+                    break;
+                }
+            }
             break;
         }
     }
