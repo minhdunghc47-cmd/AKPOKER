@@ -61,6 +61,33 @@
     <div class="flex-1 p-8 overflow-y-auto bg-[#0a0a0a] border-r border-[#d4af37]/30">
         <h2 class="text-2xl font-mafia text-gray-500 mb-8 tracking-widest uppercase border-b border-gray-800 pb-3"><i class="fa-solid fa-tv mr-2 text-[#800020]"></i> THEO DÕI GIẢI ĐẤU</h2>
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6" id="tv-grid"></div>
+        
+        <div class="mt-12 flex flex-col items-center">
+            <h2 class="text-lg font-mafia text-[#d4af37] mb-6 tracking-widest uppercase border-b border-gray-800 pb-2 w-full text-center"><i class="fa-solid fa-receipt mr-2"></i> XEM TRƯỚC HÓA ĐƠN</h2>
+            
+            <div id="receipt-preview" class="bg-white text-black p-4 shadow-[0_0_20px_rgba(212,175,55,0.2)] border-2 border-dashed border-gray-300" style="width: 80mm; font-family: 'Courier New', Courier, monospace;">
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <h2 style="margin: 0; font-size: 18px; font-weight: bold;">ACEPOKER</h2>
+                    <div style="font-size: 12px; margin-top: 5px;">VÉ THAM DỰ GIẢI ĐẤU</div>
+                </div>
+                <div style="border-top: 1px dashed black; margin: 10px 0;"></div>
+                <div style="font-size: 12px; line-height: 1.6;">
+                    <div><strong>Khách:</strong> <span id="rp-name">...</span></div>
+                    <div><strong>Giải:</strong> <span id="rp-tour">...</span></div>
+                    <div><strong>Buy-in:</strong> <span id="rp-buyin">...</span></div>
+                    <div><strong>Thời gian:</strong> <span id="rp-time">...</span></div>
+                    <div style="margin-top: 10px;"><strong>Bàn:</strong> ......... <strong>Ghế:</strong> .........</div>
+                </div>
+                <div style="border-top: 1px dashed black; margin: 10px 0;"></div>
+                <div style="text-align: center; font-size: 12px; font-style: italic;">
+                    Chúc quý khách may mắn!
+                </div>
+            </div>
+            
+            <button class="mt-6 bg-[#1a1a1a] border border-[#333] hover:bg-[#222] text-gray-300 font-bold px-6 py-3 rounded tracking-widest uppercase text-xs transition" onclick="window.print()">
+                <i class="fa-solid fa-print mr-2"></i> CHỈ IN LẠI VÉ
+            </button>
+        </div>
     </div>
     
     <!-- RIGHT PANEL -->
@@ -87,14 +114,14 @@
                         <i class="fa-solid fa-plus mr-1"></i> TẠO MỚI
                     </button>
                 </div>
-                <input type="text" id="player-search" class="input-mafia text-sm font-bold" placeholder="Nhập SĐT hoặc Tên..." autocomplete="off" onkeyup="filterMembers()" onfocus="filterMembers()">
+                <input type="text" id="player-search" class="input-mafia text-sm font-bold" placeholder="Nhập SĐT hoặc Tên..." autocomplete="off" onkeyup="filterMembers(); updateReceiptPreview();" onfocus="filterMembers(); updateReceiptPreview();">
                 <!-- AUTOCOMPLETE DROPDOWN -->
                 <div id="autocomplete-list" class="absolute z-20 w-full bg-[#1f1f1f] border border-[#d4af37]/30 rounded mt-1 hidden max-h-48 overflow-y-auto shadow-xl"></div>
             </div>
 
             <div>
                 <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Mức Phí / Buy-in (VNĐ):</label>
-                <input type="number" id="buy-in" class="input-mafia text-sm font-bold text-emerald-400" placeholder="5000000" value="5000000">
+                <input type="number" id="buy-in" class="input-mafia text-sm font-bold text-emerald-400" placeholder="5000000" value="5000000" oninput="updateReceiptPreview()">
             </div>
             <div class="flex items-center space-x-3 p-4 bg-[#800020]/20 border border-[#800020]/50 rounded cursor-pointer" onclick="document.getElementById('unpaid-checkbox').click()">
                 <input type="checkbox" id="unpaid-checkbox" class="w-5 h-5 accent-[#800020] cursor-pointer">
@@ -373,6 +400,28 @@
             setTimeout(() => alertBox.classList.add('hidden'), 4000);
         }
 
+        
+        function updateReceiptPreview() {
+            const select = document.getElementById('tour-select');
+            const phone = document.getElementById('player-search').value.trim();
+            const buyIn = document.getElementById('buy-in').value;
+            
+            const member = currentMembers.find(m => m.phone === phone);
+            const tourId = select.value;
+            const tour = currentTours.find(t => t.id === tourId);
+            
+            const name = member ? member.name : (phone || '...');
+            const tourName = tour ? tour.name : '...';
+            
+            const now = new Date();
+            const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
+            
+            document.getElementById('rp-name').innerText = name;
+            document.getElementById('rp-tour').innerText = tourName;
+            document.getElementById('rp-buyin').innerText = buyIn ? new Intl.NumberFormat('vi-VN').format(buyIn) + ' VNĐ' : '...';
+            document.getElementById('rp-time').innerText = timeStr;
+        }
+
         function filterMembers() {
             const val = document.getElementById('player-search').value.toLowerCase().trim();
             const list = document.getElementById('autocomplete-list');
@@ -626,6 +675,7 @@
             const select = document.getElementById('tour-select');
             select.value = tId;
             select.dispatchEvent(new Event('change'));
+            updateReceiptPreview();
             
             document.querySelectorAll('.tour-card-item').forEach(el => {
                 el.classList.remove('border-[#d4af37]', 'shadow-[0_0_15px_rgba(212,175,55,0.4)]');
@@ -639,40 +689,9 @@
         }
 
         function printReceipt(phone, tourId, amount) {
-            const member = currentMembers.find(m => m.phone === phone);
-            const tour = currentTours.find(t => t.id === tourId);
-            const name = member ? member.name : phone;
-            const tourName = tour ? tour.name : '';
-            
-            const now = new Date();
-            const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
-            
-            const receiptHtml = `
-                <div style="text-align: center; margin-bottom: 10px;">
-                    <h2 style="margin: 0; font-size: 18px; font-weight: bold;">ACEPOKER</h2>
-                    <div style="font-size: 12px; margin-top: 5px;">VÉ THAM DỰ GIẢI ĐẤU</div>
-                </div>
-                <div style="border-top: 1px dashed black; margin: 10px 0;"></div>
-                <div style="font-size: 12px; line-height: 1.6;">
-                    <div><strong>Khách:</strong> ${name}</div>
-                    <div><strong>Giải:</strong> ${tourName}</div>
-                    <div><strong>Buy-in:</strong> ${new Intl.NumberFormat('vi-VN').format(amount)} VNĐ</div>
-                    <div><strong>Thời gian:</strong> ${timeStr}</div>
-                    <div style="margin-top: 10px;"><strong>Bàn:</strong> ......... <strong>Ghế:</strong> .........</div>
-                </div>
-                <div style="border-top: 1px dashed black; margin: 10px 0;"></div>
-                <div style="text-align: center; font-size: 12px; font-style: italic;">
-                    Chúc quý khách may mắn!
-                </div>
-            `;
-            
-            const preview = document.getElementById('receipt-preview');
-            preview.innerHTML = receiptHtml;
-            preview.classList.remove('hidden');
-            
+            updateReceiptPreview();
             setTimeout(() => {
                 window.print();
-                preview.classList.add('hidden');
             }, 300);
         }
 
