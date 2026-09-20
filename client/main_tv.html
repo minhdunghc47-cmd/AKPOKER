@@ -40,8 +40,8 @@
         /* Stats Box styling */
         .stat-box { border-bottom: 1px solid rgba(212,175,55,0.2); padding: 1.2rem 0; display: flex; justify-content: space-between; align-items: baseline; }
         .stat-box:last-child { border-bottom: none; }
-        .stat-title { font-size: 1.5rem; color: #8892b0; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
-        .stat-val { font-size: 2.5rem; font-family: 'Teko', sans-serif; font-weight: 600; color: #d4af37; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .stat-title { font-size: clamp(1rem, 1.2vw, 1.8rem); color: #8892b0; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
+        .stat-val { font-size: clamp(1.8rem, 2.5vw, 3.5rem); font-family: 'Teko', sans-serif; font-weight: 600; color: #d4af37; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body class="flex flex-col h-screen w-screen selection:bg-none" id="tv-body">
@@ -104,13 +104,13 @@
                     <div class="flex flex-col w-full">
                         <span class="stat-title text-center mb-1">AVERAGE STACK</span>
                         <div class="flex justify-center items-end gap-3">
-                            <span class="stat-val text-blue-400 text-[3.5rem]" id="tv-avg">0</span>
-                            <span class="text-[#d4af37] font-bold text-2xl bg-[#d4af37]/10 px-3 py-1 rounded-lg border border-[#d4af37]/30 mb-2 shadow-sm" id="tv-avg-bb">0 BB</span>
+                            <span class="stat-val text-blue-400 text-[clamp(3rem,3.5vw,4.5rem)]" id="tv-avg">0</span>
+                            <span class="text-[#d4af37] font-bold text-[clamp(1.5rem,1.8vw,2rem)] bg-[#d4af37]/10 px-3 py-1 rounded-lg border border-[#d4af37]/30 mb-2 shadow-sm" id="tv-avg-bb">0 BB</span>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="text-center text-gray-600 text-sm tracking-widest border-t border-gray-800 pt-4 font-bold">
+            <div class="text-center text-gray-600 text-[clamp(0.8rem,1vw,1.2rem)] tracking-widest border-t border-gray-800 pt-4 font-bold">
                 TABLES ACTIVE: <span class="text-white ml-2" id="tv-tables"></span>
             </div>
         </div>
@@ -119,7 +119,7 @@
         <div class="w-[45%] min-w-0 overflow-hidden bg-gradient-to-b from-[#0f172a] to-[#050b14] flex flex-col justify-center items-center relative shadow-[0_0_50px_rgba(0,0,0,0.5)] z-20 border-x-4 border-black">
             
             <div class="absolute top-8 w-full text-center">
-                <div class="font-mafia text-5xl md:text-[4rem] tracking-widest text-[#d4af37] drop-shadow-[0_0_20px_rgba(212,175,55,0.4)]" id="tv-level-name">LEVEL 1</div>
+                <div class="font-mafia text-[clamp(3rem,4vw,5rem)] tracking-widest text-[#d4af37] drop-shadow-[0_0_20px_rgba(212,175,55,0.4)]" id="tv-level-name">LEVEL 1</div>
             </div>
 
             <!-- CLOCK -->
@@ -136,12 +136,12 @@
 
             <div class="absolute bottom-0 w-full flex text-center bg-black/80 border-t border-[#333] h-[10vh]">
                 <div class="flex-1 flex flex-col justify-center border-r border-[#333]">
-                    <div class="text-gray-500 text-xs font-bold tracking-widest uppercase">NEXT BREAK</div>
-                    <div class="text-[#ff4c4c] font-bold text-2xl tracking-widest" id="tv-next-break">—</div>
+                    <div class="text-gray-500 text-[clamp(0.7rem,0.9vw,1rem)] font-bold tracking-widest uppercase">NEXT BREAK</div>
+                    <div class="text-[#ff4c4c] font-bold text-[clamp(1.5rem,1.8vw,2.5rem)] tracking-widest" id="tv-next-break">—</div>
                 </div>
                 <div class="flex-[1.5] flex flex-col justify-center">
-                    <div class="text-gray-500 text-xs font-bold tracking-widest uppercase">NEXT LEVEL</div>
-                    <div class="text-blue-400 font-bold text-3xl font-teko tracking-wider" id="tv-next-level">2K / 4K - 4K</div>
+                    <div class="text-gray-500 text-[clamp(0.7rem,0.9vw,1rem)] font-bold tracking-widest uppercase">NEXT LEVEL</div>
+                    <div class="text-blue-400 font-bold text-[clamp(2rem,2.5vw,3.5rem)] font-teko tracking-wider" id="tv-next-level">2K / 4K - 4K</div>
                 </div>
             </div>
         </div>
@@ -161,12 +161,12 @@
             <!-- PAYOUT VIEW (After Late Reg closes) -->
             <div id="tv-payout-view" class="absolute inset-0 flex flex-col hidden p-6">
                 <div class="text-center mb-6 border-b border-[#333] pb-6">
-                    <div class="text-gray-400 font-bold tracking-widest uppercase text-sm mb-2">PRIZE POOL</div>
-                    <div class="font-teko text-6xl text-gold text-[#d4af37] drop-shadow-[0_0_15px_rgba(212,175,55,0.4)] font-bold" id="tv-prize-pool">0 ₫</div>
+                    <div class="text-gray-400 font-bold tracking-widest uppercase text-[clamp(1rem,1.2vw,1.5rem)] mb-2">PRIZE POOL</div>
+                    <div class="font-teko text-[clamp(4rem,4.5vw,6rem)] text-gold text-[#d4af37] drop-shadow-[0_0_15px_rgba(212,175,55,0.4)] font-bold" id="tv-prize-pool">0 ₫</div>
                 </div>
                 
                 <div class="flex-1 overflow-hidden flex flex-col">
-                    <div class="text-center text-gray-500 font-bold tracking-widest text-xs mb-4">PAYOUTS (TOP ITM)</div>
+                    <div class="text-center text-gray-500 font-bold tracking-widest text-[clamp(0.8rem,1vw,1.2rem)] mb-4">PAYOUTS (TOP ITM)</div>
                     <div class="flex-1 overflow-y-auto space-y-3 pr-2" id="tv-payout-list">
                         <!-- Payouts injected here -->
                     </div>
