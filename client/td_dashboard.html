@@ -289,7 +289,7 @@
                 selectedTableIds: Array.from(selectedTables),
                 settings: { level_time: null, late_reg_level: lateReg },
                 starting_stack: Number(startStack),
-                buy_in_fee: Number(document.getElementById('buy-in-fee').value),
+                buyin_fee: Number(document.getElementById('buy-in-fee').value),
                 blinds_structure: currentBlindsData
             });
             
@@ -373,7 +373,7 @@
                             <div>Avg Stack: <span class="text-blue-400">${formatMoney(avgStack).replace('₫','').trim()}</span></div>
                         </div>
                         <div class="flex justify-between text-[11px] uppercase tracking-widest border-b border-[#333] pb-4 mb-2 mt-1 font-bold text-gray-500">
-                            <div>Mức Phí Buy-in: <span class="text-emerald-500">${tour.buy_in_fee ? formatMoney(tour.buy_in_fee).replace('₫','').trim() : '0'} VNĐ</span></div>
+                            <div>Mức Phí Buy-in: <span class="text-emerald-500">${tour.buyin_fee ? formatMoney(tour.buyin_fee).replace('₫','').trim() : '0'} VNĐ</span></div>
                         </div>
 
                         <div class="mt-auto">
