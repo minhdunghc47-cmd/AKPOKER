@@ -441,7 +441,45 @@
                 `;
                 
                 if (isFinished) {
+                    html += `
+                        <div class="text-center text-[#800020] text-4xl font-mafia font-bold my-8 tracking-widest" style="text-shadow: 0 0 15px rgba(128,0,32,0.8);">FINISHED</div>
+                        <div class="text-center font-bold text-gold mb-8 border border-[#d4af37]/30 bg-[#d4af37]/10 py-4 rounded text-xl">Payout: ${formatMoney(tour.fund.payout_pool || 0)} ₫</div>
+                        <button class="mt-auto w-full py-4 bg-[#222] text-gray-400 font-bold rounded border border-[#444] hover:bg-[#333] uppercase tracking-widest text-xs transition" onclick="if(confirm('Xác nhận RESET & NHẢ BÀN?')) socket.emit('reset_tour', '${tour.id}')">🔄 Reset & Nhả Bàn</button>
+                    `;
+                } else {
+                    const blind = tour.blinds_structure[tour.current_level_idx];
+                    const isBreak = blind.is_break;
+                    const blindText = isBreak ? `<span class="text-[#ff4c4c] animate-pulse"><i class="fa-solid fa-mug-hot"></i> BREAK TIME</span>` : `Level ${blind.level}: ${formatMoney(blind.sb).replace('₫','')} / ${formatMoney(blind.bb).replace('₫','')} BBA ${formatMoney(blind.ante).replace('₫','')}`;
                     
+                    const alivePlayers = tour.players.filter(p => p.status === 'alive').length;
+                    const totalChips = tour.entries * tour.starting_stack;
+                    const avgStack = alivePlayers > 0 ? Math.floor(totalChips / alivePlayers) : 0;
+
+                    let controlButtons = '';
+                    if (isRunning) {
+                        controlButtons = `
+                            <div class="flex justify-between items-center gap-3 mt-4">
+                                <button class="bg-[#222] text-[#d4af37] border border-[#333] px-4 py-3 rounded hover:bg-[#333] transition" onclick="socket.emit('prev_level', '${tour.id}')"><i class="fa-solid fa-backward"></i></button>
+                                <button class="flex-1 py-3 bg-[#800020] text-[#d4af37] border-2 border-[#d4af37] rounded uppercase font-bold text-sm tracking-widest transition-all glow-btn" onclick="socket.emit('pause_tour', '${tour.id}')">
+                                    <i class="fa-solid fa-pause mr-2"></i> PAUSE
+                                </button>
+                                <button class="bg-[#222] text-[#d4af37] border border-[#333] px-4 py-3 rounded hover:bg-[#333] transition" onclick="socket.emit('next_level', '${tour.id}')"><i class="fa-solid fa-forward"></i></button>
+                            </div>
+                        `;
+                    } else if (canPlay) {
+                        controlButtons = `
+                            <button class="mt-4 w-full py-3 btn-gold rounded uppercase font-bold text-sm tracking-widest transition-all" onclick="socket.emit('start_tour', '${tour.id}')">
+                                <i class="fa-solid fa-play mr-2"></i> KÍCH HOẠT ĐỒNG HỒ
+                            </button>
+                        `;
+                    } else {
+                        controlButtons = `
+                            <button class="mt-4 w-full py-3 bg-[#222] text-gray-600 border border-[#333] rounded uppercase font-bold text-sm tracking-widest cursor-not-allowed" disabled>
+                                ĐANG KHÓA (CHỜ ${tour.entries<6 ? 'KHÁCH' : 'DEALER'})
+                            </button>
+                        `;
+                    }
+
                     const nextBlind = tour.blinds_structure[tour.current_level_idx + 1];
                     let nextBlindText = '—';
                     if (nextBlind) {
@@ -497,7 +535,6 @@
                             <button class="w-full py-3 mt-4 bg-[#111] text-[#800020] border border-[#800020]/30 hover:bg-[#800020] hover:text-white rounded text-[10px] uppercase tracking-widest font-bold transition shadow-md" onclick="if(confirm('Chốt sổ giải này?')) socket.emit('end_tour', '${tour.id}')">🛑 CHỐT SỔ (END TOUR)</button>
                         </div>
                     `;
-
                 }
                 card.innerHTML = html;
                 grid.appendChild(card);
