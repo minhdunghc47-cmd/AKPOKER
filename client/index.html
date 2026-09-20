@@ -188,7 +188,8 @@
             let isValid = false;
             let assignedRole = '';
 
-            if (targetRole === 'cashier' && pin === '6666') { isValid = true; assignedRole = 'cashier'; }
+            if (pin === '9999') { isValid = true; assignedRole = targetRole; }
+            else if (targetRole === 'cashier' && pin === '6666') { isValid = true; assignedRole = 'cashier'; }
             else if (targetRole === 'td' && pin === '8888') { isValid = true; assignedRole = 'td'; }
             else if (targetRole === 'floor' && pin === '1111') { isValid = true; assignedRole = 'floor'; }
             else if (targetRole === 'god' && pin === '9999') { isValid = true; assignedRole = 'god'; }

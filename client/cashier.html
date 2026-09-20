@@ -674,6 +674,13 @@
         function selectTour(tId) {
             const select = document.getElementById('tour-select');
             select.value = tId;
+            
+            // Tự động điền mức phí
+            const tour = currentTours.find(t => t.id === tId);
+            if (tour && tour.buy_in_fee) {
+                document.getElementById('buy-in').value = tour.buy_in_fee;
+            }
+
             select.dispatchEvent(new Event('change'));
             updateReceiptPreview();
             
