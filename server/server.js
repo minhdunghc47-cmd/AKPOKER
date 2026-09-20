@@ -54,7 +54,18 @@ let db = {
 
 if (fdb) {
   function loadFromFirebase() {
+    let isTimeout = false;
+    const timeoutTimer = setTimeout(() => {
+      isTimeout = true;
+      console.error('[FIREBASE] Cảnh báo: Hết thời gian kết nối (URL sai hoặc mạng lỗi). Hệ thống tự động chuyển sang chạy trên RAM!');
+      isFirebaseLoaded = true;
+      broadcastState(true);
+      io.emit('staff_data_updated', db.staff);
+    }, 3000);
+
     fdb.ref('/').once('value', (snapshot) => {
+      if (isTimeout) return;
+      clearTimeout(timeoutTimer);
       const data = snapshot.val();
       if (data) {
         if (data.tournaments) db.tournaments = data.tournaments;
