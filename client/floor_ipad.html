@@ -78,7 +78,12 @@
     <div id="dealer-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 backdrop-blur-sm">
         <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-xl w-96 shadow-[0_0_30px_rgba(212,175,55,0.3)]">
             <h3 class="text-xl font-mafia text-gold mb-4 uppercase text-center border-b border-[#333] pb-2">Gán Dealer Vào Bàn</h3>
-            <input type="text" id="dealer-name" class="w-full bg-[#111] border border-[#333] p-3 rounded text-white mb-4 focus:border-[#d4af37] focus:outline-none" placeholder="Nhập tên Dealer...">
+            <label class="block text-[10px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Chọn Dealer đang chờ:</label>
+            <select id="dealer-select" class="w-full bg-[#111] border border-[#333] p-3 rounded text-white mb-2 focus:border-[#d4af37] focus:outline-none text-sm font-bold">
+                <option value="">-- Chọn Dealer --</option>
+            </select>
+            <div class="text-[10px] text-gray-500 mb-4">Hoặc nhập tên thủ công:</div>
+            <input type="text" id="dealer-name" class="w-full bg-[#111] border border-[#333] p-3 rounded text-white mb-4 focus:border-[#d4af37] focus:outline-none text-sm" placeholder="Nhập tên Dealer...">
             <div class="flex gap-3">
                 <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded font-bold uppercase hover:bg-[#222]" onclick="closeDealerModal()">Hủy</button>
                 <button class="flex-1 btn-gold py-3 rounded font-bold uppercase" onclick="confirmAssignDealer()">Xác Nhận</button>
@@ -135,6 +140,15 @@
         socket.on('update_tables', (tables) => {
             globalTables = tables;
             if(selectedTourId) renderTables();
+        });
+
+        let currentStaff = [];
+        socket.on('update_staff_list', (staff) => {
+            currentStaff = staff || [];
+        });
+
+        socket.on('connect', () => {
+            socket.emit('request_initial_data');
         });
 
         function updateTourSelect() {
@@ -277,9 +291,28 @@
         function openDealerModal(tableId) {
             pendingDealerTableId = tableId;
             document.getElementById('dealer-name').value = '';
+            
+            // Nạp danh sách Dealer đang chờ vào dropdown
+            const select = document.getElementById('dealer-select');
+            select.innerHTML = '<option value="">-- Chọn Dealer --</option>';
+            const waitingDealers = currentStaff.filter(s => 
+                (s.role === 'Dealer' || s.role === 'dealer') && 
+                (s.status === 'waiting' || s.status === 'online') &&
+                s.work_status === 'ACTIVE'
+            );
+            if (waitingDealers.length === 0) {
+                select.innerHTML += '<option value="" disabled>— Không có Dealer nào đang chờ —</option>';
+            } else {
+                waitingDealers.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.name;
+                    opt.innerText = `${d.id} - ${d.name}`;
+                    select.appendChild(opt);
+                });
+            }
+            
             document.getElementById('dealer-modal').classList.remove('hidden');
             document.getElementById('dealer-modal').classList.add('flex');
-            document.getElementById('dealer-name').focus();
         }
 
         function closeDealerModal() {
@@ -288,10 +321,15 @@
         }
 
         function confirmAssignDealer() {
-            const name = document.getElementById('dealer-name').value.trim();
+            // Ưu tiên chọn từ dropdown, nếu không thì dùng ô nhập thủ công
+            const selectedVal = document.getElementById('dealer-select').value;
+            const manualVal = document.getElementById('dealer-name').value.trim();
+            const name = selectedVal || manualVal;
             if(name && pendingDealerTableId && selectedTourId) {
                 socket.emit('assign_dealer', { tour_id: selectedTourId, table_id: pendingDealerTableId, dealer_name: name });
                 closeDealerModal();
+            } else {
+                alert('Vui lòng chọn hoặc nhập tên Dealer!');
             }
         }
 
