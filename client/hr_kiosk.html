@@ -72,9 +72,13 @@
         const socket = io('https://akpoker.onrender.com');
         let currentStaffList = [];
 
-        socket.on('update_state', (state) => {
-            if (state.staff) {
-                currentStaffList = state.staff;
+        socket.on('connect', () => {
+            socket.emit('request_initial_data');
+        });
+
+        socket.on('update_staff_list', (staffList) => {
+            if (staffList) {
+                currentStaffList = staffList;
                 renderStaffDropdown();
             }
         });
