@@ -140,38 +140,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('seed_staff_data', (callback) => {
-    db.staff = [];
-    const roles = ['Dealer', 'Floor', 'Thu ngân', 'Phục vụ', 'TD'];
-    for (let i = 1; i <= 20; i++) {
-      db.staff.push({
-        id: 'NV' + String(i).padStart(2, '0'),
-        name: 'Nhân viên ' + i,
-        pin: '1234',
-        role: roles[i % roles.length],
-        base_salary: 50000,
-        status: 'offline',
-        work_status: 'ACTIVE',
-        total_minutes: 0,
-        last_in: null,
-        dob: "",
-        cccd: "",
-        cccd_date: "",
-        address: "",
-        photo: ""
-      });
-    }
-    
-    if (fdb && isFirebaseLoaded) {
-      fdb.ref('/staff').set(db.staff);
-    }
-    
-    broadcastState();
-    io.emit('staff_data_updated', db.staff);
-    
-    if (callback) callback({ success: true, message: 'Đã seed 20 nhân viên chuẩn form mới!' });
-  });
-
   socket.on('add_staff', (payload, callback) => {
     const { id, name, pin, role, base_salary, dob, cccd, cccd_date, address, photo } = payload;
     if (db.staff.find(s => s.id === id)) {

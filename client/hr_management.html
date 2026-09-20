@@ -28,9 +28,6 @@
             <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">Phân hệ Quản Trị Nhân Sự (God Mode)</p>
         </div>
         <div class="flex gap-4">
-            <button class="px-6 py-2 bg-[#800020] hover:bg-[#a00020] text-gray-300 font-bold rounded uppercase text-sm tracking-widest transition-colors" onclick="manualSeed()">
-                <i class="fa-solid fa-seedling mr-2"></i> TẠO 20 NV MẪU
-            </button>
             <a href="./index.html" class="px-6 py-2 bg-[#222] hover:bg-[#333] text-gray-300 font-bold rounded uppercase text-sm tracking-widest transition-colors">
                 <i class="fa-solid fa-arrow-left mr-2"></i> Thoát
             </a>
@@ -156,14 +153,6 @@
 
         
         
-        
-        function manualSeed() {
-            if(confirm('CẢNH BÁO: Thao tác này sẽ TẠO LẠI 20 nhân viên mẫu. Bạn có chắc chắn?')) {
-                socket.emit('seed_staff_data', (res) => {
-                    alert(res.message);
-                });
-            }
-        }
         
         socket.on('connect', () => {
             socket.emit('request_initial_data');
