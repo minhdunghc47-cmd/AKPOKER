@@ -1,235 +1,202 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ACEPOKER - MAIN TV</title>
+    <title>ACEPOKER TV DISPLAY</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Playfair+Display:wght@700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Rajdhani', sans-serif; background: #000; color: #fff; overflow: hidden; margin: 0; }
-        .font-mafia { font-family: 'Playfair Display', serif; }
-        .font-digital { font-family: 'Share Tech Mono', monospace; }
-        .text-gold { color: #d4af37; }
-        .gold-glow { text-shadow: 0 0 30px rgba(212,175,55,0.8); }
-        .green-glow { text-shadow: 0 0 20px rgba(52,211,153,0.7); }
-        .red-glow { text-shadow: 0 0 40px rgba(255,60,60,0.9); }
-        .blue-glow { text-shadow: 0 0 20px rgba(96,165,250,0.7); }
-
-        @keyframes flash-danger {
-            0%,100% { border-color: transparent; box-shadow: none; }
-            50% { border-color: #ff2a4b; box-shadow: inset 0 0 120px 20px rgba(255,0,50,0.4); }
+        @import url('https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&family=Oswald:wght@200..700&display=swap');
+        @font-face {
+            font-family: 'Mafia';
+            src: local('Impact');
         }
-        .flash-danger { animation: flash-danger 0.8s 6; }
-
-        @keyframes pulse-clock {
-            0%,100% { opacity: 1; }
-            50% { opacity: 0.7; }
+        @font-face {
+            font-family: 'Digital';
+            src: url('https://fonts.cdnfonts.com/s/17260/DS-DIGI.woff') format('woff');
         }
-        .pulse-clock { animation: pulse-clock 1s infinite; }
-
-        @keyframes blink-late {
-            0%,100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-        .blink-late { animation: blink-late 1.5s infinite; }
-
-        /* SETUP SCREEN */
-        #setup-menu { background: radial-gradient(ellipse at center, #0a0a0a 0%, #000 100%); }
-        .select-tv { background: #111; border: 2px solid #d4af37; color: #fff; padding: 20px 24px; border-radius: 10px; font-size: 22px; font-family: 'Rajdhani', sans-serif; font-weight: 700; }
-        .btn-start { background: linear-gradient(135deg, #c9a227, #d4af37, #b8961e); color: #000; font-weight: 800; border-radius: 12px; font-size: 24px; padding: 22px 40px; cursor: pointer; letter-spacing: 0.15em; text-transform: uppercase; border: none; transition: 0.2s; }
-        .btn-start:hover { filter: brightness(1.15); transform: scale(1.01); }
-
-        /* TV LAYOUT */
-        .stat-box { background: linear-gradient(180deg, #111 0%, #0a0a0a 100%); border: 1px solid #222; border-radius: 12px; }
-        .stat-label { font-size: clamp(10px, 1vw, 13px); font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #555; }
-        .stat-value { font-family: 'Share Tech Mono', monospace; font-weight: 700; line-height: 1; }
-
-        /* Clock */
-        #tv-clock { font-size: clamp(100px, 18vw, 240px); line-height: 1; font-family: 'Share Tech Mono', monospace; }
-
-        /* Divider */
-        .gold-line { height: 3px; background: linear-gradient(to right, transparent, #d4af37 30%, #d4af37 70%, transparent); }
-    
-        /* Tối ưu hóa UI/UX cho màn hình cảm ứng & di động */
-        button, select, input {
-            min-height: 48px !important;
-        }
-        .seat {
-            min-height: auto !important; /* Ngoại trừ ghế ngồi trên bàn poker */
-        }
-        @media (max-width: 1024px) {
-            .table-container, table, .overflow-y-auto, .overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            body { padding: 10px !important; }
-            /* Tăng khoảng cách các phần tử để dễ bấm trên iPad */
-            .tour-card { margin-bottom: 20px; }
-            .poker-table-bg { margin: 20px 0; }
-        }
-        @media (max-width: 768px) {
-            /* Chuyển 2 cột thành 1 cột */
-            .flex-row, .flex-1.flex.gap-6, .flex.gap-6, .flex.gap-8 { flex-direction: column !important; }
-            .w-1\/3, .w-2\/3, .w-1\/4, .w-3\/4, .w-\[380px\], .w-\[480px\] { width: 100% !important; min-width: 100% !important; }
-            .h-screen { height: auto !important; min-height: 100vh; overflow-y: auto !important; }
-            body { overflow-y: auto !important; }
-            .glass-panel { padding: 15px !important; }
-            
-            /* Dành cho các tour card/bàn */
-            .grid-cols-2, .grid-cols-3, .xl\:grid-cols-2 { grid-template-columns: 1fr !important; }
-            
-            /* Đảm bảo khoảng cách chạm trên mobile */
-            .tour-card { margin-bottom: 24px; }
-            .poker-table-bg { margin: 24px 0; }
+        
+        body { background-color: #050b14; color: #ffffff; font-family: 'Oswald', sans-serif; overflow: hidden; }
+        .font-mafia { font-family: 'Mafia', sans-serif; letter-spacing: 2px; }
+        .font-digital { font-family: 'Digital', monospace; }
+        .font-teko { font-family: 'Teko', sans-serif; }
+        
+        .pulse-clock { animation: pulseDanger 1s infinite alternate; }
+        @keyframes pulseDanger {
+            from { text-shadow: 0 0 20px rgba(255,0,0,0.5); transform: scale(1); }
+            to { text-shadow: 0 0 50px rgba(255,0,0,1); transform: scale(1.02); }
         }
 
+        .flash-danger { animation: flashRed 1s 3; }
+        @keyframes flashRed {
+            0% { box-shadow: inset 0 0 0px transparent; }
+            50% { box-shadow: inset 0 0 150px rgba(255,0,0,0.8); }
+            100% { box-shadow: inset 0 0 0px transparent; }
+        }
+
+        .gradient-text { background: linear-gradient(to bottom, #fff, #d4af37); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        /* Stats Box styling */
+        .stat-box { border-bottom: 1px solid rgba(212,175,55,0.2); padding: 1.2rem 0; display: flex; justify-content: space-between; align-items: baseline; }
+        .stat-box:last-child { border-bottom: none; }
+        .stat-title { font-size: 1.5rem; color: #8892b0; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
+        .stat-val { font-size: 2.5rem; font-family: 'Teko', sans-serif; font-weight: 600; color: #d4af37; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col border-[6px] border-transparent" id="tv-body">
+<body class="flex flex-col h-screen w-screen selection:bg-none" id="tv-body">
 
-<audio id="alert-sound" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" preload="auto"></audio>
+<audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
-<!-- SETUP SCREEN -->
-<div id="setup-menu" class="absolute inset-0 z-50 flex items-center justify-center flex-col gap-10 p-10">
-    <div class="text-center">
-        <div class="font-mafia text-gold text-8xl mb-3 gold-glow">ACEPOKER</div>
-        <div class="text-gray-500 text-2xl uppercase tracking-[0.3em] font-bold">TOURNAMENT BROADCAST SYSTEM</div>
-    </div>
-    <div class="w-full max-w-3xl flex flex-col gap-6">
-        <select id="tour-select" class="select-tv w-full">
-            <option value="">— Chọn Giải Đấu Để Phát Sóng —</option>
-        </select>
-        <button class="btn-start w-full shadow-[0_0_40px_rgba(212,175,55,0.4)]" onclick="startBroadcast()">
-            <i class="fa-solid fa-satellite-dish mr-3"></i>BẮT ĐẦU PHÁT SÓNG
-        </button>
+<!-- SETUP MENU -->
+<div id="setup-menu" class="absolute inset-0 z-50 bg-[#050b14] flex flex-col items-center justify-center">
+    <div class="bg-[#111827] border border-[#d4af37]/40 rounded-2xl p-10 w-[600px] shadow-2xl text-center">
+        <h1 class="font-mafia text-5xl text-[#d4af37] mb-8">ACEPOKER TV CONTROL</h1>
+        <select id="tour-select" class="w-full bg-[#1f2937] text-white p-5 rounded-lg border border-[#374151] font-bold text-xl outline-none focus:border-[#d4af37] mb-8 uppercase tracking-widest text-center appearance-none cursor-pointer"></select>
+        <button class="w-full bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black font-mafia text-3xl py-5 rounded-lg uppercase hover:scale-105 transition shadow-[0_0_30px_rgba(212,175,55,0.4)]" onclick="startBroadcast()">PHÁT SÓNG LÊN TIVI</button>
     </div>
 </div>
 
-<!-- MAIN TV INTERFACE -->
-<div id="main-tv" class="hidden h-full w-full flex-col" style="padding: 16px 20px; gap: 10px;">
-
-    <!-- TOP BAR: Tour name | Real time | Prize Pool -->
-    <div class="flex items-center justify-between" style="min-height: 60px;">
-        <div class="flex items-center gap-6">
-            <div class="font-mafia text-gold text-3xl tracking-widest" style="font-size: clamp(18px, 2.5vw, 32px);" id="tv-tour-name">TOURNAMENT NAME</div>
-            <!-- Late Registration Badge -->
-            <div id="late-reg-badge" class="hidden blink-late bg-[#800020] border border-red-600 px-3 py-1 rounded text-xs font-bold uppercase tracking-widest text-white">
-                <i class="fa-solid fa-clock-rotate-left mr-1"></i>LATE REG OPEN
+<!-- MAIN TV UI (3 COLUMNS) -->
+<div id="main-tv" class="hidden flex-col h-full w-full">
+    
+    <!-- HEADER -->
+    <div class="h-[12vh] bg-gradient-to-b from-[#0a1128] to-[#050b14] border-b border-[#d4af37]/30 flex justify-between items-center px-10 shadow-[0_5px_30px_rgba(0,0,0,0.8)] z-10 shrink-0">
+        <div class="flex items-center gap-4 w-[25%]">
+            <div class="w-16 h-16 rounded-full bg-black border-2 border-[#d4af37] flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.5)]">
+                <i class="fa-solid fa-crown text-3xl text-[#d4af37]"></i>
             </div>
+            <div class="font-mafia text-4xl text-white tracking-widest leading-none">ACE<span class="text-[#d4af37]">POKER</span></div>
         </div>
-        <div class="flex items-center gap-8">
-            <div class="text-right">
-                <div class="stat-label text-xs mb-1">BUY-IN</div>
-                <div class="font-digital text-[#d4af37] font-bold" style="font-size: clamp(16px, 1.8vw, 22px);" id="tv-buyin">—</div>
-            </div>
-            <div class="text-right">
-                <div class="stat-label text-xs mb-1">REAL TIME</div>
-                <div class="font-digital text-gray-300 font-bold" style="font-size: clamp(16px, 1.8vw, 22px);" id="tv-realtime">00:00:00</div>
-            </div>
+        
+        <div class="flex-1 text-center">
+            <h1 id="tv-tour-name" class="font-mafia text-5xl md:text-6xl text-white uppercase tracking-widest drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]">TOURNAMENT NAME</h1>
+        </div>
+        
+        <div class="w-[25%] flex justify-end items-center text-right text-[#d4af37] text-2xl font-teko">
+            <span id="tv-realtime" class="tracking-widest">00:00:00</span>
         </div>
     </div>
 
-    <div class="gold-line"></div>
-
-    <!-- MAIN AREA -->
-    <div class="flex flex-1 gap-4" style="min-height: 0;">
-
-        <!-- LEFT: Stats Column -->
-        <div class="flex flex-col gap-3" style="width: 22%;">
-            <!-- Players -->
-            <div class="stat-box flex flex-col items-center justify-center p-4 flex-1">
-                <div class="stat-label mb-2">PLAYERS REMAINING</div>
-                <div class="stat-value green-glow" style="font-size: clamp(36px, 5vw, 72px); color: #34d399;" id="tv-alive">0</div>
-                <div class="text-gray-600 font-bold text-sm mt-1">of <span class="text-gray-400" id="tv-entries">0</span> entries</div>
+    <!-- 3 COLUMNS -->
+    <div class="flex-1 flex overflow-hidden w-full">
+        
+        <!-- LEFT COL: STATS -->
+        <div class="w-[28%] bg-[#081020]/80 border-r border-[#d4af37]/20 flex flex-col p-8 justify-between z-0">
+            <div>
+                <div class="stat-box mt-2">
+                    <span class="stat-title">REG. CLOSES</span>
+                    <span class="stat-val text-white" id="tv-late-reg">Lvl 8</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-title">PLAYERS (ALIVE)</span>
+                    <span class="stat-val text-emerald-400"><span id="tv-alive">0</span> <span class="text-gray-500 text-3xl">/ <span id="tv-entries">0</span></span></span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-title">STARTING STACK</span>
+                    <span class="stat-val" id="tv-start-stack">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-title">TOTAL CHIPS</span>
+                    <span class="stat-val" id="tv-total-chips">0</span>
+                </div>
+                <div class="stat-box border-none mt-4">
+                    <div class="flex flex-col w-full">
+                        <span class="stat-title text-center mb-1">AVERAGE STACK</span>
+                        <div class="flex justify-center items-end gap-3">
+                            <span class="stat-val text-blue-400 text-[3.5rem]" id="tv-avg">0</span>
+                            <span class="text-[#d4af37] font-bold text-2xl bg-[#d4af37]/10 px-3 py-1 rounded-lg border border-[#d4af37]/30 mb-2 shadow-sm" id="tv-avg-bb">0 BB</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <!-- Prize Pool -->
-            <div class="stat-box flex flex-col items-center justify-center p-4 flex-1">
-                <div class="stat-label mb-2">PRIZE POOL (85%)</div>
-                <div class="stat-value gold-glow" style="font-size: clamp(20px, 2.8vw, 38px); color: #d4af37; word-break: break-all; text-align: center;" id="tv-pool">0 ₫</div>
-            </div>
-            <!-- Total Chips -->
-            <div class="stat-box flex flex-col items-center justify-center p-4 flex-1">
-                <div class="stat-label mb-2">CHIPS IN PLAY</div>
-                <div class="stat-value" style="font-size: clamp(16px, 2.2vw, 28px); color: #94a3b8; text-align: center;" id="tv-total-chips">0</div>
-            </div>
-        </div>
-
-        <!-- CENTER: Level + Clock + Blinds -->
-        <div class="flex flex-col items-center justify-center flex-1 relative" style="min-height: 0;">
-            <!-- Watermark -->
-            <div class="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
-                <i class="fa-solid fa-crown" style="font-size: 50vw; color: white;"></i>
-            </div>
-
-            <!-- Level name -->
-            <div class="font-mafia text-gold tracking-[0.3em] uppercase font-bold mb-2 relative z-10"
-                style="font-size: clamp(20px, 3.5vw, 48px);" id="tv-level-name">LEVEL 1</div>
-
-            <!-- Clock -->
-            <div id="tv-clock" class="text-white font-bold relative z-10" style="line-height: 1; text-shadow: 0 0 30px rgba(255,255,255,0.4);">00:00</div>
-
-            <!-- Blinds Display -->
-            <div id="tv-blinds-block" class="flex flex-col items-center mt-4 relative z-10">
-                <div class="stat-label mb-2">BLINDS (SB / BB)</div>
-                <div class="font-digital font-bold green-glow" style="font-size: clamp(28px, 5vw, 68px); color: #34d399;" id="tv-blinds">100 / 200</div>
-                <div class="font-digital font-bold mt-2" style="font-size: clamp(18px, 2.5vw, 36px); color: #d4af37;" id="tv-ante">ANTE: 200</div>
-            </div>
-
-            <!-- Break Message -->
-            <div id="tv-break-block" class="hidden flex-col items-center mt-4 relative z-10">
-                <div class="font-mafia font-bold" style="font-size: clamp(30px, 5vw, 72px); color: #ff4c4c; text-shadow: 0 0 30px rgba(255,76,76,0.7);">☕ BREAK TIME</div>
-                <div class="text-gray-400 font-bold text-xl mt-2 tracking-widest">NEXT LEVEL STARTS AFTER BREAK</div>
+            <div class="text-center text-gray-600 text-sm tracking-widest border-t border-gray-800 pt-4 font-bold">
+                TABLES ACTIVE: <span class="text-white ml-2" id="tv-tables"></span>
             </div>
         </div>
 
-        <!-- RIGHT: Stats Column -->
-        <div class="flex flex-col gap-3" style="width: 22%;">
-            <!-- Average Stack -->
-            <div class="stat-box flex flex-col items-center justify-center p-4 flex-1">
-                <div class="stat-label mb-2">AVERAGE STACK</div>
-                <div class="stat-value blue-glow" style="font-size: clamp(20px, 2.8vw, 38px); color: #60a5fa; text-align: center;" id="tv-avg">0</div>
+        <!-- CENTER COL: CLOCK -->
+        <div class="w-[44%] bg-gradient-to-b from-[#0f172a] to-[#050b14] flex flex-col justify-center items-center relative shadow-[0_0_50px_rgba(0,0,0,0.5)] z-20 border-x-4 border-black">
+            
+            <div class="absolute top-8 w-full text-center">
+                <div class="font-mafia text-5xl md:text-[4rem] tracking-widest text-[#d4af37] drop-shadow-[0_0_20px_rgba(212,175,55,0.4)]" id="tv-level-name">LEVEL 1</div>
             </div>
-            <!-- Next Level -->
-            <div class="stat-box flex flex-col items-center justify-center p-4 flex-1">
-                <div class="stat-label mb-2">NEXT LEVEL</div>
-                <div class="stat-value" style="font-size: clamp(16px, 2vw, 26px); color: #e2e8f0; text-align: center;" id="tv-next-level">—</div>
-                <div class="text-gray-600 text-xs mt-1">ANTE: <span class="text-gray-400" id="tv-next-ante">—</span></div>
+
+            <!-- CLOCK -->
+            <div class="w-full flex justify-center items-center my-8 mt-24">
+                <div id="tv-clock" class="font-digital text-[15rem] leading-none tracking-widest text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">00:00</div>
             </div>
-            <!-- Starting Stack -->
-            <div class="stat-box flex flex-col items-center justify-center p-4 flex-1">
-                <div class="stat-label mb-2">STARTING STACK</div>
-                <div class="stat-value" style="font-size: clamp(18px, 2.4vw, 32px); color: #fbbf24; text-align: center;" id="tv-start-stack">0</div>
+
+            <!-- BLINDS -->
+            <div class="w-full text-center mb-12">
+                <div class="text-gray-400 text-2xl font-bold tracking-widest uppercase mb-2">BLINDS</div>
+                <div class="font-teko text-[7rem] leading-none text-emerald-400 font-bold drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)]" id="tv-blinds">1K / 2K</div>
+                <div class="font-teko text-[3rem] text-[#d4af37] mt-2 font-bold tracking-widest uppercase bg-[#d4af37]/10 inline-block px-8 py-1 rounded border border-[#d4af37]/30" id="tv-ante">BBA 2K</div>
+            </div>
+
+            <div class="absolute bottom-0 w-full flex text-center bg-black/80 border-t border-[#333] h-[10vh]">
+                <div class="flex-1 flex flex-col justify-center border-r border-[#333]">
+                    <div class="text-gray-500 text-xs font-bold tracking-widest uppercase">NEXT BREAK</div>
+                    <div class="text-[#ff4c4c] font-bold text-2xl tracking-widest" id="tv-next-break">—</div>
+                </div>
+                <div class="flex-[1.5] flex flex-col justify-center">
+                    <div class="text-gray-500 text-xs font-bold tracking-widest uppercase">NEXT LEVEL</div>
+                    <div class="text-blue-400 font-bold text-3xl font-teko tracking-wider" id="tv-next-level">2K / 4K - 4K</div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="gold-line"></div>
+        <!-- RIGHT COL: DYNAMIC PRIZE/WATERMARK -->
+        <div class="w-[28%] bg-[#081020]/80 border-l border-[#d4af37]/20 flex flex-col relative z-0">
+            
+            <!-- WATERMARK VIEW (Before Late Reg closes) -->
+            <div id="tv-late-reg-view" class="absolute inset-0 flex flex-col items-center justify-center opacity-60">
+                <i class="fa-solid fa-crown text-[12rem] text-[#d4af37] opacity-20 mb-10"></i>
+                <div class="font-mafia text-5xl text-gray-500 tracking-widest text-center">LATE REG<br><span class="text-[#d4af37]">OPEN</span></div>
+                <div class="mt-4 border border-[#d4af37]/50 bg-[#d4af37]/10 text-[#d4af37] px-6 py-2 rounded-full font-bold uppercase tracking-widest text-sm">
+                    ĐANG MỞ ĐĂNG KÝ
+                </div>
+            </div>
 
-    <!-- BOTTOM BAR: Structure info -->
-    <div class="flex items-center justify-between" style="min-height: 36px;">
-        <div class="flex gap-8 items-center">
-            <div class="stat-label">STRUCTURE: 
-                <span class="text-gray-300 font-bold ml-1" id="tv-level-time">—</span>min/level
+            <!-- PAYOUT VIEW (After Late Reg closes) -->
+            <div id="tv-payout-view" class="absolute inset-0 flex flex-col hidden p-6">
+                <div class="text-center mb-6 border-b border-[#333] pb-6">
+                    <div class="text-gray-400 font-bold tracking-widest uppercase text-sm mb-2">PRIZE POOL</div>
+                    <div class="font-teko text-6xl text-gold text-[#d4af37] drop-shadow-[0_0_15px_rgba(212,175,55,0.4)] font-bold" id="tv-prize-pool">0 ₫</div>
+                </div>
+                
+                <div class="flex-1 overflow-hidden flex flex-col">
+                    <div class="text-center text-gray-500 font-bold tracking-widest text-xs mb-4">PAYOUTS (TOP ITM)</div>
+                    <div class="flex-1 overflow-y-auto space-y-3 pr-2" id="tv-payout-list">
+                        <!-- Payouts injected here -->
+                    </div>
+                </div>
             </div>
-            <div class="stat-label">LATE REG CLOSES AT LVL: 
-                <span class="text-[#d4af37] font-bold ml-1" id="tv-late-reg-lvl">—</span>
-            </div>
-            <div class="stat-label">TABLES: 
-                <span class="text-gray-300 font-bold ml-1" id="tv-tables">—</span>
-            </div>
+
         </div>
-        <div class="text-gray-700 font-bold text-sm tracking-widest uppercase">ACEPOKER SYSTEM</div>
+
     </div>
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    const socket = io('https://akpoker.onrender.com');
+    const socket = io();
     let currentTours = [];
     let broadcastTourId = null;
     let realtimeInterval = null;
 
-    function formatMoney(n) { return new Intl.NumberFormat('vi-VN').format(n || 0); }
+    function formatMoney(n) { 
+        if(!n) return '0';
+        return new Intl.NumberFormat('vi-VN').format(n); 
+    }
+    
+    function formatMoneyShort(n) {
+        if(!n) return '0';
+        if(n >= 1000000) return (n/1000000).toFixed(n%1000000 === 0 ? 0 : 1) + 'M';
+        if(n >= 1000) return (n/1000).toFixed(n%1000 === 0 ? 0 : 1) + 'K';
+        return n.toString();
+    }
+
     function formatTime(sec) {
         if(sec < 0) sec = 0;
         const m = Math.floor(sec/60).toString().padStart(2,'0');
@@ -290,39 +257,35 @@
 
         // Header
         document.getElementById('tv-tour-name').innerText = tour.name;
-        document.getElementById('tv-buyin').innerText = tour.buyin_fee ? formatMoney(tour.buyin_fee) + ' ₫' : '—';
 
-        // Prize pool
-        const pool = tour.fund.payout_pool || (tour.fund.total_paid * 0.85);
-        document.getElementById('tv-pool').innerText = formatMoney(pool) + ' ₫';
-
-        // Starting stack
-        document.getElementById('tv-start-stack').innerText = formatMoney(tour.starting_stack);
-
-        // Players
+        // Left Col Stats
+        const lateRegLvlNum = tour.settings?.late_reg_level || 8;
+        document.getElementById('tv-late-reg').innerText = `Lvl ${lateRegLvlNum}`;
+        
         const alive = (tour.players || []).filter(p => p.status === 'alive').length;
         document.getElementById('tv-alive').innerText = alive;
         document.getElementById('tv-entries').innerText = tour.entries;
-
-        // Chips
+        document.getElementById('tv-start-stack').innerText = formatMoney(tour.starting_stack);
+        
         const totalChips = tour.entries * tour.starting_stack;
         document.getElementById('tv-total-chips').innerText = formatMoney(totalChips);
+        
         const avg = alive > 0 ? Math.floor(totalChips / alive) : 0;
         document.getElementById('tv-avg').innerText = formatMoney(avg);
-
-        // Tables count
+        
         document.getElementById('tv-tables').innerText = (tour.tables || []).join(', ') || '—';
-
-        // Blind structure info
-        const levelTime = tour.settings?.level_time || tour.blinds_structure?.[0]?.duration_minutes || '—';
-        document.getElementById('tv-level-time').innerText = levelTime;
-        document.getElementById('tv-late-reg-lvl').innerText = tour.settings?.late_reg_level || '—';
 
         // Current blind
         const blind = tour.blinds_structure[tour.current_level_idx];
         const isBreak = blind?.is_break;
+        const currentLvlNum = isBreak ? (tour.blinds_structure[tour.current_level_idx - 1]?.level || 1) : blind?.level;
 
-        document.getElementById('tv-level-name').innerText = isBreak ? 'BREAK TIME' : `LEVEL ${blind.level}`;
+        // BB Calc
+        const bbAmount = isBreak ? (tour.blinds_structure[tour.current_level_idx - 1]?.bb || 1) : blind?.bb || 1;
+        const bbCount = avg > 0 ? Math.floor(avg / bbAmount) : 0;
+        document.getElementById('tv-avg-bb').innerText = `${bbCount} BB`;
+
+        document.getElementById('tv-level-name').innerText = isBreak ? 'BREAK TIME' : `LEVEL ${blind?.level || 0}`;
 
         // Clock
         const clockEl = document.getElementById('tv-clock');
@@ -342,43 +305,88 @@
             clockEl.classList.remove('pulse-clock');
         }
 
-        // Blinds / Break
-        const blindBlock = document.getElementById('tv-blinds-block');
-        const breakBlock = document.getElementById('tv-break-block');
+        // Blinds info
         if(isBreak) {
-            blindBlock.classList.add('hidden');
-            breakBlock.classList.remove('hidden');
-            breakBlock.classList.add('flex');
+            document.getElementById('tv-blinds').innerText = 'BREAK';
+            document.getElementById('tv-blinds').classList.replace('text-emerald-400', 'text-[#ff4c4c]');
+            document.getElementById('tv-ante').innerText = 'RELAX';
         } else {
-            blindBlock.classList.remove('hidden');
-            breakBlock.classList.add('hidden');
-            breakBlock.classList.remove('flex');
-            document.getElementById('tv-blinds').innerText = `${formatMoney(blind.sb)} / ${formatMoney(blind.bb)}`;
-            document.getElementById('tv-ante').innerText = `ANTE: ${formatMoney(blind.ante)}`;
+            document.getElementById('tv-blinds').innerText = `${formatMoneyShort(blind?.sb)} / ${formatMoneyShort(blind?.bb)}`;
+            document.getElementById('tv-blinds').classList.replace('text-[#ff4c4c]', 'text-emerald-400');
+            document.getElementById('tv-ante').innerText = `BBA ${formatMoneyShort(blind?.ante)}`;
         }
 
-        // Next level
+        // Next level / Next Break
         const nextBlind = tour.blinds_structure[tour.current_level_idx + 1];
-        if(nextBlind) {
-            if(nextBlind.is_break) {
+        if (nextBlind) {
+            if (nextBlind.is_break) {
                 document.getElementById('tv-next-level').innerText = 'BREAK';
-                document.getElementById('tv-next-ante').innerText = '—';
             } else {
-                document.getElementById('tv-next-level').innerText = `${formatMoney(nextBlind.sb)} / ${formatMoney(nextBlind.bb)}`;
-                document.getElementById('tv-next-ante').innerText = formatMoney(nextBlind.ante);
+                document.getElementById('tv-next-level').innerText = `${formatMoneyShort(nextBlind.sb)}/${formatMoneyShort(nextBlind.bb)} - ${formatMoneyShort(nextBlind.ante)}`;
             }
         } else {
-            document.getElementById('tv-next-level').innerText = 'FINAL LEVEL';
-            document.getElementById('tv-next-ante').innerText = '—';
+            document.getElementById('tv-next-level').innerText = 'FINAL';
         }
 
-        // Late Registration badge
-        const lateBadge = document.getElementById('late-reg-badge');
-        const lateRegClosed = tour.settings?.late_reg_level && blind.level > tour.settings.late_reg_level;
-        if(!isBreak && !lateRegClosed && tour.status !== 'finished') {
-            lateBadge.classList.remove('hidden');
+        let nextBreakStr = '—';
+        for (let i = tour.current_level_idx + 1; i < tour.blinds_structure.length; i++) {
+            if (tour.blinds_structure[i].is_break) {
+                nextBreakStr = `AFTER LVL ${tour.blinds_structure[i-1]?.level || '?'}`;
+                break;
+            }
+        }
+        document.getElementById('tv-next-break').innerText = nextBreakStr;
+
+        // Dynamic Right Column (Late Reg vs Payouts)
+        const isLateRegClosed = (currentLvlNum > lateRegLvlNum);
+        const viewLateReg = document.getElementById('tv-late-reg-view');
+        const viewPayout = document.getElementById('tv-payout-view');
+
+        if (isLateRegClosed) {
+            viewLateReg.classList.add('hidden');
+            viewPayout.classList.remove('hidden');
+
+            const pool = tour.fund.payout_pool || (tour.fund.total_paid * 0.85);
+            document.getElementById('tv-prize-pool').innerText = formatMoney(pool) + ' ₫';
+
+            // Mock or actual payouts
+            // If the system doesn't have explicit payouts yet, render a mock top 3 or generated list based on ITM
+            const payoutListEl = document.getElementById('tv-payout-list');
+            payoutListEl.innerHTML = '';
+            
+            // Generate mock payouts if needed (50%, 30%, 20% for top 3)
+            let payoutsToRender = [];
+            if (pool > 0) {
+                payoutsToRender = [
+                    { rank: 1, amount: pool * 0.5 },
+                    { rank: 2, amount: pool * 0.3 },
+                    { rank: 3, amount: pool * 0.2 },
+                ];
+                
+                // if alive is > 3, show more? Just mock.
+            }
+
+            if (payoutsToRender.length > 0) {
+                payoutsToRender.forEach(p => {
+                    const row = document.createElement('div');
+                    row.className = 'flex justify-between items-center bg-[#111] p-4 rounded border border-[#333]';
+                    row.innerHTML = `
+                        <div class="font-mafia text-2xl text-gray-400 w-16 text-center shadow-[inset_0_0_10px_rgba(0,0,0,0.5)] bg-black rounded p-1">#${p.rank}</div>
+                        <div class="font-teko text-4xl text-emerald-400 font-bold">${formatMoney(p.amount)} <span class="text-xl">₫</span></div>
+                    `;
+                    if(p.rank === 1) row.innerHTML = `
+                        <div class="font-mafia text-3xl text-yellow-400 w-16 text-center shadow-[inset_0_0_15px_rgba(212,175,55,0.4)] bg-black/50 rounded p-1"><i class="fa-solid fa-trophy text-xl mb-1 block"></i>1</div>
+                        <div class="font-teko text-[3rem] text-[#d4af37] font-bold drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]">${formatMoney(p.amount)} <span class="text-2xl">₫</span></div>
+                    `;
+                    payoutListEl.appendChild(row);
+                });
+            } else {
+                payoutListEl.innerHTML = '<div class="text-center text-gray-600 mt-10 font-bold text-sm">CHƯA CÓ THÔNG TIN TRẢ THƯỞNG</div>';
+            }
+
         } else {
-            lateBadge.classList.add('hidden');
+            viewLateReg.classList.remove('hidden');
+            viewPayout.classList.add('hidden');
         }
     }
 
