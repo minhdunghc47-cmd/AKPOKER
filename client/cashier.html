@@ -453,7 +453,7 @@
             
             document.getElementById('rp-name').innerText = name;
             document.getElementById('rp-tour').innerText = tourName;
-            document.getElementById('rp-buyin').innerText = buyIn ? new Intl.NumberFormat('vi-VN').format(buyIn) + ' VNĐ' : '...';
+            document.getElementById('rp-buyin').innerText = (buyIn !== '' && buyIn !== null && buyIn !== undefined) ? new Intl.NumberFormat('vi-VN').format(buyIn) + ' VNĐ' : '...';
             document.getElementById('rp-time').innerText = timeStr;
         }
 

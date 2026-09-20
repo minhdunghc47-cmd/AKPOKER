@@ -221,13 +221,20 @@
         socket.on('update_tours', (tours) => {
             currentTours = tours;
             renderLobby();
-            if(selectedTourId) renderTableView();
+            if(selectedTourId && !isAnyPopupOpen()) renderTableView();
         });
 
         socket.on('update_tables', (tables) => {
             globalTables = tables;
-            if(selectedTourId) renderTableView();
+            if(selectedTourId && !isAnyPopupOpen()) renderTableView();
         });
+
+        function isAnyPopupOpen() {
+            if (activeMenuSeatId !== null) return true;
+            if (document.getElementById('dealer-modal') && !document.getElementById('dealer-modal').classList.contains('hidden')) return true;
+            if (document.getElementById('move-modal') && !document.getElementById('move-modal').classList.contains('hidden')) return true;
+            return false;
+        }
 
         socket.on('update_staff_list', (staff) => { currentStaff = staff || []; });
 
@@ -359,7 +366,7 @@
                 `;
 
                 seatPositions.forEach((pos, index) => {
-                    const player = tablePlayers[index];
+                    const player = tablePlayers.find(p => p.seat === pos.id);
                     const seatDiv = document.createElement('div');
                     seatDiv.className = `seat ${player ? 'occupied' : 'empty'}`;
                     seatDiv.style.cssText = `left:${pos.x}%;top:${pos.y}%;`;
@@ -392,15 +399,21 @@
             });
         }
 
-        function closeAllMenus() {
+        
+        function closeAllMenus(skipRender = false) { 
             document.querySelectorAll('.action-menu').forEach(m => m.classList.remove('active'));
             activeMenuSeatId = null;
+            if(!skipRender && selectedTourId) renderTableView(); 
         }
         function toggleMenu(e, uid) {
             e.stopPropagation();
             const menu = document.getElementById(`menu-${uid}`);
-            if(activeMenuSeatId === uid) { menu.classList.remove('active'); activeMenuSeatId = null; }
-            else { closeAllMenus(); menu.classList.add('active'); activeMenuSeatId = uid; }
+            
+            if(activeMenuSeatId === uid) { activeMenuSeatId = null; renderTableView(); }
+
+            
+            else { closeAllMenus(true); document.getElementById('menu-'+uid).classList.add('active'); activeMenuSeatId = uid; }
+
         }
 
         // =====================
@@ -428,9 +441,9 @@
             document.getElementById('dealer-modal').classList.remove('hidden');
             document.getElementById('dealer-modal').classList.add('flex');
         }
-        function closeDealerModal() {
+        function closeDealerModal() { 
             document.getElementById('dealer-modal').classList.replace('flex','hidden');
-        }
+         renderTableView(); }
         function confirmAssignDealer() {
             const name = document.getElementById('dealer-select').value || document.getElementById('dealer-name').value.trim();
             if(name && pendingDealerTableId && selectedTourId) {
@@ -463,9 +476,9 @@
             document.getElementById('move-modal').classList.remove('hidden');
             document.getElementById('move-modal').classList.add('flex');
         }
-        function closeMoveModal() {
+        function closeMoveModal() { 
             document.getElementById('move-modal').classList.replace('flex','hidden');
-        }
+         renderTableView(); }
         function confirmMoveTable() {
             const newId = document.getElementById('move-table-select').value;
             if(pendingMovePhone && selectedTourId && newId) {

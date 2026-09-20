@@ -439,8 +439,20 @@ console.log('CREATE_TOUR DATA:', data);
       return;
     }
 
+    // Áp dụng Balance Seating & Seat Finder
     const assigned_table = t.tables[t.entries % t.tables.length];
-    const assigned_seat = t.entries + 1; // Ghế = số thứ tự người mua (1-indexed)
+    
+    // Tìm ghế trống đầu tiên từ 1 đến 9 ở bàn assigned_table
+    let assigned_seat = 1;
+    const playersAtTable = t.players.filter(p => p.table_id === assigned_table && p.status === 'alive');
+    const occupiedSeats = playersAtTable.map(p => p.seat);
+    for (let i = 1; i <= 9; i++) {
+        if (!occupiedSeats.includes(i)) {
+            assigned_seat = i;
+            break;
+        }
+    }
+    
     t.players.push({ phone: member_phone, name: member.name, status: 'alive', table_id: assigned_table, seat: assigned_seat });
     
     t.entries += 1;
@@ -479,6 +491,16 @@ console.log('CREATE_TOUR DATA:', data);
       const p = t.players.find(p => p.phone === player_phone && p.status === 'alive');
       if (p) {
         p.table_id = parseInt(new_table_id);
+        
+        // Find empty seat at new table
+        let new_seat = 1;
+        const playersAtNewTable = t.players.filter(x => x.table_id === p.table_id && x.status === 'alive' && x.phone !== p.phone);
+        const occupiedSeats = playersAtNewTable.map(x => x.seat);
+        for(let i=1; i<=9; i++){
+            if(!occupiedSeats.includes(i)) { new_seat = i; break; }
+        }
+        p.seat = new_seat;
+        
         broadcastState();
       }
     }
@@ -497,7 +519,23 @@ console.log('CREATE_TOUR DATA:', data);
     if (t && (t.status === 'running' || t.status === 'paused')) {
       t.status = 'finished';
       t.fund.payout_pool = t.fund.total_paid * 0.85; 
+      
+      // Xóa dealer khỏi các bàn của giải này
+      if (t.tables && Array.isArray(t.tables)) {
+        t.tables.forEach(tableId => {
+          const tbl = db.tables.find(x => x.id === tableId);
+          if (tbl && tbl.dealer_name) {
+             const staff = db.staff.find(s => s.name === tbl.dealer_name);
+             if (staff && staff.status === 'busy') staff.status = 'waiting';
+             tbl.dealer_name = null;
+             tbl.dealer_time = null;
+          }
+        });
+        t.dealer_assigned = false;
+      }
+      
       broadcastState();
+      io.emit('staff_data_updated', db.staff);
     }
   });
 
