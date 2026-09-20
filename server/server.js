@@ -51,60 +51,27 @@ let db = {
 
 // 2. ĐỒNG BỘ TỪ FIREBASE XUỐNG RAM KHI KHỞI ĐỘNG
 if (fdb) {
-  function checkAndSeedData() {
+  function loadFromFirebase() {
     fdb.ref('/').once('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
         if (data.tournaments) db.tournaments = data.tournaments;
         if (data.members) db.members = data.members;
         if (data.time_logs) db.time_logs = data.time_logs;
-        
-        if (data.staff && data.staff.length > 0) {
-          db.staff = data.staff;
-          console.log('[FIREBASE] Đã nạp danh sách nhân sự hiện có từ Cloud.');
-        } else {
-          console.log('[FIREBASE] Node /staff trống, tiến hành seed 20 nhân viên mẫu...');
-          const roles = ['Dealer', 'Floor', 'Thu ngân', 'Phục vụ', 'TD'];
-          for (let i = 1; i <= 20; i++) {
-            db.staff.push({
-              id: 'NV' + String(i).padStart(2, '0'),
-              name: 'Nhân viên ' + i,
-              pin: '1234',
-              role: roles[i % roles.length],
-              base_salary: 50000,
-              status: 'offline',
-              total_minutes: 0,
-              last_in: null
-            });
-          }
-          fdb.ref('/staff').set(db.staff);
-        }
+        if (data.staff) db.staff = data.staff;
+        console.log('[FIREBASE] Đã nạp dữ liệu từ Cloud thành công (READ-ONLY).');
       } else {
-        console.log('[FIREBASE] Database hoàn toàn trống rỗng, khởi tạo seed 20 nhân viên mẫu...');
-        const roles = ['Dealer', 'Floor', 'Thu ngân', 'Phục vụ', 'TD'];
-        for (let i = 1; i <= 20; i++) {
-          db.staff.push({
-            id: 'NV' + String(i).padStart(2, '0'),
-            name: 'Nhân viên ' + i,
-            pin: '1234',
-            role: roles[i % roles.length],
-            base_salary: 50000,
-            status: 'offline',
-            total_minutes: 0,
-            last_in: null
-          });
-        }
-        fdb.ref('/staff').set(db.staff);
+        console.log('[FIREBASE] Database hoàn toàn trống rỗng.');
       }
       
       console.log('[FIREBASE] Đã load dữ liệu toàn sòng từ Cloud xuống RAM!');
       isFirebaseLoaded = true;
-      broadcastState();
+      broadcastState(true);
       io.emit('staff_data_updated', db.staff);
     });
   }
   
-  checkAndSeedData();
+  loadFromFirebase();
 } else {
   isFirebaseLoaded = true;
   // Generate 20 test accounts if no DB
@@ -129,32 +96,24 @@ function saveToFirebase(path, data) {
   }
 }
 
-function broadcastState() {
+function broadcastState(skipSave = false) {
   if (!isFirebaseLoaded) return;
   const activeTours = db.tournaments.filter(t => t.status !== 'archived');
   io.emit('update_tours', activeTours);
   io.emit('update_tables', db.tables);
   io.emit('update_staff_list', db.staff);
-  io.emit('update_members', db.members);
-
-  let total_net_cash = 0, total_debt = 0, total_rake = 0;
-  db.tournaments.forEach(t => {
-    total_net_cash += t.fund.total_paid;
-    total_debt += t.fund.debt;
-    total_rake += t.fund.total_paid * 0.15;
-  });
-
   io.emit('update_god_mode', {
-    financial: { net_cash: total_net_cash, total_debt: total_debt, total_rake: total_rake },
+    financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 },
     staff: db.staff,
     all_tours: db.tournaments
   });
-  
-  // Real-time Backup lên Cloud
-  saveToFirebase('tournaments', db.tournaments);
-  saveToFirebase('members', db.members);
-  saveToFirebase('staff', db.staff);
-  saveToFirebase('time_logs', db.time_logs);
+
+  if (!skipSave) {
+    saveToFirebase('tournaments', db.tournaments);
+    saveToFirebase('members', db.members);
+    saveToFirebase('staff', db.staff);
+    saveToFirebase('time_logs', db.time_logs);
+  }
 }
 
 // TIMER ENGINE (Đã tối ưu không ghi đè Firebase mỗi giây)
@@ -203,10 +162,9 @@ io.on('connection', (socket) => {
       socket.emit('update_god_mode', { financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 }, staff: db.staff, all_tours: db.tournaments });
     }
   });
-  broadcastState();
+  // Removed broadcastState(); to prevent write on connect
 
-  
-    socket.on('seed_staff_data', (callback) => {
+  socket.on('seed_staff_data', (callback) => {
     db.staff = [];
     const roles = ['Dealer', 'Floor', 'Thu ngân', 'Phục vụ', 'TD'];
     for (let i = 1; i <= 20; i++) {
