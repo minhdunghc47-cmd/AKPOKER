@@ -473,6 +473,45 @@ console.log('CREATE_TOUR DATA:', data);
     if(callback) callback({ success: true, assigned_table, assigned_seat, message: `In Vé Thành Công! Giá vé áp dụng: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)}` });
   });
 
+  
+  socket.on('add_table_to_tour', (payload) => {
+    const { tour_id, table_id } = payload;
+    const t = db.tournaments.find(t => t.id === tour_id);
+    const tbl = db.tables.find(x => x.id === table_id);
+    if (t && tbl && !tbl.is_locked) {
+        if (!t.tables.includes(table_id)) {
+            t.tables.push(table_id);
+            tbl.is_locked = true;
+            broadcastState();
+        }
+    }
+  });
+
+  socket.on('remove_table_from_tour', (payload) => {
+    const { tour_id, table_id } = payload;
+    const t = db.tournaments.find(t => t.id === tour_id);
+    const tbl = db.tables.find(x => x.id === table_id);
+    if (t && tbl) {
+        // Kiểm tra xem bàn có người đang alive không
+        const alivePlayers = (t.players||[]).filter(p => p.table_id === table_id && p.status === 'alive');
+        if (alivePlayers.length > 0) return; // Không cho đóng
+
+        t.tables = t.tables.filter(id => id !== table_id);
+        tbl.is_locked = false;
+        
+        // Trả dealer về waiting
+        if (tbl.dealer_name) {
+            const staff = db.staff.find(s => s.name === tbl.dealer_name);
+            if (staff && staff.status === 'busy') staff.status = 'waiting';
+            tbl.dealer_name = null;
+            tbl.dealer_time = null;
+        }
+        
+        broadcastState();
+        io.emit('staff_data_updated', db.staff);
+    }
+  });
+
   socket.on('assign_dealer', (payload) => {
     const table = db.tables.find(tbl => tbl.id === payload.table_id);
     if (table) {
@@ -524,6 +563,56 @@ console.log('CREATE_TOUR DATA:', data);
     if (t) {
       const p = t.players.find(p => (p.phone === payload.player_phone || p.name === payload.player_name) && p.status === 'alive');
       if (p) { p.status = 'busted'; broadcastState(); }
+    }
+  });
+
+  
+  socket.on('adjust_time', (tourId, seconds) => {
+    const t = db.tournaments.find(t => t.id === tourId);
+    if (t && (t.status === 'running' || t.status === 'paused')) {
+        t.time_remaining += seconds;
+        if(t.time_remaining < 0) t.time_remaining = 0;
+        broadcastState();
+    }
+  });
+
+  socket.on('force_edit_stats', (payload) => {
+    const { tour_id, entries, alive } = payload;
+    const t = db.tournaments.find(t => t.id === tour_id);
+    if (t) {
+        t.entries = entries;
+        const currentAlivePlayers = t.players.filter(p => p.status === 'alive');
+        const diff = alive - currentAlivePlayers.length;
+        
+        if (diff > 0) {
+            // Need to add dummy alive players
+            for(let i = 0; i < diff; i++) {
+                const dummyTable = t.tables[0] || null;
+                t.players.push({
+                    phone: 'DUMMY_' + Date.now() + '_' + i,
+                    name: 'Manual Edit',
+                    status: 'alive',
+                    table_id: dummyTable,
+                    seat: 99 // dummy
+                });
+            }
+        } else if (diff < 0) {
+            // Need to bust out some alive players
+            let toRemove = Math.abs(diff);
+            for (let p of t.players) {
+                if (p.status === 'alive') {
+                    p.status = 'busted';
+                    toRemove--;
+                    if (toRemove === 0) break;
+                }
+            }
+        }
+        
+        // Recalculate net_fund if needed? Wait, buy-in amounts might be off.
+        // Let's just adjust total_paid based on entries
+        // Actually, just let the manual force_edit fix the entries number for display.
+        
+        broadcastState();
     }
   });
 
