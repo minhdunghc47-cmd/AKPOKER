@@ -16,16 +16,16 @@ try {
   } else if (fs.existsSync('./serviceAccountKey.json')) {
     serviceAccount = require('./serviceAccountKey.json');
   } else {
-    throw new Error('Không tìm thấy file Key');
+    throw new Error('Không tìm thấy file Key hợp lệ trên hệ thống');
   }
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://<YOUR_DATABASE_NAME>.firebaseio.com"
+    databaseURL: process.env.FIREBASE_DATABASE_URL
   });
   console.log('[FIREBASE] Đã kết nối Firebase thành công!');
 } catch (error) {
-  console.warn('[FIREBASE] Chưa tìm thấy serviceAccountKey.json hoặc cấu hình lỗi. Chạy tạm trên RAM.');
+  console.error('[FIREBASE] Lỗi khởi tạo Firebase:', error);
 }
 
 const fdb = admin.apps.length ? admin.database() : null;
