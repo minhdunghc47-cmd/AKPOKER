@@ -23,7 +23,7 @@ try {
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: process.env.FIREBASE_DATABASE_URL
+    databaseURL: process.env.FIREBASE_DATABASE_URL || "https://acepoker-1991.firebaseio.com"
   });
   console.log('[FIREBASE] Đã kết nối Firebase thành công!');
 } catch (error) {
