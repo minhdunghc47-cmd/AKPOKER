@@ -125,6 +125,7 @@ function broadcastState(skipSave = false) {
 
   if (!skipSave) {
     saveToFirebase('tournaments', db.tournaments);
+    saveToFirebase('tour_templates', db.tour_templates);
     saveToFirebase('members', db.members);
     saveToFirebase('staff', db.staff);
     saveToFirebase('time_logs', db.time_logs);
