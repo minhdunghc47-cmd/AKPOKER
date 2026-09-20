@@ -268,7 +268,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('create_tour', (data) => {
-    const { name, selectedTableIds, settings, starting_stack, buyin_fee } = data;
+    const { name, selectedTableIds, settings, starting_stack, buyin_fee, buy_in_fee } = data;
+console.log('CREATE_TOUR DATA:', data);
     const tablesToLock = db.tables.filter(t => selectedTableIds.includes(t.id));
     const canLock = tablesToLock.every(t => !t.is_locked);
 
@@ -277,7 +278,7 @@ io.on('connection', (socket) => {
       tablesToLock.forEach(t => { t.is_locked = true; t.tour_id = tourId; });
       
       const newTour = {
-        id: tourId, name: name, tables: selectedTableIds, entries: 0, dealer_assigned: false, buyin_fee: buyin_fee || 0,
+        id: tourId, name: name, tables: selectedTableIds, entries: 0, dealer_assigned: false, buyin_fee: buyin_fee || buy_in_fee || 0,
         status: 'paused', players: [], 
         fund: { total_paid: 0, expenses: 0, debt: 0, net_fund: 0, payout_pool: 0 },
         settings: settings || { level_time: 20, late_reg_level: 6 },

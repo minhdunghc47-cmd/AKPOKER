@@ -678,7 +678,7 @@
             // Tự động điền mức phí
             const tour = currentTours.find(t => t.id === tId);
             if (tour) {
-                document.getElementById('buy-in').value = tour.buyin_fee || '';
+                document.getElementById('buy-in').value = (tour.buyin_fee !== undefined) ? tour.buyin_fee : '';
             }
 
             select.dispatchEvent(new Event('change'));
