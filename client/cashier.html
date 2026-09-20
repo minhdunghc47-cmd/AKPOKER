@@ -404,16 +404,24 @@
             const video = document.getElementById('kyc-video');
             if(!stream || video.classList.contains('hidden')) return alert("Vui lòng Bật Mâm (Camera) trước khi chụp!");
             
+            const size = 150;
             const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            // Handle mirroring in canvas to match display
+            canvas.width = size;
+            canvas.height = size;
             const ctx = canvas.getContext('2d');
-            ctx.translate(canvas.width, 0);
-            ctx.scale(-1, 1);
-            ctx.drawImage(video, 0, 0);
             
-            avatarBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            // Calculate crop to make it square
+            const minDim = Math.min(video.videoWidth, video.videoHeight);
+            const sx = (video.videoWidth - minDim) / 2;
+            const sy = (video.videoHeight - minDim) / 2;
+            
+            // Flip horizontal for mirror effect
+            ctx.translate(size, 0);
+            ctx.scale(-1, 1);
+            
+            ctx.drawImage(video, sx, sy, minDim, minDim, 0, 0, size, size);
+            
+            avatarBase64 = canvas.toDataURL('image/jpeg', 0.7);
             
             const preview = document.getElementById('kyc-preview');
             preview.src = avatarBase64;
