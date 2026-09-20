@@ -588,10 +588,16 @@ console.log('CREATE_TOUR DATA:', data);
         p.rank = aliveCount; // Hạng của player chính là số người còn sống tại thời điểm bị bust
         p.status = 'busted'; 
         
+        if (!t.itm_results) t.itm_results = {};
+        t.itm_results[aliveCount] = p.name || p.phone;
+        
         // Nếu chỉ còn 1 người sống sót duy nhất, tự động gán hạng 1 cho người đó (Winner)
         if (aliveCount - 1 === 1) {
             const winner = t.players.find(x => x.status === 'alive');
-            if (winner) winner.rank = 1;
+            if (winner) {
+                winner.rank = 1;
+                t.itm_results[1] = winner.name || winner.phone;
+            }
         }
         
         broadcastState(); 
