@@ -541,6 +541,7 @@
             if (isEdit) {
                 // Đổ dữ liệu vào input
                 document.getElementById('edit-name').value = currentEditingMember.name;
+                document.getElementById('edit-phone').value = currentEditingMember.phone || '';
                 document.getElementById('edit-dob').value = currentEditingMember.dob || '';
                 document.getElementById('edit-address').value = currentEditingMember.address || '';
                 document.getElementById('edit-bank-name').value = currentEditingMember.bank_name || '';
@@ -646,8 +647,10 @@
 
             if (!name) return alert('Tên không được để trống!');
 
+            if(!newPhone) return alert("Số điện thoại không được để trống!");
             const payload = {
                 phone: editingPhone,
+                new_phone: newPhone !== editingPhone ? newPhone : undefined,
                 name, dob, address, bank_name, bank_account, 
                 avatar_base64: editAvatarBase64 || undefined
             };
@@ -656,6 +659,10 @@
                 if(res.success) {
                     // Cập nhật UI nhanh để tránh giật lag khi đợi socket
                     currentEditingMember.name = name;
+                    if(newPhone !== editingPhone) {
+                        currentEditingMember.phone = newPhone;
+                        editingPhone = newPhone; // Cập nhật lại key
+                    }
                     currentEditingMember.dob = dob;
                     currentEditingMember.address = address;
                     currentEditingMember.bank_name = bank_name;

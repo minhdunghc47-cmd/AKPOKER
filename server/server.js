@@ -295,12 +295,30 @@ io.on('connection', (socket) => {
   });
 
   socket.on('update_member', (payload, callback) => {
-    const { phone, name, dob, address, bank_account, bank_name, avatar_base64 } = payload;
+    const { phone, new_phone, name, dob, address, bank_account, bank_name, avatar_base64 } = payload;
     const member = db.members.find(m => m.phone === phone);
     if (!member) {
       if (callback) callback({ success: false, message: 'Không tìm thấy hội viên!' });
       return;
     }
+    
+    if (new_phone && new_phone !== phone) {
+      if (db.members.find(m => m.phone === new_phone)) {
+        if (callback) callback({ success: false, message: 'Số điện thoại mới đã tồn tại!' });
+        return;
+      }
+      member.phone = new_phone;
+      
+      // Update phone in active tournaments
+      db.tournaments.forEach(tour => {
+        if (tour.status !== 'archived' && tour.status !== 'finished') {
+          tour.players.forEach(p => {
+            if (p.phone === phone) p.phone = new_phone;
+          });
+        }
+      });
+    }
+
     member.name = name || member.name;
     member.dob = dob || member.dob;
     member.address = address || member.address;
