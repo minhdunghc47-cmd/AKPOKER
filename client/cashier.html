@@ -76,7 +76,7 @@
                     <div><strong>Giải:</strong> <span id="rp-tour">...</span></div>
                     <div><strong>Buy-in:</strong> <span id="rp-buyin">...</span></div>
                     <div><strong>Thời gian:</strong> <span id="rp-time">...</span></div>
-                    <div style="margin-top: 10px;"><strong>Bàn:</strong> ......... <strong>Ghế:</strong> .........</div>
+                    <div style="margin-top: 10px;"><strong>Bàn:</strong> <span id="rp-table">...</span> &nbsp;&nbsp; <strong>Ghế:</strong> <span id="rp-seat">...</span></div>
                 </div>
                 <div style="border-top: 1px dashed black; margin: 10px 0;"></div>
                 <div style="text-align: center; font-size: 12px; font-style: italic;">
@@ -707,8 +707,11 @@
             }
         }
 
-        function printReceipt(phone, tourId, amount) {
+        function printReceipt(phone, tourId, amount, assigned_table, assigned_seat) {
             updateReceiptPreview();
+            // Cập nhật bàn và ghế từ server
+            document.getElementById('rp-table').innerText = assigned_table ? `Bàn ${assigned_table}` : '---';
+            document.getElementById('rp-seat').innerText = assigned_seat ? `Ghế ${assigned_seat}` : '---';
             setTimeout(() => {
                 window.print();
             }, 300);
@@ -734,7 +737,7 @@
             socket.emit('sell_ticket', payload, (res) => {
                 btn.disabled = false;
                 if(res.success) { 
-                    printReceipt(payload.member_phone, payload.tour_id, payload.buy_in_amount);
+                    printReceipt(payload.member_phone, payload.tour_id, payload.buy_in_amount, res.assigned_table, res.assigned_seat);
                     showAlert(res.message, false); 
                     document.getElementById('player-search').value=''; 
                     document.getElementById('unpaid-checkbox').checked=false; 

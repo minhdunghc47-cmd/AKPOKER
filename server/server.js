@@ -422,7 +422,8 @@ console.log('CREATE_TOUR DATA:', data);
     }
 
     const assigned_table = t.tables[t.entries % t.tables.length];
-    t.players.push({ phone: member_phone, name: member.name, status: 'alive', table_id: assigned_table });
+    const assigned_seat = t.entries + 1; // Ghế = số thứ tự người mua (1-indexed)
+    t.players.push({ phone: member_phone, name: member.name, status: 'alive', table_id: assigned_table, seat: assigned_seat });
     
     t.entries += 1;
     const amount = Number(buy_in_amount) || 0;
@@ -439,7 +440,7 @@ console.log('CREATE_TOUR DATA:', data);
     t.fund.net_fund = t.fund.total_paid - t.fund.expenses;
 
     broadcastState();
-    if(callback) callback({ success: true, message: `In Vé Thành Công! Giá vé áp dụng: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)}` });
+    if(callback) callback({ success: true, assigned_table, assigned_seat, message: `In Vé Thành Công! Giá vé áp dụng: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)}` });
   });
 
   socket.on('assign_dealer', (payload) => {
