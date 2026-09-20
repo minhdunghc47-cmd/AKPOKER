@@ -3,229 +3,365 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ACEPOKER - MAIN TV (Mafia Edition)</title>
+    <title>ACEPOKER - MAIN TV</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Playfair+Display:wght@700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #030303; color: #fff; overflow: hidden; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Rajdhani', sans-serif; background: #000; color: #fff; overflow: hidden; margin: 0; }
         .font-mafia { font-family: 'Playfair Display', serif; }
         .font-digital { font-family: 'Share Tech Mono', monospace; }
         .text-gold { color: #d4af37; }
-        .glow-gold { text-shadow: 0 0 20px rgba(212, 175, 55, 0.7); }
-        .glow-red { text-shadow: 0 0 40px rgba(255, 0, 50, 0.9); }
-        .text-burgundy { color: #800020; }
-        
-        .flash-red { animation: flash-border 1s 5; }
-        @keyframes flash-border {
-            0% { box-shadow: inset 0 0 0px 0px rgba(128,0,32,0); }
-            50% { box-shadow: inset 0 0 150px 30px rgba(255,0,50,0.9); border-color: red;}
-            100% { box-shadow: inset 0 0 0px 0px rgba(128,0,32,0); }
-        }
+        .gold-glow { text-shadow: 0 0 30px rgba(212,175,55,0.8); }
+        .green-glow { text-shadow: 0 0 20px rgba(52,211,153,0.7); }
+        .red-glow { text-shadow: 0 0 40px rgba(255,60,60,0.9); }
+        .blue-glow { text-shadow: 0 0 20px rgba(96,165,250,0.7); }
 
-        #setup-menu { background: rgba(10,10,10,0.98); }
-        .select-mafia { background: #111; border: 2px solid #d4af37; color: #fff; padding: 25px; border-radius: 12px; width: 100%; font-size: 28px; font-weight: bold; }
-        .btn-gold { background: linear-gradient(to bottom, #e5c158, #d4af37); color: #000; font-weight: bold; border-radius: 12px; transition: 0.2s; font-size: 28px; padding: 25px; cursor: pointer; }
-        .btn-gold:hover { filter: brightness(1.2); }
+        @keyframes flash-danger {
+            0%,100% { border-color: transparent; box-shadow: none; }
+            50% { border-color: #ff2a4b; box-shadow: inset 0 0 120px 20px rgba(255,0,50,0.4); }
+        }
+        .flash-danger { animation: flash-danger 0.8s 6; }
+
+        @keyframes pulse-clock {
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .pulse-clock { animation: pulse-clock 1s infinite; }
+
+        @keyframes blink-late {
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .blink-late { animation: blink-late 1.5s infinite; }
+
+        /* SETUP SCREEN */
+        #setup-menu { background: radial-gradient(ellipse at center, #0a0a0a 0%, #000 100%); }
+        .select-tv { background: #111; border: 2px solid #d4af37; color: #fff; padding: 20px 24px; border-radius: 10px; font-size: 22px; font-family: 'Rajdhani', sans-serif; font-weight: 700; }
+        .btn-start { background: linear-gradient(135deg, #c9a227, #d4af37, #b8961e); color: #000; font-weight: 800; border-radius: 12px; font-size: 24px; padding: 22px 40px; cursor: pointer; letter-spacing: 0.15em; text-transform: uppercase; border: none; transition: 0.2s; }
+        .btn-start:hover { filter: brightness(1.15); transform: scale(1.01); }
+
+        /* TV LAYOUT */
+        .stat-box { background: linear-gradient(180deg, #111 0%, #0a0a0a 100%); border: 1px solid #222; border-radius: 12px; }
+        .stat-label { font-size: clamp(10px, 1vw, 13px); font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #555; }
+        .stat-value { font-family: 'Share Tech Mono', monospace; font-weight: 700; line-height: 1; }
+
+        /* Clock */
+        #tv-clock { font-size: clamp(100px, 18vw, 240px); line-height: 1; font-family: 'Share Tech Mono', monospace; }
+
+        /* Divider */
+        .gold-line { height: 3px; background: linear-gradient(to right, transparent, #d4af37 30%, #d4af37 70%, transparent); }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col relative transition-all duration-300 border-[10px] border-transparent" id="tv-body">
+<body class="h-screen w-screen flex flex-col border-[6px] border-transparent" id="tv-body">
 
-    <!-- AUDIO ELEMENT -->
-    <audio id="alert-sound" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" preload="auto"></audio>
+<audio id="alert-sound" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" preload="auto"></audio>
 
-    <!-- SETUP MENU -->
-    <div id="setup-menu" class="absolute inset-0 z-50 flex items-center justify-center flex-col p-10">
-        <h1 class="font-mafia text-[5rem] text-gold mb-16 glow-gold text-center leading-tight">MẠNG LƯỚI TIVI<br>PHÁT SÓNG SẢNH TRUNG TÂM</h1>
-        <div class="w-full max-w-4xl flex flex-col gap-10">
-            <select id="tour-select" class="select-mafia">
-                <option value="">-- KẾT NỐI VỚI GIẢI ĐẤU --</option>
-            </select>
-            <button class="btn-gold uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(212,175,55,0.6)]" onclick="startBroadcast()"><i class="fa-solid fa-satellite-dish mr-4"></i>BẮT ĐẦU PHÁT SÓNG TIVI</button>
+<!-- SETUP SCREEN -->
+<div id="setup-menu" class="absolute inset-0 z-50 flex items-center justify-center flex-col gap-10 p-10">
+    <div class="text-center">
+        <div class="font-mafia text-gold text-8xl mb-3 gold-glow">ACEPOKER</div>
+        <div class="text-gray-500 text-2xl uppercase tracking-[0.3em] font-bold">TOURNAMENT BROADCAST SYSTEM</div>
+    </div>
+    <div class="w-full max-w-3xl flex flex-col gap-6">
+        <select id="tour-select" class="select-tv w-full">
+            <option value="">— Chọn Giải Đấu Để Phát Sóng —</option>
+        </select>
+        <button class="btn-start w-full shadow-[0_0_40px_rgba(212,175,55,0.4)]" onclick="startBroadcast()">
+            <i class="fa-solid fa-satellite-dish mr-3"></i>BẮT ĐẦU PHÁT SÓNG
+        </button>
+    </div>
+</div>
+
+<!-- MAIN TV INTERFACE -->
+<div id="main-tv" class="hidden h-full w-full flex-col" style="padding: 16px 20px; gap: 10px;">
+
+    <!-- TOP BAR: Tour name | Real time | Prize Pool -->
+    <div class="flex items-center justify-between" style="min-height: 60px;">
+        <div class="flex items-center gap-6">
+            <div class="font-mafia text-gold text-3xl tracking-widest" style="font-size: clamp(18px, 2.5vw, 32px);" id="tv-tour-name">TOURNAMENT NAME</div>
+            <!-- Late Registration Badge -->
+            <div id="late-reg-badge" class="hidden blink-late bg-[#800020] border border-red-600 px-3 py-1 rounded text-xs font-bold uppercase tracking-widest text-white">
+                <i class="fa-solid fa-clock-rotate-left mr-1"></i>LATE REG OPEN
+            </div>
+        </div>
+        <div class="flex items-center gap-8">
+            <div class="text-right">
+                <div class="stat-label text-xs mb-1">BUY-IN</div>
+                <div class="font-digital text-[#d4af37] font-bold" style="font-size: clamp(16px, 1.8vw, 22px);" id="tv-buyin">—</div>
+            </div>
+            <div class="text-right">
+                <div class="stat-label text-xs mb-1">REAL TIME</div>
+                <div class="font-digital text-gray-300 font-bold" style="font-size: clamp(16px, 1.8vw, 22px);" id="tv-realtime">00:00:00</div>
+            </div>
         </div>
     </div>
 
-    <!-- MAIN TV INTERFACE -->
-    <div id="main-tv" class="hidden h-full flex-col p-10">
-        <!-- HEADER -->
-        <header class="flex justify-between items-end border-b-8 border-[#d4af37]/40 pb-8 mb-10">
-            <h1 class="font-mafia text-[5.5rem] text-gray-200 tracking-wider truncate max-w-[65%]" id="tv-tour-name">MAFIA MAIN EVENT</h1>
-            <div class="text-right">
-                <div class="text-gray-500 font-bold uppercase tracking-[0.3em] text-3xl mb-3">PRIZE POOL</div>
-                <div class="font-digital text-[6rem] text-gold glow-gold font-bold" id="tv-pool">0 ₫</div>
-            </div>
-        </header>
+    <div class="gold-line"></div>
 
-        <!-- CENTER -->
-        <main class="flex-1 flex flex-col items-center justify-center py-10 relative">
-            <!-- Background Watermark -->
-            <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-                <i class="fa-solid fa-crown text-[600px] text-white"></i>
-            </div>
-            
-            <div class="font-mafia text-[4rem] text-[#d4af37] tracking-[0.4em] uppercase mb-8 font-bold" id="tv-level-name">LEVEL 1</div>
-            
-            <div class="font-digital text-[22rem] leading-none font-bold text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.6)] transition-all duration-700" id="tv-clock">20:00</div>
-            
-            <div class="flex flex-col items-center mt-16" id="tv-blinds-container">
-                <div class="font-mafia text-gray-400 uppercase tracking-[0.4em] text-4xl mb-4 font-bold">BLINDS</div>
-                <div class="font-digital text-[9rem] leading-none font-bold text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.5)]" id="tv-blinds">100 / 200</div>
-                <div class="font-mafia text-[#d4af37] text-[4rem] mt-8 font-bold tracking-widest drop-shadow-md bg-[#111] px-8 py-3 rounded-2xl border-2 border-[#d4af37]/30" id="tv-ante">BBA: 200</div>
-            </div>
-        </main>
+    <!-- MAIN AREA -->
+    <div class="flex flex-1 gap-4" style="min-height: 0;">
 
-        <!-- FOOTER -->
-        <footer class="grid grid-cols-3 gap-10 border-t-8 border-[#222] pt-10 mt-6">
-            <!-- COL 1 -->
-            <div class="bg-gradient-to-t from-[#111] to-[#1a1a1a] border-2 border-[#333] rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl">
-                <div class="text-gray-500 uppercase tracking-[0.2em] text-3xl font-bold mb-6">PLAYERS (ALIVE / TOTAL)</div>
-                <div class="text-white font-digital text-[5.5rem] font-bold">
-                    <span id="tv-alive" class="text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]">0</span> 
-                    <span class="text-gray-700 mx-4">/</span> 
-                    <span id="tv-entries" class="text-gray-400">0</span>
-                </div>
+        <!-- LEFT: Stats Column -->
+        <div class="flex flex-col gap-3" style="width: 22%;">
+            <!-- Players -->
+            <div class="stat-box flex flex-col items-center justify-center p-4 flex-1">
+                <div class="stat-label mb-2">PLAYERS REMAINING</div>
+                <div class="stat-value green-glow" style="font-size: clamp(36px, 5vw, 72px); color: #34d399;" id="tv-alive">0</div>
+                <div class="text-gray-600 font-bold text-sm mt-1">of <span class="text-gray-400" id="tv-entries">0</span> entries</div>
             </div>
-            <!-- COL 2 -->
-            <div class="bg-gradient-to-t from-[#111] to-[#1a1a1a] border-2 border-[#333] rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl">
-                <div class="text-gray-500 uppercase tracking-[0.2em] text-3xl font-bold mb-6">AVERAGE STACK</div>
-                <div class="font-digital text-[5.5rem] font-bold text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.6)]" id="tv-avg">0</div>
+            <!-- Prize Pool -->
+            <div class="stat-box flex flex-col items-center justify-center p-4 flex-1">
+                <div class="stat-label mb-2">PRIZE POOL (85%)</div>
+                <div class="stat-value gold-glow" style="font-size: clamp(20px, 2.8vw, 38px); color: #d4af37; word-break: break-all; text-align: center;" id="tv-pool">0 ₫</div>
             </div>
-            <!-- COL 3 -->
-            <div class="bg-gradient-to-t from-[#111] to-[#1a1a1a] border-2 border-[#333] rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl">
-                <div class="text-gray-500 uppercase tracking-[0.2em] text-3xl font-bold mb-6">NEXT LEVEL</div>
-                <div class="font-digital text-[4.5rem] font-bold text-gray-300" id="tv-next">200/400</div>
+            <!-- Total Chips -->
+            <div class="stat-box flex flex-col items-center justify-center p-4 flex-1">
+                <div class="stat-label mb-2">CHIPS IN PLAY</div>
+                <div class="stat-value" style="font-size: clamp(16px, 2.2vw, 28px); color: #94a3b8; text-align: center;" id="tv-total-chips">0</div>
             </div>
-        </footer>
+        </div>
+
+        <!-- CENTER: Level + Clock + Blinds -->
+        <div class="flex flex-col items-center justify-center flex-1 relative" style="min-height: 0;">
+            <!-- Watermark -->
+            <div class="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+                <i class="fa-solid fa-crown" style="font-size: 50vw; color: white;"></i>
+            </div>
+
+            <!-- Level name -->
+            <div class="font-mafia text-gold tracking-[0.3em] uppercase font-bold mb-2 relative z-10"
+                style="font-size: clamp(20px, 3.5vw, 48px);" id="tv-level-name">LEVEL 1</div>
+
+            <!-- Clock -->
+            <div id="tv-clock" class="text-white font-bold relative z-10" style="line-height: 1; text-shadow: 0 0 30px rgba(255,255,255,0.4);">00:00</div>
+
+            <!-- Blinds Display -->
+            <div id="tv-blinds-block" class="flex flex-col items-center mt-4 relative z-10">
+                <div class="stat-label mb-2">BLINDS (SB / BB)</div>
+                <div class="font-digital font-bold green-glow" style="font-size: clamp(28px, 5vw, 68px); color: #34d399;" id="tv-blinds">100 / 200</div>
+                <div class="font-digital font-bold mt-2" style="font-size: clamp(18px, 2.5vw, 36px); color: #d4af37;" id="tv-ante">ANTE: 200</div>
+            </div>
+
+            <!-- Break Message -->
+            <div id="tv-break-block" class="hidden flex-col items-center mt-4 relative z-10">
+                <div class="font-mafia font-bold" style="font-size: clamp(30px, 5vw, 72px); color: #ff4c4c; text-shadow: 0 0 30px rgba(255,76,76,0.7);">☕ BREAK TIME</div>
+                <div class="text-gray-400 font-bold text-xl mt-2 tracking-widest">NEXT LEVEL STARTS AFTER BREAK</div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Stats Column -->
+        <div class="flex flex-col gap-3" style="width: 22%;">
+            <!-- Average Stack -->
+            <div class="stat-box flex flex-col items-center justify-center p-4 flex-1">
+                <div class="stat-label mb-2">AVERAGE STACK</div>
+                <div class="stat-value blue-glow" style="font-size: clamp(20px, 2.8vw, 38px); color: #60a5fa; text-align: center;" id="tv-avg">0</div>
+            </div>
+            <!-- Next Level -->
+            <div class="stat-box flex flex-col items-center justify-center p-4 flex-1">
+                <div class="stat-label mb-2">NEXT LEVEL</div>
+                <div class="stat-value" style="font-size: clamp(16px, 2vw, 26px); color: #e2e8f0; text-align: center;" id="tv-next-level">—</div>
+                <div class="text-gray-600 text-xs mt-1">ANTE: <span class="text-gray-400" id="tv-next-ante">—</span></div>
+            </div>
+            <!-- Starting Stack -->
+            <div class="stat-box flex flex-col items-center justify-center p-4 flex-1">
+                <div class="stat-label mb-2">STARTING STACK</div>
+                <div class="stat-value" style="font-size: clamp(18px, 2.4vw, 32px); color: #fbbf24; text-align: center;" id="tv-start-stack">0</div>
+            </div>
+        </div>
     </div>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script>
-        const socket = io('https://akpoker.onrender.com');
-        let currentTours = [];
-        let broadcastTourId = null;
+    <div class="gold-line"></div>
 
-        function formatMoney(amount) { return new Intl.NumberFormat('vi-VN').format(amount).replace('₫', '').trim(); }
-        
-        function formatTime(seconds) {
-            if(seconds < 0) seconds = 0;
-            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const s = (seconds % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
-        }
+    <!-- BOTTOM BAR: Structure info -->
+    <div class="flex items-center justify-between" style="min-height: 36px;">
+        <div class="flex gap-8 items-center">
+            <div class="stat-label">STRUCTURE: 
+                <span class="text-gray-300 font-bold ml-1" id="tv-level-time">—</span>min/level
+            </div>
+            <div class="stat-label">LATE REG CLOSES AT LVL: 
+                <span class="text-[#d4af37] font-bold ml-1" id="tv-late-reg-lvl">—</span>
+            </div>
+            <div class="stat-label">TABLES: 
+                <span class="text-gray-300 font-bold ml-1" id="tv-tables">—</span>
+            </div>
+        </div>
+        <div class="text-gray-700 font-bold text-sm tracking-widest uppercase">ACEPOKER SYSTEM</div>
+    </div>
+</div>
 
-        socket.on('update_tours', (tours) => { 
-            currentTours = tours; 
-            if (!broadcastTourId) {
-                const select = document.getElementById('tour-select');
-                const selVal = select.value;
-                select.innerHTML = '<option value="">-- KẾT NỐI VỚI GIẢI ĐẤU --</option>';
-                tours.forEach(tour => {
-                    const opt = document.createElement('option');
-                    opt.value = tour.id; opt.innerText = `[${tour.status.toUpperCase()}] ${tour.name}`;
-                    if(tour.id === selVal) opt.selected = true;
-                    select.appendChild(opt);
-                });
-            } else {
-                renderMainTV();
-            }
-        });
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    const socket = io('https://akpoker.onrender.com');
+    let currentTours = [];
+    let broadcastTourId = null;
+    let realtimeInterval = null;
 
-        function startBroadcast() {
-            const val = document.getElementById('tour-select').value;
-            if(!val) return alert("Vui lòng chọn giải đấu!");
-            
-            // Yêu cầu User tương tác để Audio có thể Play được
-            document.getElementById('alert-sound').load();
-            document.getElementById('alert-sound').volume = 1.0;
-            
-            broadcastTourId = val;
-            document.getElementById('setup-menu').classList.add('hidden');
-            document.getElementById('main-tv').classList.remove('hidden');
-            document.getElementById('main-tv').classList.add('flex');
-            
+    function formatMoney(n) { return new Intl.NumberFormat('vi-VN').format(n || 0); }
+    function formatTime(sec) {
+        if(sec < 0) sec = 0;
+        const m = Math.floor(sec/60).toString().padStart(2,'0');
+        const s = (sec%60).toString().padStart(2,'0');
+        return `${m}:${s}`;
+    }
+
+    // Real time clock
+    function startRealTime() {
+        if(realtimeInterval) clearInterval(realtimeInterval);
+        realtimeInterval = setInterval(() => {
+            const now = new Date();
+            const hh = now.getHours().toString().padStart(2,'0');
+            const mm = now.getMinutes().toString().padStart(2,'0');
+            const ss = now.getSeconds().toString().padStart(2,'0');
+            const el = document.getElementById('tv-realtime');
+            if(el) el.innerText = `${hh}:${mm}:${ss}`;
+        }, 1000);
+    }
+
+    socket.on('connect', () => { socket.emit('request_initial_data'); });
+
+    socket.on('update_tours', (tours) => {
+        currentTours = tours;
+        if (!broadcastTourId) {
+            const select = document.getElementById('tour-select');
+            const prev = select.value;
+            select.innerHTML = '<option value="">— Chọn Giải Đấu Để Phát Sóng —</option>';
+            tours.filter(t => t.status !== 'archived').forEach(tour => {
+                const opt = document.createElement('option');
+                opt.value = tour.id;
+                opt.innerText = `[${tour.status.toUpperCase()}] ${tour.name}`;
+                if(tour.id === prev) opt.selected = true;
+                select.appendChild(opt);
+            });
+        } else {
             renderMainTV();
-            
-            // Bật Fullscreen để giống Tivi thật
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(e => console.log("Không thể tự động bật Fullscreen:", e));
-            }
+        }
+    });
+
+    function startBroadcast() {
+        const val = document.getElementById('tour-select').value;
+        if(!val) return alert('Vui lòng chọn giải đấu!');
+        document.getElementById('alert-sound').load();
+        broadcastTourId = val;
+        document.getElementById('setup-menu').classList.add('hidden');
+        document.getElementById('main-tv').classList.remove('hidden');
+        document.getElementById('main-tv').classList.add('flex');
+        startRealTime();
+        renderMainTV();
+        document.documentElement.requestFullscreen?.().catch(()=>{});
+    }
+
+    function renderMainTV() {
+        if(!broadcastTourId) return;
+        const tour = currentTours.find(t => t.id === broadcastTourId);
+        if(!tour) return;
+
+        // Header
+        document.getElementById('tv-tour-name').innerText = tour.name;
+        document.getElementById('tv-buyin').innerText = tour.buyin_fee ? formatMoney(tour.buyin_fee) + ' ₫' : '—';
+
+        // Prize pool
+        const pool = tour.fund.payout_pool || (tour.fund.total_paid * 0.85);
+        document.getElementById('tv-pool').innerText = formatMoney(pool) + ' ₫';
+
+        // Starting stack
+        document.getElementById('tv-start-stack').innerText = formatMoney(tour.starting_stack);
+
+        // Players
+        const alive = (tour.players || []).filter(p => p.status === 'alive').length;
+        document.getElementById('tv-alive').innerText = alive;
+        document.getElementById('tv-entries').innerText = tour.entries;
+
+        // Chips
+        const totalChips = tour.entries * tour.starting_stack;
+        document.getElementById('tv-total-chips').innerText = formatMoney(totalChips);
+        const avg = alive > 0 ? Math.floor(totalChips / alive) : 0;
+        document.getElementById('tv-avg').innerText = formatMoney(avg);
+
+        // Tables count
+        document.getElementById('tv-tables').innerText = (tour.tables || []).join(', ') || '—';
+
+        // Blind structure info
+        const levelTime = tour.settings?.level_time || tour.blinds_structure?.[0]?.duration_minutes || '—';
+        document.getElementById('tv-level-time').innerText = levelTime;
+        document.getElementById('tv-late-reg-lvl').innerText = tour.settings?.late_reg_level || '—';
+
+        // Current blind
+        const blind = tour.blinds_structure[tour.current_level_idx];
+        const isBreak = blind?.is_break;
+
+        document.getElementById('tv-level-name').innerText = isBreak ? 'BREAK TIME' : `LEVEL ${blind.level}`;
+
+        // Clock
+        const clockEl = document.getElementById('tv-clock');
+        clockEl.innerText = formatTime(tour.time_remaining);
+        const danger = tour.time_remaining <= 60 && !isBreak && tour.status === 'running';
+        if(danger) {
+            clockEl.style.color = '#ff2a4b';
+            clockEl.style.textShadow = '0 0 40px rgba(255,0,50,0.9)';
+            clockEl.classList.add('pulse-clock');
+        } else if(isBreak) {
+            clockEl.style.color = '#ff4c4c';
+            clockEl.style.textShadow = '0 0 30px rgba(255,76,76,0.6)';
+            clockEl.classList.remove('pulse-clock');
+        } else {
+            clockEl.style.color = '#ffffff';
+            clockEl.style.textShadow = '0 0 30px rgba(255,255,255,0.4)';
+            clockEl.classList.remove('pulse-clock');
         }
 
-        function renderMainTV() {
-            if(!broadcastTourId) return;
-            const tour = currentTours.find(t => t.id === broadcastTourId);
-            if(!tour) return; 
-
-            // Cập nhật Header
-            document.getElementById('tv-tour-name').innerText = tour.name;
-            const prizePool = tour.fund.payout_pool || (tour.fund.total_paid * 0.85);
-            document.getElementById('tv-pool').innerText = formatMoney(prizePool) + ' ₫';
-
-            const blind = tour.blinds_structure[tour.current_level_idx];
-            const isBreak = blind.is_break;
-
-            // Cập nhật Đồng hồ
-            document.getElementById('tv-level-name').innerText = isBreak ? 'BREAK TIME' : `LEVEL ${blind.level}`;
-            const clockEl = document.getElementById('tv-clock');
-            clockEl.innerText = formatTime(tour.time_remaining);
-            
-            // Logic đổi màu đỏ khi < 60s
-            if (tour.time_remaining <= 60 && !isBreak && tour.status === 'running') {
-                clockEl.classList.remove('text-white', 'drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]');
-                clockEl.classList.add('text-[#ff2a4b]', 'glow-red');
-            } else {
-                clockEl.classList.remove('text-[#ff2a4b]', 'glow-red');
-                clockEl.classList.add('text-white', 'drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]');
-            }
-
-            // Cập nhật Blinds Center
-            const blindsContainer = document.getElementById('tv-blinds-container');
-            if (isBreak) {
-                blindsContainer.classList.add('hidden');
-            } else {
-                blindsContainer.classList.remove('hidden');
-                document.getElementById('tv-blinds').innerText = `${formatMoney(blind.sb)} / ${formatMoney(blind.bb)}`;
-                document.getElementById('tv-ante').innerText = `BBA: ${formatMoney(blind.ante)}`;
-            }
-
-            // Cập nhật Footer (Thống kê)
-            const alivePlayers = tour.players.filter(p => p.status === 'alive').length;
-            document.getElementById('tv-alive').innerText = alivePlayers;
-            document.getElementById('tv-entries').innerText = tour.entries;
-
-            const totalChips = tour.entries * tour.starting_stack;
-            const avgStack = alivePlayers > 0 ? Math.floor(totalChips / alivePlayers) : 0;
-            document.getElementById('tv-avg').innerText = formatMoney(avgStack);
-
-            // Cập nhật Next Level
-            const nextBlind = tour.blinds_structure[tour.current_level_idx + 1];
-            if (nextBlind) {
-                document.getElementById('tv-next').innerText = nextBlind.is_break ? 'BREAK' : `${formatMoney(nextBlind.sb)} / ${formatMoney(nextBlind.bb)}`;
-            } else {
-                document.getElementById('tv-next').innerText = 'END';
-            }
+        // Blinds / Break
+        const blindBlock = document.getElementById('tv-blinds-block');
+        const breakBlock = document.getElementById('tv-break-block');
+        if(isBreak) {
+            blindBlock.classList.add('hidden');
+            breakBlock.classList.remove('hidden');
+            breakBlock.classList.add('flex');
+        } else {
+            blindBlock.classList.remove('hidden');
+            breakBlock.classList.add('hidden');
+            breakBlock.classList.remove('flex');
+            document.getElementById('tv-blinds').innerText = `${formatMoney(blind.sb)} / ${formatMoney(blind.bb)}`;
+            document.getElementById('tv-ante').innerText = `ANTE: ${formatMoney(blind.ante)}`;
         }
 
-        // Lắng nghe tín hiệu âm thanh cảnh báo chuyển Level
-        socket.on('level_changed', (data) => {
-            if (data.tour_id === broadcastTourId) {
-                console.log("[AUDIO ALERT] Triggered Level Change");
-                
-                // Play âm thanh cảnh báo
-                const audio = document.getElementById('alert-sound');
-                audio.currentTime = 0;
-                const playPromise = audio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => { console.log('Trình duyệt chặn autoplay âm thanh:', error); });
-                }
-
-                // Nhấp nháy viền đỏ màn hình (Flash Red Glow)
-                const body = document.getElementById('tv-body');
-                body.classList.remove('flash-red');
-                void body.offsetWidth; // Kích hoạt reflow để reset animation
-                body.classList.add('flash-red');
+        // Next level
+        const nextBlind = tour.blinds_structure[tour.current_level_idx + 1];
+        if(nextBlind) {
+            if(nextBlind.is_break) {
+                document.getElementById('tv-next-level').innerText = 'BREAK';
+                document.getElementById('tv-next-ante').innerText = '—';
+            } else {
+                document.getElementById('tv-next-level').innerText = `${formatMoney(nextBlind.sb)} / ${formatMoney(nextBlind.bb)}`;
+                document.getElementById('tv-next-ante').innerText = formatMoney(nextBlind.ante);
             }
-        });
-    </script>
+        } else {
+            document.getElementById('tv-next-level').innerText = 'FINAL LEVEL';
+            document.getElementById('tv-next-ante').innerText = '—';
+        }
+
+        // Late Registration badge
+        const lateBadge = document.getElementById('late-reg-badge');
+        const lateRegClosed = tour.settings?.late_reg_level && blind.level > tour.settings.late_reg_level;
+        if(!isBreak && !lateRegClosed && tour.status !== 'finished') {
+            lateBadge.classList.remove('hidden');
+        } else {
+            lateBadge.classList.add('hidden');
+        }
+    }
+
+    socket.on('level_changed', (data) => {
+        if(data.tour_id === broadcastTourId) {
+            const audio = document.getElementById('alert-sound');
+            audio.currentTime = 0;
+            audio.play().catch(()=>{});
+            const body = document.getElementById('tv-body');
+            body.classList.remove('flash-danger');
+            void body.offsetWidth;
+            body.classList.add('flash-danger');
+        }
+    });
+</script>
 </body>
 </html>

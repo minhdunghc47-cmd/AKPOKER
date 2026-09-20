@@ -8,42 +8,63 @@
         }
     </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ACEPOKER - Floor (Mafia Edition)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>ACEPOKER - Floor Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; color: #d1d5db; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Rajdhani', sans-serif; background-color: #0a0a0a; color: #d1d5db; -webkit-tap-highlight-color: transparent; }
         .font-mafia { font-family: 'Playfair Display', serif; }
+        .font-digital { font-family: 'Share Tech Mono', monospace; }
         .text-gold { color: #d4af37; }
-        
-        .seat { 
-            width: 70px; height: 70px; 
-            border-radius: 50%; 
-            background: #161616; 
-            border: 2px solid #333; 
-            position: absolute; 
+        .btn-gold { background: linear-gradient(to bottom, #e5c158, #d4af37); color: #000; font-weight: bold; border-radius: 8px; border: none; transition: 0.2s; cursor: pointer; }
+        .btn-gold:hover { filter: brightness(1.1); }
+
+        /* TOUR CARD on lobby */
+        .tour-card {
+            background: linear-gradient(135deg, #161616, #111);
+            border: 1px solid #333;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.25s;
+            user-select: none;
+        }
+        .tour-card:hover { border-color: #d4af37; box-shadow: 0 0 20px rgba(212,175,55,0.2); transform: translateY(-2px); }
+        .tour-card.running { border-color: #d4af37; box-shadow: 0 0 15px rgba(212,175,55,0.15); }
+
+        /* STATUS BADGE */
+        .badge-running { background: #d4af37; color: #000; }
+        .badge-paused { background: #374151; color: #9ca3af; }
+        .badge-finished { background: #800020; color: #fff; }
+
+        /* POKER TABLE */
+        .seat {
+            width: 68px; height: 68px;
+            border-radius: 50%;
+            background: #161616;
+            border: 2px solid #333;
+            position: absolute;
             transform: translate(-50%, -50%);
-            display: flex; flex-direction: column; align-items: center; justify-center; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.8);
             cursor: pointer;
             transition: all 0.2s;
+            overflow: visible;
         }
         .seat.occupied { border-color: #d4af37; background: #1a1a1a; }
-        .seat.empty { border-style: dashed; opacity: 0.5; }
-        .seat:hover { transform: translate(-50%, -50%) scale(1.1); z-index: 10; }
-        
-        /* Popup Menu Animation */
+        .seat.empty { border-style: dashed; opacity: 0.45; cursor: default; }
+        .seat:active { transform: translate(-50%, -50%) scale(0.92); }
+
         .action-menu {
-            position: absolute; top: 100%; left: 50%; transform: translateX(-50%) translateY(10px) scale(0.95);
-            opacity: 0; pointer-events: none; transition: all 0.2s; z-index: 50;
+            position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%) scale(0.9);
+            opacity: 0; pointer-events: none; transition: all 0.15s; z-index: 100;
+            min-width: 140px;
         }
         .action-menu.active {
-            opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(5px) scale(1);
+            opacity: 1; pointer-events: auto; transform: translateX(-50%) scale(1);
         }
 
-        /* Oval Table */
         .poker-table-bg {
             background: radial-gradient(ellipse at center, #1a4a28 0%, #0d2b15 100%);
             border: 6px solid #8c6222;
@@ -51,56 +72,83 @@
             border-radius: 120px;
         }
 
-        .btn-gold { background: linear-gradient(to bottom, #e5c158, #d4af37); color: #000; font-weight: bold; border-radius: 4px; border: 1px solid #b5952f; transition: 0.2s; }
-        .btn-gold:hover { background: linear-gradient(to bottom, #d4af37, #b5952f); }
-
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #111; }
         ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
+
+        @keyframes breathe {
+            0%,100% { box-shadow: 0 0 15px rgba(212,175,55,0.15); }
+            50% { box-shadow: 0 0 30px rgba(212,175,55,0.4); }
+        }
+        .tour-card.running { animation: breathe 2s infinite; }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
+
     <!-- HEADER -->
-    <header class="bg-[#111] border-b border-[#d4af37]/30 p-4 flex justify-between items-center shadow-lg shrink-0">
-        <h1 class="text-2xl font-mafia text-gold tracking-widest"><i class="fa-solid fa-tablet-screen-button mr-2"></i> FLOOR IPAD</h1>
-        <select id="tour-select" class="bg-[#1a1a1a] border border-[#d4af37]/50 text-white p-2 rounded text-sm font-bold uppercase tracking-widest focus:outline-none focus:border-[#d4af37]" onchange="renderTables()">
-            <option value="">-- Chọn Giải Đấu --</option>
-        </select>
+    <header class="bg-[#111] border-b border-[#d4af37]/30 px-5 py-3 flex justify-between items-center shadow-lg shrink-0">
+        <div class="flex items-center gap-3">
+            <button id="btn-back" class="hidden bg-[#1a1a1a] border border-[#333] text-gray-400 px-3 py-1.5 rounded text-sm font-bold uppercase tracking-widest hover:border-[#d4af37] hover:text-[#d4af37] transition" onclick="showLobby()">
+                <i class="fa-solid fa-arrow-left mr-1"></i> TOURS
+            </button>
+            <h1 class="font-mafia text-gold text-xl tracking-widest" id="header-title">
+                <i class="fa-solid fa-tablet-screen-button mr-2"></i> FLOOR MANAGER
+            </h1>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="text-xs text-gray-500 font-bold uppercase tracking-widest font-digital" id="header-clock">00:00:00</div>
+            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]"></div>
+        </div>
     </header>
 
-    <!-- MAIN CONTENT -->
-    <main class="flex-1 overflow-y-auto p-8 relative" id="main-content">
-        <div id="no-tour-msg" class="text-center text-gray-500 font-bold uppercase tracking-widest mt-20">Vui lòng chọn giải đấu để xem sơ đồ bàn.</div>
-        <div id="tables-container" class="grid grid-cols-1 xl:grid-cols-2 gap-16 pb-32 hidden"></div>
+    <!-- LOBBY: Tour List -->
+    <main id="view-lobby" class="flex-1 overflow-y-auto p-5">
+        <div class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-4">Chọn giải đấu để quản lý bàn</div>
+        <div id="tour-list" class="grid grid-cols-1 gap-4">
+            <div class="text-center text-gray-600 font-bold uppercase tracking-widest py-16">Đang tải dữ liệu...</div>
+        </div>
+    </main>
+
+    <!-- TABLE VIEW: Per tour -->
+    <main id="view-tables" class="hidden flex-1 overflow-y-auto">
+        <!-- Tour info bar -->
+        <div class="bg-[#111] border-b border-[#222] px-5 py-3 flex gap-6 items-center text-xs font-bold uppercase tracking-widest shrink-0">
+            <div class="text-gray-500">LEVEL: <span class="text-[#d4af37]" id="tbl-level">—</span></div>
+            <div class="text-gray-500">CLOCK: <span class="text-white font-digital" id="tbl-clock">—</span></div>
+            <div class="text-gray-500">PLAYERS: <span class="text-emerald-400" id="tbl-players">—</span></div>
+            <div class="text-gray-500">BLINDS: <span class="text-emerald-400" id="tbl-blinds">—</span></div>
+        </div>
+        <!-- Tables grid -->
+        <div id="tables-container" class="grid grid-cols-1 xl:grid-cols-2 gap-12 p-6 pb-24"></div>
     </main>
 
     <!-- MODAL GÁN DEALER -->
-    <div id="dealer-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-xl w-96 shadow-[0_0_30px_rgba(212,175,55,0.3)]">
-            <h3 class="text-xl font-mafia text-gold mb-4 uppercase text-center border-b border-[#333] pb-2">Gán Dealer Vào Bàn</h3>
-            <label class="block text-[10px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Chọn Dealer đang chờ:</label>
-            <select id="dealer-select" class="w-full bg-[#111] border border-[#333] p-3 rounded text-white mb-2 focus:border-[#d4af37] focus:outline-none text-sm font-bold">
-                <option value="">-- Chọn Dealer --</option>
+    <div id="dealer-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-[360px] shadow-[0_0_30px_rgba(212,175,55,0.3)]">
+            <h3 class="text-lg font-mafia text-gold mb-4 uppercase text-center border-b border-[#333] pb-3">Gán Dealer Vào Bàn</h3>
+            <label class="block text-[10px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Dealer đang chờ:</label>
+            <select id="dealer-select" class="w-full bg-[#111] border border-[#333] p-3 rounded-lg text-white mb-3 focus:border-[#d4af37] focus:outline-none text-sm font-bold">
+                <option value="">— Chọn Dealer —</option>
             </select>
-            <div class="text-[10px] text-gray-500 mb-4">Hoặc nhập tên thủ công:</div>
-            <input type="text" id="dealer-name" class="w-full bg-[#111] border border-[#333] p-3 rounded text-white mb-4 focus:border-[#d4af37] focus:outline-none text-sm" placeholder="Nhập tên Dealer...">
+            <div class="text-[10px] text-gray-500 mb-2 text-center">— hoặc nhập tay —</div>
+            <input type="text" id="dealer-name" class="w-full bg-[#111] border border-[#333] p-3 rounded-lg text-white mb-4 focus:border-[#d4af37] focus:outline-none text-sm" placeholder="Tên Dealer...">
             <div class="flex gap-3">
-                <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded font-bold uppercase hover:bg-[#222]" onclick="closeDealerModal()">Hủy</button>
-                <button class="flex-1 btn-gold py-3 rounded font-bold uppercase" onclick="confirmAssignDealer()">Xác Nhận</button>
+                <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded-lg font-bold uppercase hover:bg-[#222]" onclick="closeDealerModal()">Hủy</button>
+                <button class="flex-1 btn-gold py-3 rounded-lg font-bold uppercase" onclick="confirmAssignDealer()">Xác Nhận</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL CHUYỂN BÀN -->
-    <div id="move-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-xl w-96 shadow-[0_0_30px_rgba(212,175,55,0.3)]">
-            <h3 class="text-xl font-mafia text-gold mb-4 uppercase text-center border-b border-[#333] pb-2">Chuyển Bàn Khách Hàng</h3>
-            <div class="text-white text-center mb-4 font-bold" id="move-player-name"></div>
+    <div id="move-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-[360px] shadow-[0_0_30px_rgba(212,175,55,0.3)]">
+            <h3 class="text-lg font-mafia text-gold mb-4 uppercase text-center border-b border-[#333] pb-3">Chuyển Bàn</h3>
+            <div class="text-white text-center mb-4 font-bold text-sm" id="move-player-name"></div>
             <label class="block text-[10px] text-gray-400 font-bold uppercase mb-2">Chọn Bàn Đích:</label>
-            <select id="move-table-select" class="w-full bg-[#111] border border-[#333] p-3 rounded text-white mb-6 focus:border-[#d4af37] focus:outline-none"></select>
+            <select id="move-table-select" class="w-full bg-[#111] border border-[#333] p-3 rounded-lg text-white mb-5 focus:border-[#d4af37] focus:outline-none"></select>
             <div class="flex gap-3">
-                <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded font-bold uppercase hover:bg-[#222]" onclick="closeMoveModal()">Hủy</button>
-                <button class="flex-1 btn-gold py-3 rounded font-bold uppercase" onclick="confirmMoveTable()">Xác Nhận</button>
+                <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded-lg font-bold uppercase hover:bg-[#222]" onclick="closeMoveModal()">Hủy</button>
+                <button class="flex-1 btn-gold py-3 rounded-lg font-bold uppercase" onclick="confirmMoveTable()">Chuyển</button>
             </div>
         </div>
     </div>
@@ -110,176 +158,202 @@
         const socket = io('https://akpoker.onrender.com');
         let currentTours = [];
         let globalTables = [];
+        let currentStaff = [];
         let selectedTourId = null;
         let activeMenuSeatId = null;
-
         let pendingDealerTableId = null;
-        
         let pendingMovePhone = null;
-        let pendingMoveTourId = null;
 
-        // Tọa độ 9 ghế (X%, Y%)
         const seatPositions = [
-            { id: 1, x: 82, y: 20 },
-            { id: 2, x: 95, y: 50 },
-            { id: 3, x: 82, y: 80 },
-            { id: 4, x: 62, y: 95 },
-            { id: 5, x: 50, y: 100 },
-            { id: 6, x: 38, y: 95 },
-            { id: 7, x: 18, y: 80 },
-            { id: 8, x: 5, y: 50 },
-            { id: 9, x: 18, y: 20 }
+            { id: 1, x: 82, y: 18 }, { id: 2, x: 95, y: 50 }, { id: 3, x: 82, y: 82 },
+            { id: 4, x: 62, y: 96 }, { id: 5, x: 50, y: 100 }, { id: 6, x: 38, y: 96 },
+            { id: 7, x: 18, y: 82 }, { id: 8, x: 5, y: 50 },  { id: 9, x: 18, y: 18 }
         ];
+
+        function formatTime(sec) {
+            if(sec < 0) sec = 0;
+            const m = Math.floor(sec/60).toString().padStart(2,'0');
+            const s = (sec%60).toString().padStart(2,'0');
+            return `${m}:${s}`;
+        }
+        function formatMoney(n) { return new Intl.NumberFormat('vi-VN').format(n||0); }
+
+        // Real time clock
+        setInterval(() => {
+            const now = new Date();
+            const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+            document.getElementById('header-clock').innerText = t;
+        }, 1000);
+
+        socket.on('connect', () => socket.emit('request_initial_data'));
 
         socket.on('update_tours', (tours) => {
             currentTours = tours;
-            updateTourSelect();
-            if(selectedTourId) renderTables();
+            renderLobby();
+            if(selectedTourId) renderTableView();
         });
 
         socket.on('update_tables', (tables) => {
             globalTables = tables;
-            if(selectedTourId) renderTables();
+            if(selectedTourId) renderTableView();
         });
 
-        let currentStaff = [];
-        socket.on('update_staff_list', (staff) => {
-            currentStaff = staff || [];
-        });
+        socket.on('update_staff_list', (staff) => { currentStaff = staff || []; });
 
-        socket.on('connect', () => {
-            socket.emit('request_initial_data');
-        });
-
-        function updateTourSelect() {
-            const select = document.getElementById('tour-select');
-            const currentVal = select.value;
-            select.innerHTML = '<option value="">-- Chọn Giải Đấu --</option>';
-            currentTours.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.id;
-                opt.innerText = `${t.name} [${t.status}]`;
-                if(t.id === currentVal) opt.selected = true;
-                select.appendChild(opt);
-            });
-            selectedTourId = select.value;
-        }
-
-        document.getElementById('tour-select').addEventListener('change', (e) => {
-            selectedTourId = e.target.value;
-            if(selectedTourId) {
-                document.getElementById('no-tour-msg').classList.add('hidden');
-                document.getElementById('tables-container').classList.remove('hidden');
-                renderTables();
-            } else {
-                document.getElementById('no-tour-msg').classList.remove('hidden');
-                document.getElementById('tables-container').classList.add('hidden');
-            }
-        });
-
-        // Đóng menu khi click ra ngoài
         document.addEventListener('click', (e) => {
-            if(!e.target.closest('.seat')) {
-                closeAllMenus();
-            }
+            if(!e.target.closest('.seat')) closeAllMenus();
         });
 
-        function closeAllMenus() {
-            document.querySelectorAll('.action-menu').forEach(m => m.classList.remove('active'));
-            activeMenuSeatId = null;
-        }
-
-        function toggleMenu(e, seatId) {
-            e.stopPropagation(); // Prevent document click
-            const menu = document.getElementById(`menu-${seatId}`);
-            if(activeMenuSeatId === seatId) {
-                menu.classList.remove('active');
-                activeMenuSeatId = null;
-            } else {
-                closeAllMenus();
-                menu.classList.add('active');
-                activeMenuSeatId = seatId;
+        // =====================
+        // LOBBY
+        // =====================
+        function renderLobby() {
+            const list = document.getElementById('tour-list');
+            const active = currentTours.filter(t => t.status !== 'archived');
+            if(active.length === 0) {
+                list.innerHTML = '<div class="text-center text-gray-600 font-bold uppercase tracking-widest py-16">Chưa có giải đấu nào đang hoạt động</div>';
+                return;
             }
+            list.innerHTML = '';
+            active.forEach(t => {
+                const alive = (t.players || []).filter(p => p.status === 'alive').length;
+                const blind = t.blinds_structure?.[t.current_level_idx];
+                const isBreak = blind?.is_break;
+                const statusClass = t.status === 'running' ? 'badge-running' : t.status === 'finished' ? 'badge-finished' : 'badge-paused';
+                const statusText = { running: '▶ ĐANG CHẠY', paused: '⏸ TẠM DỪNG', finished: '✓ KẾT THÚC' }[t.status] || t.status;
+                
+                const card = document.createElement('div');
+                card.className = `tour-card p-5 ${t.status === 'running' ? 'running' : ''}`;
+                card.onclick = () => openTourTables(t.id);
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="font-mafia text-xl text-white tracking-wider">${t.name}</div>
+                            <div class="text-xs text-gray-500 mt-1 font-bold uppercase tracking-widest">
+                                Bàn ${(t.tables||[]).join(', ')} &nbsp;|&nbsp; Buy-in: ${t.buyin_fee ? formatMoney(t.buyin_fee) + '₫' : '—'}
+                            </div>
+                        </div>
+                        <span class="text-xs font-bold px-2 py-1 rounded uppercase tracking-widest ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-3 text-center">
+                        <div class="bg-[#0a0a0a] rounded-lg p-3 border border-[#222]">
+                            <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">Level</div>
+                            <div class="text-gold font-bold text-lg font-digital">${isBreak ? 'BRK' : (blind?.level || '—')}</div>
+                        </div>
+                        <div class="bg-[#0a0a0a] rounded-lg p-3 border border-[#222]">
+                            <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">Clock</div>
+                            <div class="text-white font-bold text-lg font-digital">${formatTime(t.time_remaining)}</div>
+                        </div>
+                        <div class="bg-[#0a0a0a] rounded-lg p-3 border border-[#222]">
+                            <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">Còn lại</div>
+                            <div class="text-emerald-400 font-bold text-lg">${alive}<span class="text-gray-600 text-sm">/${t.entries}</span></div>
+                        </div>
+                        <div class="bg-[#0a0a0a] rounded-lg p-3 border border-[#222]">
+                            <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">Blinds</div>
+                            <div class="text-white font-bold text-sm font-digital">
+                                ${isBreak ? '<span class="text-red-400">BREAK</span>' : (blind ? `${formatMoney(blind.sb)}/${formatMoney(blind.bb)}` : '—')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                        <span class="text-xs text-[#d4af37] font-bold uppercase tracking-widest">
+                            Quản lý bàn <i class="fa-solid fa-chevron-right ml-1"></i>
+                        </span>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
         }
 
-        function renderTables() {
+        function openTourTables(tourId) {
+            selectedTourId = tourId;
+            document.getElementById('view-lobby').classList.add('hidden');
+            document.getElementById('view-tables').classList.remove('hidden');
+            document.getElementById('btn-back').classList.remove('hidden');
+
+            const t = currentTours.find(x => x.id === tourId);
+            document.getElementById('header-title').innerHTML = `<i class="fa-solid fa-table mr-2 text-sm"></i><span class="font-mafia text-gold">${t?.name || 'Quản lý Bàn'}</span>`;
+            renderTableView();
+        }
+
+        function showLobby() {
+            selectedTourId = null;
+            document.getElementById('view-tables').classList.add('hidden');
+            document.getElementById('view-lobby').classList.remove('hidden');
+            document.getElementById('btn-back').classList.add('hidden');
+            document.getElementById('header-title').innerHTML = '<i class="fa-solid fa-tablet-screen-button mr-2"></i> FLOOR MANAGER';
+        }
+
+        // =====================
+        // TABLE VIEW
+        // =====================
+        function renderTableView() {
             if(!selectedTourId) return;
             const t = currentTours.find(x => x.id === selectedTourId);
             if(!t) return;
-            
+
+            // Update info bar
+            const blind = t.blinds_structure?.[t.current_level_idx];
+            const isBreak = blind?.is_break;
+            document.getElementById('tbl-level').innerText = isBreak ? 'BREAK' : `${blind?.level || '—'}`;
+            document.getElementById('tbl-clock').innerText = formatTime(t.time_remaining);
+            const alive = (t.players||[]).filter(p => p.status === 'alive').length;
+            document.getElementById('tbl-players').innerText = `${alive}/${t.entries}`;
+            document.getElementById('tbl-blinds').innerText = isBreak ? 'BREAK' : (blind ? `${formatMoney(blind.sb)}/${formatMoney(blind.bb)} BBA:${formatMoney(blind.ante)}` : '—');
+
             const container = document.getElementById('tables-container');
             container.innerHTML = '';
 
-            const tourTables = globalTables.filter(tbl => t.tables.includes(tbl.id));
-
+            const tourTables = globalTables.filter(tbl => (t.tables||[]).includes(tbl.id));
             tourTables.forEach(tbl => {
-                // Get players for this table
-                const tablePlayers = t.players.filter(p => p.table_id === tbl.id && p.status === 'alive');
-                
-                const tableWrapper = document.createElement('div');
-                tableWrapper.className = 'w-full max-w-[700px] h-[350px] mx-auto relative mt-10 mb-10';
+                const tablePlayers = (t.players||[]).filter(p => p.table_id === tbl.id && p.status === 'alive');
 
-                // Bàn Oval
-                let dealerHtml = '';
-                if(tbl.dealer_name) {
-                    dealerHtml = `
-                        <div class="text-[#d4af37] text-lg font-mafia tracking-widest bg-black/60 px-4 py-2 rounded-full border border-[#d4af37]/30 shadow-lg">
-                            <i class="fa-solid fa-hands-holding-circle mr-2"></i>${tbl.dealer_name}
-                        </div>
-                    `;
-                } else {
-                    dealerHtml = `
-                        <button class="bg-[#d4af37]/20 border border-[#d4af37] text-[#d4af37] px-4 py-2 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-[#d4af37]/40 transition animate-pulse shadow-[0_0_15px_rgba(212,175,55,0.4)]" onclick="openDealerModal(${tbl.id})">
-                            <i class="fa-solid fa-plus mr-1"></i> CHỌN DEALER
-                        </button>
-                    `;
-                }
+                const tableWrapper = document.createElement('div');
+                tableWrapper.className = 'w-full max-w-[680px] h-[340px] mx-auto relative mt-8 mb-8';
+
+                const dealerHtml = tbl.dealer_name
+                    ? `<div class="text-[#d4af37] text-sm font-mafia tracking-widest bg-black/60 px-3 py-1 rounded-full border border-[#d4af37]/30">
+                           <i class="fa-solid fa-hands-holding-circle mr-1"></i>${tbl.dealer_name}
+                       </div>`
+                    : `<button class="bg-[#d4af37]/20 border border-[#d4af37] text-[#d4af37] px-3 py-1 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-[#d4af37]/40 transition animate-pulse" onclick="openDealerModal(${tbl.id})">
+                           <i class="fa-solid fa-plus mr-1"></i>DEALER
+                       </button>`;
 
                 tableWrapper.innerHTML = `
-                    <div class="absolute inset-x-12 inset-y-8 poker-table-bg flex flex-col items-center justify-center text-center">
-                        <div class="absolute top-4 text-gray-400 font-bold tracking-widest text-sm opacity-50">BÀN ${tbl.id}</div>
-                        
-                        <!-- Dealer Area (Top Center inside table) -->
-                        <div class="absolute top-8">
-                            ${dealerHtml}
-                        </div>
-
-                        <!-- Center Info -->
-                        <div class="text-white/20 font-mafia text-5xl tracking-widest uppercase mt-4 pointer-events-none">MAFIA</div>
+                    <div class="absolute inset-x-10 inset-y-6 poker-table-bg flex flex-col items-center justify-center">
+                        <div class="absolute top-3 text-gray-500 font-bold tracking-widest text-xs opacity-50">BÀN ${tbl.id}</div>
+                        <div class="absolute top-7">${dealerHtml}</div>
+                        <div class="text-white/10 font-mafia text-5xl tracking-widest uppercase mt-4 pointer-events-none">ACE</div>
                     </div>
                 `;
 
-                // Render Seats
                 seatPositions.forEach((pos, index) => {
-                    const player = tablePlayers[index]; // Map player to seat index
-                    
+                    const player = tablePlayers[index];
                     const seatDiv = document.createElement('div');
                     seatDiv.className = `seat ${player ? 'occupied' : 'empty'}`;
-                    seatDiv.style.left = `${pos.x}%`;
-                    seatDiv.style.top = `${pos.y}%`;
-                    
+                    seatDiv.style.cssText = `left:${pos.x}%;top:${pos.y}%;`;
+
                     if(player) {
                         const uid = `seat_${tbl.id}_${index}`;
                         seatDiv.onclick = (e) => toggleMenu(e, uid);
                         seatDiv.innerHTML = `
-                            <div class="flex-1 flex flex-col items-center justify-center w-full h-full p-1">
-                                <div class="text-[9px] text-[#d4af37] font-bold truncate w-full text-center">${player.phone.slice(-4)}</div>
-                                <div class="text-[11px] text-white font-bold truncate w-full text-center mt-0.5">${player.name.split(' ').pop()}</div>
+                            <div class="flex flex-col items-center justify-center w-full h-full p-1">
+                                <div class="text-[9px] text-[#d4af37] font-bold truncate w-full text-center leading-tight">${player.phone?.slice(-4) || ''}</div>
+                                <div class="text-[11px] text-white font-bold truncate w-full text-center mt-0.5 leading-tight">${(player.name||'').split(' ').pop()}</div>
+                                <div class="text-[8px] text-gray-500 font-bold leading-tight">G${player.seat || (index+1)}</div>
                             </div>
-                            <!-- Popup Menu -->
-                            <div id="menu-${uid}" class="action-menu bg-[#1a1a1a] border border-[#d4af37]/50 rounded-lg p-2 shadow-2xl flex flex-col gap-1 w-36">
-                                <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-emerald-400 hover:bg-[#333] rounded" onclick="openMoveModal('${player.phone}', '${player.name}', ${tbl.id})">
-                                    <i class="fa-solid fa-rotate mr-2"></i> Chuyển Bàn
+                            <div id="menu-${uid}" class="action-menu bg-[#1a1a1a] border border-[#d4af37]/50 rounded-xl p-2 shadow-2xl flex flex-col gap-1 w-36">
+                                <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-emerald-400 hover:bg-[#333] rounded-lg" onclick="openMoveModal('${player.phone}','${(player.name||'').replace(/'/g,"\\'")}',${tbl.id})">
+                                    <i class="fa-solid fa-rotate mr-2"></i>Chuyển Bàn
                                 </button>
-                                <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-[#333] rounded" onclick="bustOut('${player.phone}')">
-                                    <i class="fa-solid fa-skull mr-2"></i> Bust Out
+                                <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-[#333] rounded-lg" onclick="bustOut('${player.phone}')">
+                                    <i class="fa-solid fa-skull mr-2"></i>Bust Out
                                 </button>
                             </div>
                         `;
                     } else {
-                        seatDiv.innerHTML = `<div class="text-gray-600 font-bold text-xs mt-6">${pos.id}</div>`;
+                        seatDiv.innerHTML = `<div class="text-gray-700 font-bold text-xs">${pos.id}</div>`;
                     }
-                    
                     tableWrapper.appendChild(seatDiv);
                 });
 
@@ -287,44 +361,47 @@
             });
         }
 
-        // DEALER LOGIC
+        function closeAllMenus() {
+            document.querySelectorAll('.action-menu').forEach(m => m.classList.remove('active'));
+            activeMenuSeatId = null;
+        }
+        function toggleMenu(e, uid) {
+            e.stopPropagation();
+            const menu = document.getElementById(`menu-${uid}`);
+            if(activeMenuSeatId === uid) { menu.classList.remove('active'); activeMenuSeatId = null; }
+            else { closeAllMenus(); menu.classList.add('active'); activeMenuSeatId = uid; }
+        }
+
+        // =====================
+        // DEALER MODAL
+        // =====================
         function openDealerModal(tableId) {
             pendingDealerTableId = tableId;
             document.getElementById('dealer-name').value = '';
-            
-            // Nạp danh sách Dealer đang chờ vào dropdown
             const select = document.getElementById('dealer-select');
-            select.innerHTML = '<option value="">-- Chọn Dealer --</option>';
-            const waitingDealers = currentStaff.filter(s => 
-                (s.role === 'Dealer' || s.role === 'dealer') && 
+            select.innerHTML = '<option value="">— Chọn Dealer —</option>';
+            const dealers = currentStaff.filter(s =>
+                (s.role === 'Dealer' || s.role === 'dealer') &&
                 (s.status === 'waiting' || s.status === 'online') &&
                 s.work_status === 'ACTIVE'
             );
-            if (waitingDealers.length === 0) {
-                select.innerHTML += '<option value="" disabled>— Không có Dealer nào đang chờ —</option>';
+            if(!dealers.length) {
+                select.innerHTML += '<option disabled>— Không có Dealer đang chờ —</option>';
             } else {
-                waitingDealers.forEach(d => {
-                    const opt = document.createElement('option');
-                    opt.value = d.name;
-                    opt.innerText = `${d.id} - ${d.name}`;
-                    select.appendChild(opt);
+                dealers.forEach(d => {
+                    const o = document.createElement('option');
+                    o.value = d.name; o.innerText = `${d.id} - ${d.name}`;
+                    select.appendChild(o);
                 });
             }
-            
             document.getElementById('dealer-modal').classList.remove('hidden');
             document.getElementById('dealer-modal').classList.add('flex');
         }
-
         function closeDealerModal() {
-            document.getElementById('dealer-modal').classList.add('hidden');
-            document.getElementById('dealer-modal').classList.remove('flex');
+            document.getElementById('dealer-modal').classList.replace('flex','hidden');
         }
-
         function confirmAssignDealer() {
-            // Ưu tiên chọn từ dropdown, nếu không thì dùng ô nhập thủ công
-            const selectedVal = document.getElementById('dealer-select').value;
-            const manualVal = document.getElementById('dealer-name').value.trim();
-            const name = selectedVal || manualVal;
+            const name = document.getElementById('dealer-select').value || document.getElementById('dealer-name').value.trim();
             if(name && pendingDealerTableId && selectedTourId) {
                 socket.emit('assign_dealer', { tour_id: selectedTourId, table_id: pendingDealerTableId, dealer_name: name });
                 closeDealerModal();
@@ -333,52 +410,44 @@
             }
         }
 
-        // MOVE TABLE LOGIC
+        // =====================
+        // MOVE TABLE MODAL
+        // =====================
         function openMoveModal(phone, name, currentTableId) {
             closeAllMenus();
             pendingMovePhone = phone;
-            pendingMoveTourId = selectedTourId;
-            
             document.getElementById('move-player-name').innerText = `${name} (${phone})`;
-            
             const select = document.getElementById('move-table-select');
             select.innerHTML = '';
-            
             const t = currentTours.find(x => x.id === selectedTourId);
             if(t) {
-                t.tables.forEach(tblId => {
-                    if(tblId !== currentTableId) {
-                        const opt = document.createElement('option');
-                        opt.value = tblId;
-                        opt.innerText = `Bàn số ${tblId}`;
-                        select.appendChild(opt);
+                (t.tables||[]).forEach(id => {
+                    if(id !== currentTableId) {
+                        const o = document.createElement('option');
+                        o.value = id; o.innerText = `Bàn số ${id}`;
+                        select.appendChild(o);
                     }
                 });
             }
-
             document.getElementById('move-modal').classList.remove('hidden');
             document.getElementById('move-modal').classList.add('flex');
         }
-
         function closeMoveModal() {
-            document.getElementById('move-modal').classList.add('hidden');
-            document.getElementById('move-modal').classList.remove('flex');
+            document.getElementById('move-modal').classList.replace('flex','hidden');
         }
-
         function confirmMoveTable() {
-            const newTableId = document.getElementById('move-table-select').value;
-            if(pendingMovePhone && pendingMoveTourId && newTableId) {
-                socket.emit('move_player_table', { 
-                    tour_id: pendingMoveTourId, 
-                    player_phone: pendingMovePhone, 
-                    new_table_id: newTableId 
-                });
+            const newId = document.getElementById('move-table-select').value;
+            if(pendingMovePhone && selectedTourId && newId) {
+                socket.emit('move_player_table', { tour_id: selectedTourId, player_phone: pendingMovePhone, new_table_id: newId });
                 closeMoveModal();
             }
         }
 
+        // =====================
+        // BUST OUT
+        // =====================
         function bustOut(phone) {
-            if(confirm('Xác nhận BUST OUT khách hàng này?')) {
+            if(confirm('Xác nhận BUST OUT khách này?')) {
                 socket.emit('bust_out', { tour_id: selectedTourId, player_phone: phone });
             }
         }
