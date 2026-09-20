@@ -371,40 +371,45 @@
                     const bustedName = tour.itm_results ? tour.itm_results[p.rank] : null;
                     const row = document.createElement('div');
                     
+                    const isTop1 = p.rank === 1;
+                    
+                    // Base styles
+                    const containerStyle = isTop1 
+                        ? 'flex items-center justify-between w-full gap-4 px-4 py-4 bg-gradient-to-r from-yellow-500/30 to-[#111] border border-yellow-500 rounded shadow-[0_0_30px_rgba(234,179,8,0.4)] my-2'
+                        : (bustedName 
+                            ? 'flex items-center justify-between w-full gap-4 px-4 py-3 bg-gradient-to-r from-[#d4af37]/20 to-[#111] border border-[#d4af37]/50 rounded shadow-[0_0_15px_rgba(212,175,55,0.2)]'
+                            : 'flex items-center justify-between w-full gap-4 px-4 py-3 bg-[#111] border border-[#333] rounded shadow-[0_0_15px_rgba(16,185,129,0.1)]');
+                    
+                    const rankStyle = isTop1
+                        ? 'w-20 shrink-0 flex justify-center items-center font-mafia text-3xl text-yellow-400 bg-black/50 rounded p-1 shadow-[inset_0_0_15px_rgba(212,175,55,0.4)]'
+                        : 'w-16 shrink-0 flex justify-center items-center font-mafia text-2xl text-white bg-black rounded p-1 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]';
+                        
+                    const rankContent = isTop1 ? '<i class="fa-solid fa-trophy mr-1 text-xl"></i>1' : '#' + p.rank;
+                    
+                    const nameStyle = isTop1
+                        ? 'flex-1 text-left truncate font-bold text-yellow-400 text-3xl uppercase tracking-widest drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]'
+                        : 'flex-1 text-left truncate font-bold text-white text-xl uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]';
+                        
+                    const amountStyle = isTop1
+                        ? 'whitespace-nowrap shrink-0 text-right font-teko text-[3.5rem] text-yellow-400 font-bold tracking-tight drop-shadow-[0_0_15px_rgba(212,175,55,0.8)] leading-none'
+                        : 'whitespace-nowrap shrink-0 text-right font-teko text-4xl text-emerald-400 font-bold tracking-tight leading-none';
+                        
+                    const amountSymbolStyle = isTop1 ? 'text-2xl' : 'text-xl';
+
+                    row.className = containerStyle;
+                    
+                    let nameHtml = '';
                     if (bustedName) {
-                        // Đã có người nhận giải -> Vinh danh rực rỡ
-                        row.className = 'flex justify-between items-center bg-gradient-to-r from-[#d4af37]/20 to-[#111] p-4 rounded border border-[#d4af37]/50 shadow-[0_0_15px_rgba(212,175,55,0.2)]';
-                        let rankHtml = `<div class="font-mafia text-2xl text-white w-16 text-center shadow-[inset_0_0_10px_rgba(0,0,0,0.5)] bg-black rounded p-1">#${p.rank}</div>`;
-                        let amountHtml = `<div class="font-teko text-4xl text-emerald-400 font-bold">${formatMoney(p.amount)} <span class="text-xl">₫</span></div>`;
-                        
-                        if(p.rank === 1) {
-                            row.className = 'flex justify-between items-center bg-gradient-to-r from-yellow-500/30 to-[#111] p-5 rounded border border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.4)] transform scale-105 my-2';
-                            rankHtml = `<div class="font-mafia text-3xl text-yellow-400 w-16 text-center shadow-[inset_0_0_15px_rgba(212,175,55,0.4)] bg-black/50 rounded p-1"><i class="fa-solid fa-trophy text-xl mb-1 block"></i>1</div>`;
-                            amountHtml = `<div class="font-teko text-[3.5rem] text-[#d4af37] font-bold drop-shadow-[0_0_15px_rgba(212,175,55,0.8)]">${formatMoney(p.amount)} <span class="text-2xl">₫</span></div>`;
-                        }
-                        
-                        row.innerHTML = `
-                            ${rankHtml}
-                            <div class="flex-1 text-center font-bold text-white text-[1.3rem] uppercase tracking-widest truncate px-4 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">${bustedName}</div>
-                            ${amountHtml}
-                        `;
+                        nameHtml = `<div class="${nameStyle}">${bustedName}</div>`;
                     } else {
-                        // Chưa có người nhận -> Rực rỡ
-                        row.className = 'flex justify-between items-center bg-[#111] p-4 rounded border border-[#333] shadow-[0_0_15px_rgba(16,185,129,0.1)]';
-                        let rankHtml = `<div class="font-mafia text-2xl text-gray-400 w-16 text-center shadow-[inset_0_0_10px_rgba(0,0,0,0.5)] bg-black rounded p-1">#${p.rank}</div>`;
-                        let amountHtml = `<div class="font-teko text-4xl text-emerald-400 font-bold">${formatMoney(p.amount)} <span class="text-xl">₫</span></div>`;
-                        
-                        if(p.rank === 1) {
-                            rankHtml = `<div class="font-mafia text-3xl text-yellow-400 w-16 text-center shadow-[inset_0_0_15px_rgba(212,175,55,0.4)] bg-black/50 rounded p-1"><i class="fa-solid fa-trophy text-xl mb-1 block"></i>1</div>`;
-                            amountHtml = `<div class="font-teko text-[3rem] text-[#d4af37] font-bold drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]">${formatMoney(p.amount)} <span class="text-2xl">₫</span></div>`;
-                        }
-                        
-                        row.innerHTML = `
-                            ${rankHtml}
-                            <div class="flex-1 text-center font-bold text-[#d4af37] text-lg uppercase tracking-widest truncate px-4 opacity-70 border-b border-dashed border-[#333] mx-4 self-end mb-2"></div>
-                            ${amountHtml}
-                        `;
+                        nameHtml = `<div class="flex-1 border-b-2 border-dashed border-[#333] opacity-70"></div>`;
                     }
+                    
+                    row.innerHTML = `
+                        <div class="${rankStyle}">${rankContent}</div>
+                        ${nameHtml}
+                        <div class="${amountStyle}">${formatMoney(p.amount)} <span class="${amountSymbolStyle}">₫</span></div>
+                    `;
                     
                     payoutListEl.appendChild(row);
                 });
