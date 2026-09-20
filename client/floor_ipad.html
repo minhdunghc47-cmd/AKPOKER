@@ -350,7 +350,7 @@
                 tableWrapper.className = 'w-full max-w-[680px] h-[340px] mx-auto relative mt-8 mb-8';
 
                 const dealerHtml = tbl.dealer_name
-                    ? `<div class="text-[#d4af37] text-sm font-mafia tracking-widest bg-black/60 px-3 py-1 rounded-full border border-[#d4af37]/30">
+                    ? `<div class="text-[#d4af37] text-sm font-mafia tracking-widest bg-black/60 px-3 py-1 rounded-full border border-[#d4af37]/30 cursor-pointer hover:bg-black/80 transition" onclick="openDealerModal(${tbl.id})">
                            <i class="fa-solid fa-hands-holding-circle mr-1"></i>${tbl.dealer_name}
                        </div>`
                     : `<button class="bg-[#d4af37]/20 border border-[#d4af37] text-[#d4af37] px-3 py-1 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-[#d4af37]/40 transition animate-pulse" onclick="openDealerModal(${tbl.id})">
