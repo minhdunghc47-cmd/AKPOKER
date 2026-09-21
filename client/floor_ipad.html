@@ -187,6 +187,9 @@
             </select>
             <div class="text-[10px] text-gray-500 mb-2 text-center">— hoặc nhập tay —</div>
             <input type="text" id="dealer-name" class="w-full bg-[#111] border border-[#333] p-3 rounded-lg text-white mb-4 focus:border-[#d4af37] focus:outline-none text-sm" placeholder="Tên Dealer...">
+            <div class="flex gap-2 mb-3">
+                <button class="flex-1 bg-red-900/40 text-red-400 border border-red-900 py-2 rounded-lg font-bold uppercase text-xs hover:bg-red-800" onclick="confirmUnassignDealer()">Rút Dealer (Unassign)</button>
+            </div>
             <div class="flex gap-3">
                 <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded-lg font-bold uppercase hover:bg-[#222]" onclick="closeDealerModal()">Hủy</button>
                 <button class="flex-1 btn-gold py-3 rounded-lg font-bold uppercase" onclick="confirmAssignDealer()">Xác Nhận</button>
@@ -238,6 +241,34 @@
             const now = new Date();
             const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
             document.getElementById('header-clock').innerText = t;
+
+            const nowMs = Date.now();
+            document.querySelectorAll('.dealer-timer').forEach(el => {
+                const startTime = parseInt(el.getAttribute('data-time'));
+                if (!startTime || isNaN(startTime)) {
+                    el.innerText = '0m';
+                    return;
+                }
+                const diffMs = nowMs - startTime;
+                const diffMins = Math.floor(diffMs / 60000);
+                
+                let text = '';
+                if (diffMins < 60) {
+                    text = diffMins + 'm';
+                } else {
+                    const h = Math.floor(diffMins / 60);
+                    const m = diffMins % 60;
+                    text = h + 'h' + m.toString().padStart(2, '0') + 'm';
+                }
+                el.innerText = text;
+                
+                if (diffMins >= 60) {
+                    el.className = 'dealer-timer text-[10px] mt-1 bg-red-900/80 text-red-300 font-bold px-3 py-0.5 rounded-full border border-red-500 animate-pulse tracking-widest';
+                } else {
+                    el.className = 'dealer-timer text-[9px] mt-1 bg-black/60 text-gray-400 px-2 py-0.5 rounded-full border border-[#333] tracking-widest';
+                }
+            });
+
         }, 1000);
 
         socket.on('connect', () => socket.emit('request_initial_data'));
@@ -403,7 +434,8 @@
                 const dealerHtml = tbl.dealer_name
                     ? `<div class="text-[#d4af37] text-sm font-mafia tracking-widest bg-black/60 px-3 py-1 rounded-full border border-[#d4af37]/30 cursor-pointer hover:bg-black/80 transition shadow-[0_0_10px_rgba(212,175,55,0.2)]" onclick="openDealerModal(${tbl.id})">
                            <i class="fa-solid fa-hands-holding-circle mr-1"></i>${tbl.dealer_name}
-                       </div>`
+                       </div>
+                       <div class="dealer-timer text-[9px] mt-1 bg-black/60 px-2 rounded-full border" data-time="${tbl.dealer_time}">0m</div>`
                     : `<button class="text-red-500 font-bold animate-pulse text-[11px] bg-black/60 px-3 py-1 rounded-full border border-red-500/50 cursor-pointer hover:bg-black/80 tracking-widest uppercase" onclick="openDealerModal(${tbl.id})">
                            ⚠️ THIẾU DEALER
                        </button>`;
@@ -568,6 +600,14 @@
         function closeDealerModal() { 
             document.getElementById('dealer-modal').classList.replace('flex','hidden');
          renderTableView(); }
+        
+        function confirmUnassignDealer() {
+            if (pendingDealerTableId && selectedTourId) {
+                socket.emit('unassign_dealer', { tour_id: selectedTourId, table_id: pendingDealerTableId });
+                closeDealerModal();
+            }
+        }
+
         function confirmAssignDealer() {
             const name = document.getElementById('dealer-select').value || document.getElementById('dealer-name').value.trim();
             if(name && pendingDealerTableId && selectedTourId) {
