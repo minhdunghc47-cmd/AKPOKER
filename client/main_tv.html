@@ -340,14 +340,14 @@
 
         // Dynamic Right Column (Late Reg vs Payouts)
         
-        const isLateRegClosed = (currentLvlNum > lateRegLvlNum);
+        const isLateRegClosed = (currentLvlNum >= lateRegLvlNum);
         
         // --- LATE REG COUNTDOWN LOGIC ---
         if (!isLateRegClosed) {
             let totalRemainingSec = tour.time_remaining || 0;
             for (let i = tour.current_level_idx + 1; i < tour.blinds_structure.length; i++) {
                 const b = tour.blinds_structure[i];
-                if (!b.is_break && b.level > lateRegLvlNum) {
+                if (!b.is_break && b.level >= lateRegLvlNum) {
                     break;
                 }
                 totalRemainingSec += (Number(b.duration) || 0) * 60;
