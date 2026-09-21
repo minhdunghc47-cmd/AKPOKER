@@ -142,6 +142,10 @@
                 <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Lương Cơ Bản (VNĐ/Giờ)</label>
                 <input type="number" id="hr-salary" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none" value="50000">
             </div>
+            <div>
+                <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1 mt-2">Thưởng chia bài (VNĐ/Giờ) - Tùy chọn</label>
+                <input type="number" id="hr-dealer-bonus" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none" value="30000">
+            </div>
             <div class="flex flex-col gap-2 mt-4">
                 <button id="btn-submit" onclick="submitStaff()" class="w-full bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold uppercase tracking-widest py-3 rounded transition-colors shadow-lg">
                     <i class="fa-solid fa-save mr-2"></i> LƯU HỒ SƠ
@@ -168,7 +172,9 @@
                         <th class="p-3">Chức Danh</th>
                         <th class="p-3">Trạng Thái</th>
                         <th class="p-3">Tổng Giờ</th>
-                        <th class="p-3 text-right">Lương Tạm Tính</th>
+                        <th class="p-3">Giờ Chia Bài</th>
+                        <th class="p-3 text-right">Tiền Thưởng</th>
+                        <th class="p-3 text-right">Tổng Lương</th>
                     </tr>
                 </thead>
                 <tbody id="staff-table" class="text-sm">
@@ -205,6 +211,26 @@
                     const hours = (s.total_minutes / 60).toFixed(2);
                     const salary = (s.total_minutes / 60) * s.base_salary;
                     
+                    
+                    const isDealer = s.role === 'Dealer' || s.role === 'TD' || s.role === 'Floor';
+                    const baseSalary = (s.total_minutes / 60) * s.base_salary;
+                    
+                    let dealingHours = 0;
+                    let dealingMins = 0;
+                    let dealingBonus = 0;
+                    
+                    if (s.total_dealing_ms) {
+                        const totalMins = Math.floor(s.total_dealing_ms / 60000);
+                        dealingHours = Math.floor(totalMins / 60);
+                        dealingMins = totalMins % 60;
+                        dealingBonus = (totalMins / 60) * (s.dealer_bonus || 30000);
+                    }
+                    
+                    const totalSalary = baseSalary + dealingBonus;
+                    
+                    const timeDealingStr = s.total_dealing_ms ? `${dealingHours}h ${dealingMins}m` : '-';
+                    const bonusStr = s.total_dealing_ms ? new Intl.NumberFormat('vi-VN', {style:'currency', currency:'VND'}).format(dealingBonus) : '-';
+
                     let statusColor = s.status === 'offline' ? 'text-gray-500' : 'text-[#2ecc71]';
                     if(s.status === 'waiting') statusColor = 'text-[#d4af37]';
                     let statusText = s.status;
@@ -220,13 +246,15 @@
                     }
                     
                     tbody.innerHTML += `
-                        <tr class="${rowClass}" onclick='editStaff(this.getAttribute("data-staff"))' data-staff='${JSON.stringify(s).replace(/'/g, "&apos;").replace(/"/g, "&quot;")}'>
+                        <tr class="${rowClass}" onclick='editStaff(this.getAttribute("data-staff"))' data-staff='${JSON.stringify(s).replace(/'/g, "&apos;").replace(/"/g, "&quot;")}' >
                             <td class="p-3 text-gray-400 font-bold">${s.id}</td>
                             <td class="p-3 ${textNameClass}">${s.name}</td>
                             <td class="p-3 text-[#d4af37]">${s.role}</td>
                             <td class="p-3 ${statusColor} uppercase font-bold text-xs">${statusText}</td>
-                            <td class="p-3">${hours}h</td>
-                            <td class="p-3 text-right text-green-400 font-bold">${new Intl.NumberFormat('vi-VN', {style:'currency', currency:'VND'}).format(salary)}</td>
+                            <td class="p-3 text-blue-400 font-bold">${hours}h</td>
+                            <td class="p-3 text-yellow-500">${timeDealingStr}</td>
+                            <td class="p-3 text-right text-yellow-500 font-bold">${bonusStr}</td>
+                            <td class="p-3 text-right text-green-400 font-bold text-lg">${new Intl.NumberFormat('vi-VN', {style:'currency', currency:'VND'}).format(totalSalary)}</td>
                         </tr>
                     `;
                 });
@@ -290,6 +318,7 @@
             document.getElementById('hr-pin').value = s.pin || '';
             document.getElementById('hr-role').value = s.role;
             document.getElementById('hr-salary').value = s.base_salary;
+            document.getElementById('hr-dealer-bonus').value = s.dealer_bonus || '30000';
             
             document.getElementById('hr-dob').value = s.dob || '';
             document.getElementById('hr-cccd').value = s.cccd || '';
@@ -336,6 +365,7 @@
             document.getElementById('hr-pin').value = '';
             document.getElementById('hr-role').value = 'Dealer';
             document.getElementById('hr-salary').value = '50000';
+            document.getElementById('hr-dealer-bonus').value = '30000';
             document.getElementById('hr-dob').value = '';
             document.getElementById('hr-cccd').value = '';
             document.getElementById('hr-cccd-date').value = '';
@@ -371,6 +401,7 @@
                 pin: document.getElementById('hr-pin').value,
                 role: document.getElementById('hr-role').value,
                 base_salary: document.getElementById('hr-salary').value,
+                dealer_bonus: document.getElementById('hr-dealer-bonus').value,
 
                 dob: document.getElementById('hr-dob').value,
                 cccd: document.getElementById('hr-cccd').value,

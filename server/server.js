@@ -258,7 +258,11 @@ io.on('connection', (socket) => {
         if (s.last_in) {
           const diffMins = Math.floor((now - s.last_in) / 60000);
           s.total_minutes += diffMins;
-        }
+    }
+    if (s.session_start) {
+      s.total_dealing_ms = (s.total_dealing_ms || 0) + (now - s.session_start);
+      s.session_start = null;
+    }
         s.status = 'offline';
         s.last_in = null;
         db.time_logs.push({ staff_id: s.id, name: s.name, type: 'OUT', time: now });
@@ -277,6 +281,8 @@ io.on('connection', (socket) => {
     
     s.status = 'waiting';
     s.last_in = Date.now();
+    s.total_dealing_ms = 0;
+    s.session_start = null;
     db.time_logs.push({ staff_id, name: s.name, type: 'IN', time: s.last_in });
     
     broadcastState();
@@ -295,6 +301,10 @@ io.on('connection', (socket) => {
     if (s.last_in) {
       const diffMins = Math.floor((now - s.last_in) / 60000);
       s.total_minutes += diffMins;
+    }
+    if (s.session_start) {
+      s.total_dealing_ms = (s.total_dealing_ms || 0) + (now - s.session_start);
+      s.session_start = null;
     }
     s.status = 'offline';
     s.last_in = null;
@@ -523,7 +533,13 @@ console.log('CREATE_TOUR DATA:', data);
         // Trả dealer về waiting
         if (tbl.dealer_name) {
             const staff = db.staff.find(s => s.name === tbl.dealer_name);
-            if (staff && staff.status === 'busy') staff.status = 'waiting';
+            if (staff && staff.status === 'busy') {
+                staff.status = 'waiting';
+                if (staff.session_start) {
+                    staff.total_dealing_ms = (staff.total_dealing_ms || 0) + (Date.now() - staff.session_start);
+                    staff.session_start = null;
+                }
+            }
             tbl.dealer_name = null;
             tbl.dealer_time = null;
         }
@@ -539,7 +555,13 @@ console.log('CREATE_TOUR DATA:', data);
       // Free old dealer
       if (table.dealer_name) {
           const oldStaff = db.staff.find(s => s.name === table.dealer_name);
-          if (oldStaff) oldStaff.status = 'waiting';
+          if (oldStaff) {
+              oldStaff.status = 'waiting';
+              if (oldStaff.session_start) {
+                  oldStaff.total_dealing_ms = (oldStaff.total_dealing_ms || 0) + (Date.now() - oldStaff.session_start);
+                  oldStaff.session_start = null;
+              }
+          }
       }
       
       table.dealer_name = payload.dealer_name;
@@ -547,7 +569,10 @@ console.log('CREATE_TOUR DATA:', data);
       
       // Mark new dealer as busy
       const newStaff = db.staff.find(s => s.name === payload.dealer_name);
-      if (newStaff) newStaff.status = 'busy';
+      if (newStaff) {
+          newStaff.status = 'busy';
+          newStaff.session_start = Date.now();
+      }
       
       const t = db.tournaments.find(t => t.id === payload.tour_id);
       if (t) t.dealer_assigned = true; 
@@ -667,7 +692,13 @@ console.log('CREATE_TOUR DATA:', data);
           const tbl = db.tables.find(x => x.id === tableId);
           if (tbl && tbl.dealer_name) {
              const staff = db.staff.find(s => s.name === tbl.dealer_name);
-             if (staff && staff.status === 'busy') staff.status = 'waiting';
+             if (staff && staff.status === 'busy') {
+                staff.status = 'waiting';
+                if (staff.session_start) {
+                    staff.total_dealing_ms = (staff.total_dealing_ms || 0) + (Date.now() - staff.session_start);
+                    staff.session_start = null;
+                }
+            }
              tbl.dealer_name = null;
              tbl.dealer_time = null;
           }
