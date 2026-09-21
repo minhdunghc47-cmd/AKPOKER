@@ -156,6 +156,7 @@
                 <div class="mt-4 border border-[#d4af37]/50 bg-[#d4af37]/10 text-[#d4af37] px-6 py-2 rounded-full font-bold uppercase tracking-widest text-sm">
                     ĐANG MỞ ĐĂNG KÝ
                 </div>
+                <div class="text-[clamp(1.5rem,2vw,2.5rem)] font-bold text-yellow-400 mt-4 animate-pulse drop-shadow-[0_0_10px_rgba(234,179,8,0.6)]" id="tv-late-reg-countdown"></div>
             </div>
 
             <!-- PAYOUT VIEW (After Late Reg closes) -->
@@ -338,7 +339,36 @@
         document.getElementById('tv-next-break').innerText = nextBreakStr;
 
         // Dynamic Right Column (Late Reg vs Payouts)
+        
         const isLateRegClosed = (currentLvlNum > lateRegLvlNum);
+        
+        // --- LATE REG COUNTDOWN LOGIC ---
+        if (!isLateRegClosed) {
+            let totalRemainingSec = tour.time_remaining || 0;
+            for (let i = tour.current_level_idx + 1; i < tour.blinds_structure.length; i++) {
+                const b = tour.blinds_structure[i];
+                if (!b.is_break && b.level > lateRegLvlNum) {
+                    break;
+                }
+                totalRemainingSec += (Number(b.duration) || 0) * 60;
+            }
+            
+            let hr = Math.floor(totalRemainingSec / 3600);
+            let min = Math.floor((totalRemainingSec % 3600) / 60);
+            let sec = totalRemainingSec % 60;
+            let formattedLateReg = '';
+            
+            if (hr > 0) {
+                formattedLateReg = hr.toString().padStart(2, '0') + ':' + min.toString().padStart(2, '0') + ':' + sec.toString().padStart(2, '0');
+            } else {
+                formattedLateReg = min.toString().padStart(2, '0') + ':' + sec.toString().padStart(2, '0');
+            }
+            
+            const countdownEl = document.getElementById('tv-late-reg-countdown');
+            if (countdownEl) countdownEl.innerText = 'ĐÓNG SAU: ' + formattedLateReg;
+        }
+        // --------------------------------
+
         const viewLateReg = document.getElementById('tv-late-reg-view');
         const viewPayout = document.getElementById('tv-payout-view');
 
