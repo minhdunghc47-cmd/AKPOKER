@@ -350,7 +350,7 @@
                 if (!b.is_break && b.level >= lateRegLvlNum) {
                     break;
                 }
-                totalRemainingSec += (Number(b.duration) || 0) * 60;
+                totalRemainingSec += (Number(b.duration_minutes) || 0) * 60;
             }
             
             let hr = Math.floor(totalRemainingSec / 3600);
