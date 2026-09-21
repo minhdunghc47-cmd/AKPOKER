@@ -431,11 +431,27 @@
                 const tableWrapper = document.createElement('div');
                 tableWrapper.className = 'w-full xl:w-[46vw] h-[400px] md:h-[480px] xl:h-[500px] mx-auto relative my-8 flex-1';
 
+                
+                let initialDealerTimer = '0m';
+                let dealerTimerClass = 'dealer-timer text-[9px] mt-1 bg-black/60 text-gray-400 px-2 py-0.5 rounded-full border border-[#333] tracking-widest';
+                if (tbl.dealer_time) {
+                    const diffMins = Math.floor((Date.now() - tbl.dealer_time) / 60000);
+                    if (diffMins < 60) {
+                        initialDealerTimer = diffMins + 'm';
+                    } else {
+                        const h = Math.floor(diffMins / 60);
+                        const m = diffMins % 60;
+                        initialDealerTimer = h + 'h' + m.toString().padStart(2, '0') + 'm';
+                        dealerTimerClass = 'dealer-timer text-[10px] mt-1 bg-red-900/80 text-red-300 font-bold px-3 py-0.5 rounded-full border border-red-500 animate-pulse tracking-widest';
+                    }
+                }
+
                 const dealerHtml = tbl.dealer_name
                     ? `<div class="text-[#d4af37] text-sm font-mafia tracking-widest bg-black/60 px-3 py-1 rounded-full border border-[#d4af37]/30 cursor-pointer hover:bg-black/80 transition shadow-[0_0_10px_rgba(212,175,55,0.2)]" onclick="openDealerModal(${tbl.id})">
                            <i class="fa-solid fa-hands-holding-circle mr-1"></i>${tbl.dealer_name}
                        </div>
-                       <div class="dealer-timer text-[9px] mt-1 bg-black/60 px-2 rounded-full border" data-time="${tbl.dealer_time}">0m</div>`
+                       <div class="${dealerTimerClass}" data-time="${tbl.dealer_time}">${initialDealerTimer}</div>`
+
                     : `<button class="text-red-500 font-bold animate-pulse text-[11px] bg-black/60 px-3 py-1 rounded-full border border-red-500/50 cursor-pointer hover:bg-black/80 tracking-widest uppercase" onclick="openDealerModal(${tbl.id})">
                            ⚠️ THIẾU DEALER
                        </button>`;
