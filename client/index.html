@@ -173,53 +173,83 @@
         </div>
     </div>
 
+    
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
-        const socket = io('https://akpoker.onrender.com');
-        const statusBox = document.getElementById('status-box');
-        const statusDot = document.getElementById('status-dot');
-        const statusText = document.getElementById('status-text');
+        // Cấu hình Firebase (Staging) sẽ được điền ở đây
+        const firebaseConfig = {
+            // apiKey: "...",
+            // authDomain: "...",
+            // projectId: "..."
+        };
+        // firebase.initializeApp(firebaseConfig);
 
-        socket.on('connect', () => {
-            statusBox.className = "absolute bottom-6 right-8 flex items-center space-x-3 bg-[#111] px-4 py-2 rounded-full border border-[#2ecc71]/40 shadow-lg z-20";
-            statusDot.className = "w-2.5 h-2.5 bg-[#2ecc71] rounded-full pulse-dot";
-            statusText.className = "text-[#2ecc71] font-bold text-[10px] tracking-widest uppercase";
-            statusText.innerText = "Connected (Trạm Mây)";
-        });
+        let socket = null;
 
-        socket.on('disconnect', () => {
-            statusBox.className = "absolute bottom-6 right-8 flex items-center space-x-3 bg-[#111] px-4 py-2 rounded-full border border-red-500/40 shadow-lg z-20";
-            statusDot.className = "w-2.5 h-2.5 bg-red-500 rounded-full";
-            statusText.className = "text-red-500 font-bold text-[10px] tracking-widest uppercase";
-            statusText.innerText = "Disconnected";
-        });
+        function connectSocket(token) {
+            socket = io('https://akpoker.onrender.com', {
+                auth: { token: token }
+            });
+            
+            // ... status UI handlers ...
+            socket.on('connect', () => {
+                document.getElementById('status-box').className = "absolute bottom-6 right-8 flex items-center space-x-3 bg-[#111] px-4 py-2 rounded-full border border-[#2ecc71]/40 shadow-lg z-20";
+                document.getElementById('status-dot').className = "w-2.5 h-2.5 bg-[#2ecc71] rounded-full pulse-dot";
+                document.getElementById('status-text').className = "text-[#2ecc71] font-bold text-[10px] tracking-widest uppercase";
+                document.getElementById('status-text').innerText = "Connected (Authenticated)";
+            });
+            
+            socket.on('connect_error', (err) => {
+                alert("Lỗi kết nối Socket: " + err.message);
+            });
+        }
 
-        // PIN LOGIC
+        // Tạm thời để trống socket lúc đầu, chỉ kết nối khi có token trong localStorage (nếu đã đăng nhập)
+        window.onload = () => {
+            const token = sessionStorage.getItem('acepoker_token');
+            if (token) connectSocket(token);
+        };
+        
+        // Modal Logic
         let targetLink = '';
-        let targetRole = '';
         const modal = document.getElementById('pin-modal');
-        const input = document.getElementById('pin-input');
+        const emailInput = document.getElementById('email-input');
+        const pwdInput = document.getElementById('password-input');
         const errorMsg = document.getElementById('pin-error');
 
         function openPinModal(link, role) {
             targetLink = link;
-            targetRole = role;
-            input.value = '';
+            emailInput.value = '';
+            pwdInput.value = '';
             errorMsg.classList.add('hidden');
             modal.classList.remove('hidden');
-            setTimeout(() => input.focus(), 100);
         }
 
         function closePinModal() {
             modal.classList.add('hidden');
         }
 
-        function verifyPin() {
-            const pin = input.value;
-            let isValid = false;
-            let assignedRole = '';
-
-            if (pin === '9999') { isValid = true; assignedRole = targetRole; }
+        async function verifyPin() {
+            const email = emailInput.value;
+            const pwd = pwdInput.value;
+            
+            try {
+                // Giả lập call Firebase Auth (Trong môi trường thực sẽ gọi firebase.auth().signInWithEmailAndPassword)
+                // const userCredential = await firebase.auth().signInWithEmailAndPassword(email, pwd);
+                // const token = await userCredential.user.getIdToken();
+                const token = "MOCK_TOKEN_FOR_STAGING_UI"; 
+                
+                sessionStorage.setItem('acepoker_token', token);
+                window.location.href = targetLink;
+            } catch(e) {
+                errorMsg.innerText = e.message || "Đăng nhập thất bại!";
+                errorMsg.classList.remove('hidden');
+            }
+        }
             else if (targetRole === 'cashier' && pin === '6666') { isValid = true; assignedRole = 'cashier'; }
             else if (targetRole === 'td' && pin === '8888') { isValid = true; assignedRole = 'td'; }
             else if (targetRole === 'floor' && pin === '1111') { isValid = true; assignedRole = 'floor'; }
@@ -235,12 +265,7 @@
             }
         }
 
-        // KEYBOARD & NUMPAD LOGIC
-        document.querySelectorAll('.numpad-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const key = btn.getAttribute('data-key');
-                handlePinInput(key);
-            });
+        
         });
 
         window.addEventListener('keydown', (e) => {

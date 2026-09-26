@@ -1,0 +1,24 @@
+# BẢNG PHÂN QUYỀN SOCKET.IO (DỰ KIẾN)
+## 1. Events Quản trị hệ thống & Tài chính
+- `update_god_mode` (Read): `god`
+- `add_staff`, `update_staff`, `resign_staff`: `god` (CẦN QUYẾT ĐỊNH: Cashier có được phép sửa nhân sự không?)
+- `save_template`: `god`, `td`
+
+## 2. Events Quản lý Thu ngân (Cashier)
+- `register_member`, `update_member`: `cashier`, `god`
+- `sell_ticket`: `cashier`, `god`
+- `update_members` (Read): `cashier`, `god`, `td`
+
+## 3. Events Quản lý Giải đấu (TD)
+- `create_tour`, `start_tour`, `pause_tour`, `next_level`, `prev_level`, `adjust_time`, `force_edit_stats`, `end_tour`, `reset_tour`: `td`, `god`
+
+## 4. Events Quản lý Bàn & Floor
+- `add_table_to_tour`, `remove_table_from_tour`, `assign_dealer`, `unassign_dealer`, `move_player_table`, `bust_out`: `floor`, `td`, `god`
+- `update_tables` (Read): `floor`, `td`, `god`, `cashier`
+
+## 5. Events Chấm công (Kiosk)
+- `clock_in`, `clock_out`: `kiosk` (Thiết bị dùng chung) hoặc `god`.
+- `update_staff_list` (Read): `kiosk` (Để chọn tên), `god`, `cashier`, `td`, `floor`. (Lưu ý: Sẽ gỡ bỏ trường PIN và CCCD khi gửi cho `kiosk`).
+
+## 6. Events Hiển thị Tivi
+- `update_tours` (Read): `tv`, `kiosk`, `floor`, `td`, `cashier`, `god`

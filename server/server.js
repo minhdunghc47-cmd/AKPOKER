@@ -113,15 +113,32 @@ function saveToFirebase(path, data) {
 function broadcastState(skipSave = false) {
   if (!isFirebaseLoaded) return;
   const activeTours = db.tournaments.filter(t => t.status !== 'archived');
+  
+  // Create a safe version of staff without PINs
+  const safeStaff = db.staff.map(s => {
+      const copy = { ...s };
+      delete copy.pin;
+      delete copy.cccd;
+      return copy;
+  });
+
+  // Basic broadcast for everyone (TV, Kiosk)
   io.emit('update_tours', activeTours);
-  io.emit('update_tables', db.tables);
-  io.emit('update_staff_list', db.staff);
-  io.emit('update_members', db.members);
-  io.emit('update_god_mode', {
+  
+  // Specific roles get full tables and members
+  io.to('role_god').to('role_td').to('role_floor').to('role_cashier').emit('update_tables', db.tables);
+  io.to('role_god').to('role_cashier').emit('update_members', db.members);
+  
+  // God mode gets EVERYTHING including finances and raw staff list
+  io.to('role_god').emit('update_god_mode', {
     financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 },
-    staff: db.staff,
+    staff: db.staff, 
     all_tours: db.tournaments
   });
+  
+  // Safe staff list to others
+  io.to('role_td').to('role_floor').to('role_cashier').to('role_kiosk').emit('update_staff_list', safeStaff);
+  io.to('role_god').emit('update_staff_list', db.staff); // God gets the real one
 
   if (!skipSave) {
     saveToFirebase('tournaments', db.tournaments);
@@ -168,7 +185,45 @@ setInterval(() => {
   }
 }, 1000);
 
+
+// ==================== AUTHENTICATION MIDDLEWARE ====================
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth.token;
+    if (!token) return next(new Error("Authentication error: Missing token"));
+    
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    
+    let role = decodedToken.role;
+    if (!role) {
+        const snap = await admin.database().ref('user_roles/' + decodedToken.uid).once('value');
+        role = snap.val() || 'viewer';
+    }
+
+    socket.user = { uid: decodedToken.uid, role: role };
+    socket.join('role_' + role);
+    next();
+  } catch (error) {
+    console.warn("[AUTH] Invalid connection attempt:", error.message);
+    next(new Error("Authentication error: Invalid or expired token"));
+  }
+});
+
+function requireRole(socket, allowedRoles, handler) {
+  return (...args) => {
+    if (!socket.user || !allowedRoles.includes(socket.user.role)) {
+      console.warn("[AUTH] Unauthorized access by " + (socket.user ? socket.user.uid : 'unknown') + " for restricted event.");
+      const cb = args[args.length - 1];
+      if (typeof cb === 'function') cb({ success: false, message: 'Lỗi Phân Quyền!' });
+      return;
+    }
+    handler(...args);
+  };
+}
+// ===================================================================
+
 io.on('connection', (socket) => {
+
   if(isFirebaseLoaded) {
     const activeTours = db.tournaments.filter(t => t.status !== 'archived');
     socket.emit('update_tours', activeTours);
@@ -180,7 +235,7 @@ io.on('connection', (socket) => {
     socket.emit('update_god_mode', { financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 }, staff: db.staff, all_tours: db.tournaments });
   }
 
-  socket.on('request_initial_data', () => {
+  socket.on('request_initial_data', requireRole(socket, ['god', 'td', 'floor', 'cashier', 'kiosk', 'tv'], () => {
     if(isFirebaseLoaded) {
       const activeTours = db.tournaments.filter(t => t.status !== 'archived');
       socket.emit('update_tours', activeTours);
@@ -191,9 +246,9 @@ io.on('connection', (socket) => {
       socket.emit('staff_data_updated', db.staff);
       socket.emit('update_god_mode', { financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 }, staff: db.staff, all_tours: db.tournaments });
     }
-  });
+  }));
 
-  socket.on('add_staff', (payload, callback) => {
+  socket.on('add_staff', requireRole(socket, ['god'], (payload, callback) => {
     const { id, name, pin, role, base_salary, dob, cccd, cccd_date, address, photo } = payload;
     if (db.staff.find(s => s.id === id)) {
       if (callback) callback({ success: false, message: 'Mã nhân viên đã tồn tại!' });
@@ -210,9 +265,9 @@ io.on('connection', (socket) => {
     });
     broadcastState();
     if (callback) callback({ success: true, message: 'Bổ nhiệm nhân sự thành công!' });
-  });
+  }));
 
-  socket.on('save_template', (templateData, callback) => {
+  socket.on('save_template', requireRole(socket, ['god', 'td'], (templateData, callback) => {
     // Generate an ID for the template
     const templateId = 'tpl_' + Date.now();
     const newTemplate = { id: templateId, ...templateData };
@@ -223,9 +278,9 @@ io.on('connection', (socket) => {
     io.emit('update_tour_templates', db.tour_templates); // Broadcast to all connected clients
     
     if (callback) callback({ success: true, message: 'Đã lưu mẫu giải đấu thành công!' });
-  });
+  }));
 
-  socket.on('update_staff', (payload, callback) => {
+  socket.on('update_staff', requireRole(socket, ['god'], (payload, callback) => {
     const { id, name, pin, role, base_salary, dob, cccd, cccd_date, address, photo } = payload;
     const staffIndex = db.staff.findIndex(s => s.id === id);
     if (staffIndex === -1) {
@@ -244,9 +299,9 @@ io.on('connection', (socket) => {
     
     broadcastState();
     if (callback) callback({ success: true, message: 'Cập nhật nhân sự thành công!' });
-  });
+  }));
 
-  socket.on('resign_staff', (staffId, callback) => {
+  socket.on('resign_staff', requireRole(socket, ['god'], (staffId, callback) => {
     const s = db.staff.find(s => s.id === staffId);
     if (!s) {
       if(callback) callback({ success: false, message: 'Không tìm thấy nhân sự!' });
@@ -269,14 +324,14 @@ io.on('connection', (socket) => {
     }
     broadcastState();
     if(callback) callback({ success: true, message: 'Đã cập nhật trạng thái Thôi Việc!' });
-  });
+  }));
 
-  socket.on('clock_in', (payload, callback) => {
+  socket.on('clock_in', requireRole(socket, ['god', 'kiosk'], (payload, callback) => {
     const { staff_id, pin } = payload;
     const s = db.staff.find(s => s.id === staff_id);
     if(s && s.work_status === 'RESIGNED') { if(callback) callback({success: false, message: 'Tài khoản đã bị khóa do thôi việc. Không thể chấm công!'}); return; }
     if (!s) { if(callback) callback({success: false, message: 'Không tìm thấy nhân sự!'}); return; }
-    if (s.pin !== pin && pin !== '9999') { if(callback) callback({success: false, message: 'Mã PIN sai!'}); return; }
+    if (s.pin !== pin) { if(callback) callback({success: false, message: 'Mã PIN sai!'}); return; }
     if (s.status !== 'offline') { if(callback) callback({success: false, message: 'Đã check-in rồi!'}); return; }
     
     s.status = 'waiting';
@@ -287,14 +342,14 @@ io.on('connection', (socket) => {
     
     broadcastState();
     if (callback) callback({ success: true, message: 'Check-IN thành công!' });
-  });
+  }));
 
-  socket.on('clock_out', (payload, callback) => {
+  socket.on('clock_out', requireRole(socket, ['god', 'kiosk'], (payload, callback) => {
     const { staff_id, pin } = payload;
     const s = db.staff.find(s => s.id === staff_id);
     if(s && s.work_status === 'RESIGNED') { if(callback) callback({success: false, message: 'Tài khoản đã bị khóa do thôi việc. Không thể chấm công!'}); return; }
     if (!s) { if(callback) callback({success: false, message: 'Không tìm thấy nhân sự!'}); return; }
-    if (s.pin !== pin && pin !== '9999') { if(callback) callback({success: false, message: 'Mã PIN sai!'}); return; }
+    if (s.pin !== pin) { if(callback) callback({success: false, message: 'Mã PIN sai!'}); return; }
     if (s.status === 'offline') { if(callback) callback({success: false, message: 'Đang offline!'}); return; }
     
     const now = Date.now();
@@ -312,9 +367,9 @@ io.on('connection', (socket) => {
     
     broadcastState();
     if (callback) callback({ success: true, message: 'Check-OUT thành công!' });
-  });
+  }));
 
-  socket.on('register_member', (payload, callback) => {
+  socket.on('register_member', requireRole(socket, ['god', 'cashier'], (payload, callback) => {
     const { phone, name, dob, address, bank_account, bank_name, avatar_base64 } = payload;
     if (db.members.find(m => m.phone === phone)) {
       if (callback) callback({ success: false, message: 'Số điện thoại đã tồn tại!' });
@@ -323,9 +378,9 @@ io.on('connection', (socket) => {
     db.members.push({ phone, name, dob, address, bank_account, bank_name, avatar_base64, play_history: [], total_tours: 0 });
     broadcastState();
     if (callback) callback({ success: true, message: 'Đăng ký Hội Viên thành công!' });
-  });
+  }));
 
-  socket.on('update_member', (payload, callback) => {
+  socket.on('update_member', requireRole(socket, ['god', 'cashier'], (payload, callback) => {
     const { phone, new_phone, name, dob, address, bank_account, bank_name, avatar_base64 } = payload;
     const member = db.members.find(m => m.phone === phone);
     if (!member) {
@@ -359,9 +414,9 @@ io.on('connection', (socket) => {
     
     broadcastState();
     if (callback) callback({ success: true, message: 'Cập nhật hồ sơ thành công!' });
-  });
+  }));
 
-  socket.on('create_tour', (data) => {
+  socket.on('create_tour', requireRole(socket, ['god', 'td'], (data) => {
     const { name, selectedTableIds, settings, starting_stack, buyin_fee, buy_in_fee } = data;
 console.log('CREATE_TOUR DATA:', data);
     const tablesToLock = db.tables.filter(t => selectedTableIds.includes(t.id));
@@ -385,23 +440,23 @@ console.log('CREATE_TOUR DATA:', data);
       db.tournaments.push(newTour);
       broadcastState();
     }
-  });
+  }));
 
-  socket.on('start_tour', (tourId) => {
+  socket.on('start_tour', requireRole(socket, ['god', 'td'], (tourId) => {
     const t = db.tournaments.find(t => t.id === tourId);
     if (t && t.entries >= 6 && t.dealer_assigned && t.status === 'paused') {
       t.status = 'running'; broadcastState();
     }
-  });
+  }));
 
-  socket.on('pause_tour', (tourId) => {
+  socket.on('pause_tour', requireRole(socket, ['god', 'td'], (tourId) => {
     const t = db.tournaments.find(t => t.id === tourId);
     if (t && t.status === 'running') {
       t.status = 'paused'; broadcastState();
     }
-  });
+  }));
 
-  socket.on('next_level', (tourId) => {
+  socket.on('next_level', requireRole(socket, ['god', 'td'], (tourId) => {
     const t = db.tournaments.find(t => t.id === tourId);
     if (t && t.current_level_idx < t.blinds_structure.length - 1) {
       t.current_level_idx++;
@@ -412,9 +467,9 @@ console.log('CREATE_TOUR DATA:', data);
       io.emit('level_changed', { tour_id: t.id, level: currentBlind.level });
       broadcastState();
     }
-  });
+  }));
 
-  socket.on('prev_level', (tourId) => {
+  socket.on('prev_level', requireRole(socket, ['god', 'td'], (tourId) => {
     const t = db.tournaments.find(t => t.id === tourId);
     if (t && t.current_level_idx > 0) {
       t.current_level_idx--;
@@ -425,9 +480,9 @@ console.log('CREATE_TOUR DATA:', data);
       io.emit('level_changed', { tour_id: t.id, level: currentBlind.level });
       broadcastState();
     }
-  });
+  }));
 
-  socket.on('sell_ticket', (payload, callback) => {
+  socket.on('sell_ticket', requireRole(socket, ['god', 'cashier'], (payload, callback) => {
     const { tour_id, member_phone, is_paid, buy_in_amount } = payload;
     const t = db.tournaments.find(t => t.id === tour_id);
     if (!t) return;
@@ -502,10 +557,10 @@ console.log('CREATE_TOUR DATA:', data);
 
     broadcastState();
     if(callback) callback({ success: true, assigned_table, assigned_seat, message: `In Vé Thành Công! Giá vé áp dụng: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)}` });
-  });
+  }));
 
   
-  socket.on('add_table_to_tour', (payload) => {
+  socket.on('add_table_to_tour', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
     const { tour_id, table_id } = payload;
     const t = db.tournaments.find(t => t.id === tour_id);
     const tbl = db.tables.find(x => x.id === table_id);
@@ -516,9 +571,9 @@ console.log('CREATE_TOUR DATA:', data);
             broadcastState();
         }
     }
-  });
+  }));
 
-  socket.on('remove_table_from_tour', (payload) => {
+  socket.on('remove_table_from_tour', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
     const { tour_id, table_id } = payload;
     const t = db.tournaments.find(t => t.id === tour_id);
     const tbl = db.tables.find(x => x.id === table_id);
@@ -547,10 +602,10 @@ console.log('CREATE_TOUR DATA:', data);
         broadcastState();
         io.emit('staff_data_updated', db.staff);
     }
-  });
+  }));
 
   
-  socket.on('unassign_dealer', (payload) => {
+  socket.on('unassign_dealer', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
     const table = db.tables.find(tbl => tbl.id === payload.table_id);
     if (table && table.dealer_name) {
       const oldStaff = db.staff.find(s => s.name === table.dealer_name);
@@ -574,9 +629,9 @@ console.log('CREATE_TOUR DATA:', data);
       broadcastState();
       io.emit('staff_data_updated', db.staff);
     }
-  });
+  }));
 
-  socket.on('assign_dealer', (payload) => {
+  socket.on('assign_dealer', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
     const table = db.tables.find(tbl => tbl.id === payload.table_id);
     if (table) {
       // Free old dealer
@@ -607,9 +662,9 @@ console.log('CREATE_TOUR DATA:', data);
       broadcastState();
       io.emit('staff_data_updated', db.staff); // update floor_ipad dropdowns
     }
-  });
+  }));
 
-  socket.on('move_player_table', (payload) => {
+  socket.on('move_player_table', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
     const { tour_id, player_phone, new_table_id } = payload;
     const t = db.tournaments.find(t => t.id === tour_id);
     if (t) {
@@ -629,9 +684,9 @@ console.log('CREATE_TOUR DATA:', data);
         broadcastState();
       }
     }
-  });
+  }));
 
-  socket.on('bust_out', (payload) => {
+  socket.on('bust_out', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
     const t = db.tournaments.find(t => t.id === payload.tour_id);
     if (t) {
       const p = t.players.find(p => (p.phone === payload.player_phone || p.name === payload.player_name) && p.status === 'alive');
@@ -655,19 +710,19 @@ console.log('CREATE_TOUR DATA:', data);
         broadcastState(); 
       }
     }
-  });
+  }));
 
   
-  socket.on('adjust_time', (tourId, seconds) => {
+  socket.on('adjust_time', requireRole(socket, ['god', 'td'], (tourId, seconds) => {
     const t = db.tournaments.find(t => t.id === tourId);
     if (t && (t.status === 'running' || t.status === 'paused')) {
         t.time_remaining += seconds;
         if(t.time_remaining < 0) t.time_remaining = 0;
         broadcastState();
     }
-  });
+  }));
 
-  socket.on('force_edit_stats', (payload) => {
+  socket.on('force_edit_stats', requireRole(socket, ['god', 'td'], (payload) => {
     const { tour_id, entries, alive } = payload;
     const t = db.tournaments.find(t => t.id === tour_id);
     if (t) {
@@ -705,9 +760,9 @@ console.log('CREATE_TOUR DATA:', data);
         
         broadcastState();
     }
-  });
+  }));
 
-  socket.on('end_tour', (tourId) => {
+  socket.on('end_tour', requireRole(socket, ['god', 'td'], (tourId) => {
     const t = db.tournaments.find(t => t.id === tourId);
     if (t && (t.status === 'running' || t.status === 'paused')) {
       t.status = 'finished';
@@ -736,16 +791,16 @@ console.log('CREATE_TOUR DATA:', data);
       broadcastState();
       io.emit('staff_data_updated', db.staff);
     }
-  });
+  }));
 
-  socket.on('reset_tour', (tourId) => {
+  socket.on('reset_tour', requireRole(socket, ['god', 'td'], (tourId) => {
     const t = db.tournaments.find(t => t.id === tourId);
     if (t && t.status === 'finished') {
       t.status = 'archived';
       db.tables.forEach(table => { if (table.tour_id === tourId) { table.is_locked = false; table.tour_id = null; } });
       broadcastState();
     }
-  });
+  }));
 });
 
 server.listen(process.env.PORT || 3000, () => console.log(`[API] Server is running`));
