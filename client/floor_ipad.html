@@ -461,6 +461,23 @@
             }
 
             const tourTables = globalTables.filter(tbl => (t.tables||[]).includes(tbl.id));
+            
+            // Check UI Lock
+            let overlayHtml = '';
+            const aliveTotal = (t.players||[]).filter(p => p.status === 'alive').length;
+            const minPlayers = (t.settings && t.settings.min_players) ? t.settings.min_players : 6;
+            if (t.status === 'running' && aliveTotal < minPlayers) {
+                overlayHtml = `
+                    <div class="absolute inset-0 bg-red-900/80 z-50 flex flex-col justify-center items-center rounded-xl border-4 border-red-500 backdrop-blur-sm pointer-events-none">
+                        <i class="fa-solid fa-lock text-5xl text-yellow-300 mb-2 drop-shadow-[0_0_15px_rgba(255,0,0,1)] animate-bounce"></i>
+                        <div class="text-white font-bold text-2xl text-center leading-tight drop-shadow-md tracking-widest font-mafia uppercase">
+                            CHƯA ĐỦ ${minPlayers} PLAYER<br>
+                            <span class="text-yellow-300 text-lg">HOLD DEALING</span>
+                        </div>
+                    </div>
+                `;
+            }
+
             tourTables.forEach(tbl => {
                 const tablePlayers = (t.players||[]).filter(p => p.table_id === tbl.id && p.status === 'alive');
 
@@ -493,6 +510,7 @@
                        </button>`;
 
                 tableWrapper.innerHTML = `
+                    ${overlayHtml}
                     <div class="absolute inset-x-10 inset-y-6 poker-table-bg flex flex-col items-center justify-center">
                         <div class="absolute top-3 w-full px-8 flex justify-center items-start pointer-events-none">
                             <div class="text-gray-500 font-bold tracking-widest text-xs opacity-50">BÀN ${tbl.id}</div>
