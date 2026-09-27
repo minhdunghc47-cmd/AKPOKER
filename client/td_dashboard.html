@@ -19,28 +19,28 @@
         .font-digital { font-family: 'Share Tech Mono', monospace; }
         .text-gold { color: #d4af37; }
         .bg-burgundy { background-color: #800020; }
-        
+
         .card-mafia { background: #1a1a1a; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 6px; box-shadow: 0 6px 12px rgba(0,0,0,0.8); }
         .input-mafia { background: #111; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 4px; width: 100%; focus:outline-none; focus:border-[#d4af37]; }
         .btn-gold { background: linear-gradient(to bottom, #e5c158, #d4af37); color: #000; font-weight: bold; border-radius: 4px; border: 1px solid #b5952f; text-shadow: 0 1px 1px rgba(255,255,255,0.4); transition: 0.2s; }
         .btn-gold:hover:not(:disabled) { background: linear-gradient(to bottom, #d4af37, #b5952f); }
-        
+
         .table-btn { aspect-ratio: 1; border: 1px solid #444; background: #222; color: #666; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .table-btn.selected { background: #d4af37; color: #000; border-color: #b5952f; box-shadow: inset 0 0 10px rgba(255,255,255,0.5); }
         .table-btn.locked { background: #0a0a0a; color: #333; text-decoration: line-through; cursor: not-allowed; border-color: #1a1a1a; }
-        
+
         .tv-card.running { box-shadow: 0 0 20px rgba(128, 0, 32, 0.8); border-color: #800020; }
         .glow-btn { box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); }
-        
+
         /* Hide arrows in number inputs for cleaner grid */
-        input[type="number"]::-webkit-outer-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
 
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #111; }
         ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
-    
+
         /* Tối ưu hóa UI/UX cho màn hình cảm ứng & di động */
         button, select, input {
             min-height: 48px !important;
@@ -62,16 +62,31 @@
             .h-screen { height: auto !important; min-height: 100vh; overflow-y: auto !important; }
             body { overflow-y: auto !important; }
             .glass-panel { padding: 15px !important; }
-            
+
             /* Dành cho các tour card/bàn */
             .grid-cols-2, .grid-cols-3, .xl\:grid-cols-2 { grid-template-columns: 1fr !important; }
-            
+
             /* Đảm bảo khoảng cách chạm trên mobile */
             .tour-card { margin-bottom: 24px; }
             .poker-table-bg { margin: 24px 0; }
         }
 
     </style>
+
+    <!-- FIREBASE AUTH SETUP -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "STAGING_API_KEY",
+            authDomain: "acepoker-staging.firebaseapp.com",
+            projectId: "acepoker-staging"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
+
 </head>
 <body class="flex h-screen overflow-hidden">
     <!-- LEFT PANEL: CREATE TOUR -->
@@ -79,7 +94,7 @@
         <h2 class="text-3xl font-mafia text-gold text-center tracking-wider border-b border-[#d4af37]/30 pb-4 drop-shadow-md">
             <i class="fa-solid fa-crown mr-2"></i>CASINO TD
         </h2>
-        
+
         <div>
             <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Mẫu Giải Đấu (Preset)</label>
             <select id="tour-preset" class="input-mafia text-sm font-semibold" onchange="onPresetChange()">
@@ -102,7 +117,14 @@
                 <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Mức Phí Buy-in (VNĐ)</label>
                 <input type="number" id="buy-in-fee" class="input-mafia text-sm font-bold text-emerald-400" value="5000000" step="100000">
             </div>
+            <div>
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Thời gian bắt đầu dự kiến</label>
+                <input type="datetime-local" id="scheduled-start" class="input-mafia text-sm font-bold text-gray-200 mb-4 w-full bg-[#111]">
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Số người tối thiểu để chia bài</label>
+                <input type="number" id="min-players" class="input-mafia text-sm font-bold text-yellow-400 w-full" value="6" min="2" max="10">
+            </div>
         </div>
+
 
         <div id="blinds-preview-container" class="flex flex-col gap-3 flex-1 mt-4">
             <button class="bg-[#1a1a1a] border border-[#d4af37] text-[#d4af37] py-4 rounded font-bold uppercase hover:bg-[#222] transition text-sm flex items-center justify-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.5)]" onclick="openBlindsModal()">
@@ -127,14 +149,14 @@
         <div class="grid grid-cols-1 xl:grid-cols-2 3xl:grid-cols-3 gap-8" id="tv-grid"></div>
     </div>
 
-    
+
     <!-- MODAL CẤU HÌNH BLINDS -->
     <div id="blinds-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
         <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-[95%] md:w-[80%] max-w-[900px] shadow-[0_0_40px_rgba(212,175,55,0.2)] flex flex-col h-[85vh]">
             <h3 class="text-2xl font-mafia text-gold mb-4 uppercase text-center border-b border-[#333] pb-3 drop-shadow-md">
                 <i class="fa-solid fa-sliders mr-2"></i>Cấu Hình Cấu Trúc Blinds
             </h3>
-            
+
             <div class="flex justify-end mb-4">
                 <div class="flex items-center gap-3 bg-red-900/40 px-4 py-2 rounded-lg border border-red-500 shadow-md">
                     <span class="text-sm font-bold text-white tracking-widest uppercase">LATE REG KẾT THÚC TẠI LEVEL:</span>
@@ -167,8 +189,29 @@
     </div>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
-        const socket = io('https://akpoker.onrender.com');
-        
+
+        const token = sessionStorage.getItem('acepoker_token');
+        if (!token) {
+            alert('Lỗi: Bạn chưa đăng nhập hoặc phiên đã hết hạn!');
+            window.location.href = './index.html';
+        }
+        const socket = io('https://akpoker.onrender.com', { auth: { token } });
+
+        socket.on('connect_error', (err) => {
+            if (err.message.includes('Authentication error')) {
+                alert('Xác thực thất bại! Đang chuyển hướng về trang chủ...');
+                sessionStorage.removeItem('acepoker_token');
+                window.location.href = './index.html';
+            }
+        });
+
+        socket.on('token_expired', () => {
+            alert('Phiên làm việc hết hạn. Hệ thống yêu cầu đăng nhập lại để làm mới phiên làm việc!');
+            sessionStorage.removeItem('acepoker_token');
+            window.location.href = './index.html';
+        });
+
+
         let currentTables = [], selectedTables = new Set(), currentTours = [];
         let currentBlindsData = []; // Stateful Editable Grid Data
         let customTemplates = [];
@@ -211,11 +254,11 @@
             const nameInput = prompt('Nhập tên mẫu giải đấu muốn lưu (VD: Giải Tốc Độ Cuối Tuần):');
             if (!nameInput) return;
             if (currentBlindsData.length === 0) return alert("Vui lòng vào 'CẤU HÌNH BLINDS CHI TIẾT' tạo cấu trúc trước khi lưu mẫu!");
-            
+
             const startStack = document.getElementById('starting-stack').value;
             const lateReg = document.getElementById('late-reg-input').value;
             const buyIn = document.getElementById('buy-in-fee').value;
-            
+
             socket.emit('save_template', {
                 name: nameInput,
                 starting_stack: Number(startStack),
@@ -273,7 +316,7 @@
         function renderEditableBlinds() {
             const tbody = document.getElementById('blinds-preview-body');
             tbody.innerHTML = '';
-            
+
             currentBlindsData.forEach((b, index) => {
                 const tr = document.createElement('tr');
                 if (b.is_break) {
@@ -292,7 +335,7 @@
                             <input type="text" class="w-8 bg-transparent text-[#d4af37] font-bold border-b border-[#d4af37]/50 focus:outline-none focus:border-white text-center" value="${b.level}" onchange="updateBlind(${index}, 'level', this.value)">
                         </td>
                         <td class="p-2 text-white flex gap-2 items-center justify-center">
-                            <input type="number" class="w-12 bg-transparent border-b border-gray-600 focus:outline-none focus:border-white text-right" value="${b.sb}" onchange="updateBlind(${index}, 'sb', this.value)"> / 
+                            <input type="number" class="w-12 bg-transparent border-b border-gray-600 focus:outline-none focus:border-white text-right" value="${b.sb}" onchange="updateBlind(${index}, 'sb', this.value)"> /
                             <input type="number" class="w-12 bg-transparent border-b border-gray-600 focus:outline-none focus:border-white text-left" value="${b.bb}" onchange="updateBlind(${index}, 'bb', this.value)">
                         </td>
                         <td class="p-2 text-emerald-400">
@@ -336,14 +379,14 @@
             setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
         }
 
-        
+
         function onPresetChange() {
             const val = document.getElementById('tour-preset').value;
             const lateInput = document.getElementById('late-reg-input');
             const nameInput = document.getElementById('tour-name');
             const stackInput = document.getElementById('starting-stack');
             const buyinInput = document.getElementById('buy-in-fee');
-            
+
             if (val) {
                 let data = TOURNAMENT_PRESETS[val] || customTemplates.find(t => t.id === val);
                 if (data) {
@@ -363,21 +406,21 @@
 
 
         // --- REGULAR TV GRID LOGIC ---
-        
+
         function forceEditStats(tourId, currentAlive, currentTotal) {
             const newTotal = prompt(`Nhập tổng số Entries thực tế (Hiện tại: ${currentTotal}):`, currentTotal);
             if (newTotal === null) return;
             const newAlive = prompt(`Nhập số Khách Alive thực tế (Hiện tại: ${currentAlive}):`, currentAlive);
             if (newAlive === null) return;
-            
+
             const nTotal = parseInt(newTotal);
             const nAlive = parseInt(newAlive);
-            
+
             if (isNaN(nTotal) || isNaN(nAlive) || nAlive > nTotal) {
                 alert("Thông số không hợp lệ! Alive không thể lớn hơn Total.");
                 return;
             }
-            
+
             if(confirm(`Xác nhận ghi đè? Alive: ${nAlive}, Total Entries: ${nTotal}`)) {
                 socket.emit('force_edit_stats', { tour_id: tourId, entries: nTotal, alive: nAlive });
             }
@@ -401,20 +444,24 @@
             const name = document.getElementById('tour-name').value.trim();
             const startStack = document.getElementById('starting-stack').value;
             const lateReg = Number(document.getElementById('late-reg-input').value) || 6;
-            
+
             if (!name) return alert("Vui lòng nhập tên giải đấu!");
             if (selectedTables.size === 0) return alert("Vui lòng chọn ít nhất 1 bàn để phát!");
             if (currentBlindsData.length === 0) return alert("Vui lòng cấu hình ít nhất 1 Level Blinds!");
 
-            socket.emit('create_tour', { 
-                name, 
+            const scheduledStart = document.getElementById('scheduled-start').value;
+            const minPlayers = document.getElementById('min-players').value;
+
+            socket.emit('create_tour', {
+                name,
                 selectedTableIds: Array.from(selectedTables),
-                settings: { level_time: null, late_reg_level: lateReg },
+                settings: { level_time: null, late_reg_level: lateReg, min_players: Number(minPlayers) },
                 starting_stack: Number(startStack),
+                scheduled_start: scheduledStart ? new Date(scheduledStart).getTime() : null,
                 buyin_fee: Number(document.getElementById('buy-in-fee').value),
                 blinds_structure: currentBlindsData
             });
-            
+
             document.getElementById('tour-preset').value = '';
             onPresetChange();
             selectedTables.clear();
@@ -426,7 +473,7 @@
             currentTours.forEach(tour => {
                 const card = document.createElement('div');
                 card.className = `card-mafia flex flex-col p-6 tv-card ${tour.status === 'running' ? 'running' : ''}`;
-                
+
                 const entriesOk = tour.entries >= 6;
                 const dealerOk = tour.dealer_assigned;
                 const canPlay = entriesOk && dealerOk && tour.status === 'paused';
@@ -439,7 +486,7 @@
                         <span class="bg-[#111] px-3 py-1 text-[11px] font-bold tracking-widest rounded border border-[#333] text-[#d4af37]">BÀN: ${tour.tables.join(',')}</span>
                     </div>
                 `;
-                
+
                 if (isFinished) {
                     html += `
                         <div class="text-center text-[#800020] text-4xl font-mafia font-bold my-8 tracking-widest" style="text-shadow: 0 0 15px rgba(128,0,32,0.8);">FINISHED</div>
@@ -450,7 +497,7 @@
                     const blind = tour.blinds_structure[tour.current_level_idx];
                     const isBreak = blind.is_break;
                     const blindText = isBreak ? `<span class="text-[#ff4c4c] animate-pulse"><i class="fa-solid fa-mug-hot"></i> BREAK TIME</span>` : `Level ${blind.level}: ${formatMoney(blind.sb).replace('₫','')} / ${formatMoney(blind.bb).replace('₫','')} BBA ${formatMoney(blind.ante).replace('₫','')}`;
-                    
+
                     const alivePlayers = tour.players.filter(p => p.status === 'alive').length;
                     const totalChips = tour.entries * tour.starting_stack;
                     const avgStack = alivePlayers > 0 ? Math.floor(totalChips / alivePlayers) : 0;
@@ -503,12 +550,12 @@
                             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent opacity-50"></div>
                             <div class="font-mafia text-2xl text-[#d4af37] font-bold uppercase tracking-widest drop-shadow-md">${blindText}</div>
                             <div class="text-[11px] text-gray-500 uppercase tracking-widest mt-1 mb-5 font-bold">NEXT: ${nextBlindText}</div>
-                            
+
                             <div class="flex items-center justify-center gap-5 mb-2">
                                 <button class="bg-[#1a1a1a] border border-[#444] text-gray-400 w-12 h-12 rounded-full font-bold hover:bg-[#333] hover:text-white transition shadow-md flex items-center justify-center text-sm" onclick="socket.emit('adjust_time', '${tour.id}', -60)" title="-1 Phút">-1M</button>
-                                
+
                                 <div class="font-digital text-7xl font-bold ${isBreak ? 'text-[#ff4c4c]' : 'text-emerald-400'} drop-shadow-[0_0_15px_currentColor] tracking-widest">${formatTime(tour.time_remaining)}</div>
-                                
+
                                 <div class="flex flex-col gap-2">
                                     <button class="bg-[#1a1a1a] border border-[#444] text-gray-400 w-12 h-8 rounded text-[10px] font-bold hover:bg-[#333] hover:text-white transition shadow-md" onclick="socket.emit('adjust_time', '${tour.id}', 60)">+1M</button>
                                     <button class="bg-[#1a1a1a] border border-[#444] text-gray-400 w-12 h-8 rounded text-[10px] font-bold hover:bg-[#333] hover:text-white transition shadow-md" onclick="socket.emit('adjust_time', '${tour.id}', 300)">+5M</button>
@@ -546,7 +593,7 @@
             tables.forEach(t => { if (t.is_locked && selectedTables.has(t.id)) selectedTables.delete(t.id); });
             renderTables();
         });
-        
+
         socket.on('update_tours', (tours) => { currentTours = tours; renderTours(); });
         socket.on('error_message', (msg) => alert("HỆ THỐNG: " + msg));
     </script>

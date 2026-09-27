@@ -26,9 +26,9 @@ io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth.token;
     if (!token) return next(new Error("Authentication error: Missing token"));
-    
+
     const decodedToken = await admin.auth().verifyIdToken(token);
-    
+
     let role = decodedToken.role;
     if (!role) {
         const snap = await admin.database().ref('user_roles/' + decodedToken.uid).once('value');
@@ -65,7 +65,7 @@ io.on('connection', (socket) => {
 
 httpServer.listen(() => {
   const port = httpServer.address().port;
-  
+
   const test1 = new Promise((resolve) => {
       const client = Client('http://localhost:' + port);
       client.on('connect_error', (err) => {
@@ -90,7 +90,7 @@ httpServer.listen(() => {
           console.log('Test 3 (Valid TD token): Connected');
           client.emit('create_tour', {}, (res) => {
               console.log('Test 3.1 (Valid Role TD -> create_tour):', res.success ? 'PASS' : 'FAIL');
-              
+
               client.emit('add_staff', {}, (res2) => {
                   console.log('Test 3.2 (Invalid Role TD -> add_staff):', res2.success === false ? 'PASS' : 'FAIL', res2.message);
                   client.disconnect();

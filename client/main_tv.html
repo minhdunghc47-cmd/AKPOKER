@@ -16,12 +16,12 @@
             font-family: 'Digital';
             src: url('https://fonts.cdnfonts.com/s/17260/DS-DIGI.woff') format('woff');
         }
-        
+
         body { background-color: #050b14; color: #ffffff; font-family: 'Oswald', sans-serif; overflow: hidden; }
         .font-mafia { font-family: 'Mafia', sans-serif; letter-spacing: 2px; }
         .font-digital { font-family: 'Digital', monospace; }
         .font-teko { font-family: 'Teko', sans-serif; }
-        
+
         .pulse-clock { animation: pulseDanger 1s infinite alternate; }
         @keyframes pulseDanger {
             from { text-shadow: 0 0 20px rgba(255,0,0,0.5); transform: scale(1); }
@@ -36,13 +36,28 @@
         }
 
         .gradient-text { background: linear-gradient(to bottom, #fff, #d4af37); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        
+
         /* Stats Box styling */
         .stat-box { border-bottom: 1px solid rgba(212,175,55,0.2); padding: 1.2rem 0; display: flex; justify-content: space-between; align-items: baseline; }
         .stat-box:last-child { border-bottom: none; }
         .stat-title { font-size: clamp(1rem, 1.2vw, 1.8rem); color: #8892b0; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
         .stat-val { font-size: clamp(1.8rem, 2.5vw, 3.5rem); font-family: 'Teko', sans-serif; font-weight: 600; color: #d4af37; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     </style>
+
+    <!-- FIREBASE AUTH SETUP -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "STAGING_API_KEY",
+            authDomain: "acepoker-staging.firebaseapp.com",
+            projectId: "acepoker-staging"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
+
 </head>
 <body class="flex flex-col h-screen w-screen selection:bg-none" id="tv-body">
 
@@ -59,7 +74,7 @@
 
 <!-- MAIN TV UI (3 COLUMNS) -->
 <div id="main-tv" class="hidden flex-col h-full w-full">
-    
+
     <!-- HEADER -->
     <div class="h-[12vh] bg-gradient-to-b from-[#0a1128] to-[#050b14] border-b border-[#d4af37]/30 flex justify-between items-center px-10 shadow-[0_5px_30px_rgba(0,0,0,0.8)] z-10 shrink-0">
         <div class="flex items-center gap-4 w-[25%]">
@@ -68,11 +83,11 @@
             </div>
             <div class="font-mafia text-4xl text-white tracking-widest leading-none">ACE<span class="text-[#d4af37]">POKER</span></div>
         </div>
-        
+
         <div class="flex-1 text-center">
             <h1 id="tv-tour-name" class="font-mafia text-5xl md:text-6xl text-white uppercase tracking-widest drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]">TOURNAMENT NAME</h1>
         </div>
-        
+
         <div class="w-[25%] flex justify-end items-center text-right text-[#d4af37] text-2xl font-teko">
             <span id="tv-realtime" class="tracking-widest">00:00:00</span>
         </div>
@@ -80,7 +95,7 @@
 
     <!-- 3 COLUMNS -->
     <div class="flex-1 flex overflow-hidden w-full">
-        
+
         <!-- LEFT COL: STATS -->
         <div class="w-[23%] bg-[#081020]/80 border-r border-[#d4af37]/20 flex flex-col p-8 justify-between z-0">
             <div>
@@ -117,11 +132,18 @@
 
         <!-- CENTER COL: CLOCK -->
         <div class="w-[45%] min-w-0 overflow-hidden bg-gradient-to-b from-[#0f172a] to-[#050b14] flex flex-col justify-center items-center relative shadow-[0_0_50px_rgba(0,0,0,0.5)] z-20 border-x-4 border-black">
-            
+
             <div class="absolute top-8 w-full text-center">
                 <div class="font-mafia text-[clamp(3rem,4vw,5rem)] tracking-widest text-[#d4af37] drop-shadow-[0_0_20px_rgba(212,175,55,0.4)]" id="tv-level-name">LEVEL 1</div>
             </div>
 
+            <!-- DEALING LOCK BANNER -->
+            <div id="tv-dealing-lock-banner" class="hidden absolute top-[15vh] w-full text-center z-50">
+                <div class="inline-block bg-red-600 text-yellow-300 font-mafia text-4xl px-12 py-3 rounded-full shadow-[0_0_50px_rgba(255,0,0,0.8)] border-4 border-yellow-300 animate-pulse tracking-widest whitespace-nowrap">
+                    <i class="fa-solid fa-triangle-exclamation mr-3 text-white"></i> 
+                    ĐỒNG HỒ ĐANG CHẠY - CHỜ ĐỦ <span id="tv-lock-min-players">6</span> NGƯỜI CHƠI ĐỂ BẮT ĐẦU CHIA BÀI
+                </div>
+            </div>
             <!-- CLOCK -->
             <div class="w-full flex justify-center items-center my-8 mt-24">
                 <div id="tv-clock" class="font-digital text-[clamp(6rem,15vw,16rem)] leading-none tracking-tighter whitespace-nowrap text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">00:00</div>
@@ -148,7 +170,7 @@
 
         <!-- RIGHT COL: DYNAMIC PRIZE/WATERMARK -->
         <div class="w-[32%] bg-[#081020]/80 border-l border-[#d4af37]/20 flex flex-col relative z-0">
-            
+
             <!-- WATERMARK VIEW (Before Late Reg closes) -->
             <div id="tv-late-reg-view" class="absolute inset-0 flex flex-col items-center justify-center opacity-60">
                 <i class="fa-solid fa-crown text-[12rem] text-[#d4af37] opacity-20 mb-10"></i>
@@ -165,7 +187,7 @@
                     <div class="text-gray-400 font-bold tracking-widest uppercase text-[clamp(1rem,1.2vw,1.5rem)] mb-2">PRIZE POOL</div>
                     <div class="font-teko text-[clamp(4rem,4.5vw,6rem)] text-gold text-[#d4af37] drop-shadow-[0_0_15px_rgba(212,175,55,0.4)] font-bold" id="tv-prize-pool">0 ₫</div>
                 </div>
-                
+
                 <div class="flex-1 overflow-hidden flex flex-col">
                     <div class="text-center text-gray-500 font-bold tracking-widest text-[clamp(0.8rem,1vw,1.2rem)] mb-4">PAYOUTS (TOP ITM)</div>
                     <div class="flex-1 overflow-y-auto space-y-3 pr-2" id="tv-payout-list">
@@ -181,16 +203,37 @@
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    const socket = io('https://akpoker.onrender.com');
+
+        const token = sessionStorage.getItem('acepoker_token');
+        if (!token) {
+            alert('Lỗi: Bạn chưa đăng nhập hoặc phiên đã hết hạn!');
+            window.location.href = './index.html';
+        }
+        const socket = io('https://akpoker.onrender.com', { auth: { token } });
+
+        socket.on('connect_error', (err) => {
+            if (err.message.includes('Authentication error')) {
+                alert('Xác thực thất bại! Đang chuyển hướng về trang chủ...');
+                sessionStorage.removeItem('acepoker_token');
+                window.location.href = './index.html';
+            }
+        });
+
+        socket.on('token_expired', () => {
+            alert('Phiên làm việc hết hạn. Hệ thống yêu cầu đăng nhập lại để làm mới phiên làm việc!');
+            sessionStorage.removeItem('acepoker_token');
+            window.location.href = './index.html';
+        });
+
     let currentTours = [];
     let broadcastTourId = null;
     let realtimeInterval = null;
 
-    function formatMoney(n) { 
+    function formatMoney(n) {
         if(!n) return '0';
-        return new Intl.NumberFormat('vi-VN').format(n); 
+        return new Intl.NumberFormat('vi-VN').format(n);
     }
-    
+
     function formatMoneyShort(n) {
         if(!n) return '0';
         if(n >= 1000000) return (n/1000000).toFixed(n%1000000 === 0 ? 0 : 1) + 'M';
@@ -254,7 +297,7 @@
     function renderMainTV() {
         if(!broadcastTourId) return;
         const tour = currentTours.find(t => t.id === broadcastTourId);
-        
+
         if(!tour || tour.status === 'archived') {
             document.getElementById('main-tv').classList.add('hidden');
             document.getElementById('main-tv').classList.remove('flex');
@@ -270,18 +313,18 @@
         // Left Col Stats
         const lateRegLvlNum = tour.settings?.late_reg_level || 8;
         document.getElementById('tv-late-reg').innerText = `Lvl ${lateRegLvlNum}`;
-        
+
         const alive = (tour.players || []).filter(p => p.status === 'alive').length;
         document.getElementById('tv-alive').innerText = alive;
         document.getElementById('tv-entries').innerText = tour.entries;
         document.getElementById('tv-start-stack').innerText = formatMoney(tour.starting_stack);
-        
+
         const totalChips = tour.entries * tour.starting_stack;
         document.getElementById('tv-total-chips').innerText = formatMoney(totalChips);
-        
+
         const avg = alive > 0 ? Math.floor(totalChips / alive) : 0;
         document.getElementById('tv-avg').innerText = formatMoney(avg);
-        
+
         document.getElementById('tv-tables').innerText = (tour.tables || []).join(', ') || '—';
 
         // Current blind
@@ -347,9 +390,9 @@
         document.getElementById('tv-next-break').innerText = nextBreakStr;
 
         // Dynamic Right Column (Late Reg vs Payouts)
-        
+
         const isLateRegClosed = (currentLvlNum >= lateRegLvlNum) || tour.status === 'finished';
-        
+
         // --- LATE REG COUNTDOWN LOGIC ---
         if (!isLateRegClosed) {
             let totalRemainingSec = tour.time_remaining || 0;
@@ -360,18 +403,18 @@
                 }
                 totalRemainingSec += (Number(b.duration_minutes) || 0) * 60;
             }
-            
+
             let hr = Math.floor(totalRemainingSec / 3600);
             let min = Math.floor((totalRemainingSec % 3600) / 60);
             let sec = totalRemainingSec % 60;
             let formattedLateReg = '';
-            
+
             if (hr > 0) {
                 formattedLateReg = hr.toString().padStart(2, '0') + ':' + min.toString().padStart(2, '0') + ':' + sec.toString().padStart(2, '0');
             } else {
                 formattedLateReg = min.toString().padStart(2, '0') + ':' + sec.toString().padStart(2, '0');
             }
-            
+
             const countdownEl = document.getElementById('tv-late-reg-countdown');
             if (countdownEl) countdownEl.innerText = 'ĐÓNG SAU: ' + formattedLateReg;
         }
@@ -391,7 +434,7 @@
             // If the system doesn't have explicit payouts yet, render a mock top 3 or generated list based on ITM
             const payoutListEl = document.getElementById('tv-payout-list');
             payoutListEl.innerHTML = '';
-            
+
             // Generate smart ITM payouts
             let payoutsToRender = [];
             const e = tour.entries || 0;
@@ -413,47 +456,47 @@
                 payoutsToRender.forEach(p => {
                     const bustedName = tour.itm_results ? tour.itm_results[p.rank] : null;
                     const row = document.createElement('div');
-                    
+
                     const isTop1 = p.rank === 1;
-                    
+
                     // Base styles
                     const containerStyle = isTop1
                         ? 'flex items-center w-full px-4 py-4 bg-gradient-to-r from-yellow-500/30 to-[#111] border border-yellow-500 rounded shadow-[0_0_30px_rgba(234,179,8,0.4)] my-2'
-                        : (bustedName 
+                        : (bustedName
                             ? 'flex items-center w-full px-4 py-3 bg-gradient-to-r from-[#d4af37]/20 to-[#111] border border-[#d4af37]/50 rounded shadow-[0_0_15px_rgba(212,175,55,0.2)]'
                             : 'flex items-center w-full px-4 py-3 bg-[#111] border border-[#333] rounded shadow-[0_0_15px_rgba(16,185,129,0.1)]');
-                    
+
                     const rankStyle = isTop1
                         ? 'w-16 shrink-0 text-center flex justify-center items-center font-mafia text-3xl text-yellow-400 bg-black/50 rounded p-1 shadow-[inset_0_0_15px_rgba(212,175,55,0.4)]'
                         : 'w-16 shrink-0 text-center flex justify-center items-center font-mafia text-2xl text-white bg-black rounded p-1 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]';
-                        
+
                     const rankContent = isTop1 ? '<i class="fa-solid fa-trophy mr-1 text-xl"></i>1' : '#' + p.rank;
-                    
+
                     const nameStyle = isTop1
                         ? 'flex-1 min-w-0 mx-4 text-left truncate px-2 font-bold text-yellow-400 text-lg md:text-xl uppercase tracking-tight drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]'
                         : 'flex-1 min-w-0 mx-4 text-left truncate px-2 font-bold text-white text-sm md:text-base uppercase tracking-tight drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]';
-                        
+
                     const amountStyle = isTop1
                         ? 'whitespace-nowrap shrink-0 text-right font-teko text-4xl text-yellow-400 font-bold tracking-tighter drop-shadow-[0_0_15px_rgba(212,175,55,0.8)] leading-none'
                         : 'whitespace-nowrap shrink-0 text-right font-teko text-2xl md:text-3xl text-emerald-400 font-bold tracking-tighter leading-none';
-                        
+
                     const amountSymbolStyle = isTop1 ? 'text-xl' : 'text-lg';
 
                     row.className = containerStyle;
-                    
+
                     let nameHtml = '';
                     if (bustedName) {
                         nameHtml = `<div class="${nameStyle}" style="flex: 1 1 0%; min-width: 0;">${bustedName}</div>`;
                     } else {
                         nameHtml = `<div class="mx-4 border-b-2 border-dashed border-[#333] opacity-70" style="flex: 1 1 0%; min-width: 0;"></div>`;
                     }
-                    
+
                     row.innerHTML = `
                         <div class="${rankStyle}" style="flex-shrink: 0;">${rankContent}</div>
                         ${nameHtml}
                         <div class="${amountStyle}" style="flex-shrink: 0;">${formatMoney(p.amount)} <span class="${amountSymbolStyle}">₫</span></div>
                     `;
-                    
+
                     payoutListEl.appendChild(row);
                 });
             } else {

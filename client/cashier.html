@@ -17,20 +17,20 @@
         body { font-family: 'Inter', sans-serif; background-color: #111; color: #d1d5db; }
         .font-mafia { font-family: 'Playfair Display', serif; }
         .text-gold { color: #d4af37; }
-        
+
         .card-mafia { background: #1a1a1a; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.8); border-left: 4px solid #d4af37; }
         .card-mafia.running { border-left-color: #800020; box-shadow: -4px 0 15px rgba(128, 0, 32, 0.6); }
-        
+
         .input-mafia { background: #111; border: 1px solid #444; color: #fff; padding: 14px; border-radius: 4px; width: 100%; focus:outline-none; focus:border-[#d4af37]; }
         .btn-gold { background: linear-gradient(to bottom, #e5c158, #d4af37); color: #000; font-weight: bold; border-radius: 4px; border: 1px solid #b5952f; transition: 0.2s; }
         .btn-gold:hover:not(:disabled) { background: linear-gradient(to bottom, #d4af37, #b5952f); }
         .btn-gold:disabled { background: #333; color: #777; border-color: #222; cursor: not-allowed; }
-        
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #111; }
-        
+
         ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
-        
+
         @media print {
             body * {
                 visibility: hidden;
@@ -52,9 +52,9 @@
             }
         }
 
-        
+
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; cursor: pointer; }
-    
+
         /* Tối ưu hóa UI/UX cho màn hình cảm ứng & di động */
         button, select, input {
             min-height: 48px !important;
@@ -76,26 +76,41 @@
             .h-screen { height: auto !important; min-height: 100vh; overflow-y: auto !important; }
             body { overflow-y: auto !important; }
             .glass-panel { padding: 15px !important; }
-            
+
             /* Dành cho các tour card/bàn */
             .grid-cols-2, .grid-cols-3, .xl\:grid-cols-2 { grid-template-columns: 1fr !important; }
-            
+
             /* Đảm bảo khoảng cách chạm trên mobile */
             .tour-card { margin-bottom: 24px; }
             .poker-table-bg { margin: 24px 0; }
         }
 
     </style>
+
+    <!-- FIREBASE AUTH SETUP -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "STAGING_API_KEY",
+            authDomain: "acepoker-staging.firebaseapp.com",
+            projectId: "acepoker-staging"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
+
 </head>
 <body class="flex h-screen overflow-hidden">
     <!-- LEFT PANEL -->
     <div class="flex-1 p-8 overflow-y-auto bg-[#0a0a0a] border-r border-[#d4af37]/30">
         <h2 class="text-2xl font-mafia text-gray-500 mb-8 tracking-widest uppercase border-b border-gray-800 pb-3"><i class="fa-solid fa-tv mr-2 text-[#800020]"></i> THEO DÕI GIẢI ĐẤU</h2>
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6" id="tv-grid"></div>
-        
+
         <div class="mt-12 flex flex-col items-center">
             <h2 class="text-lg font-mafia text-[#d4af37] mb-6 tracking-widest uppercase border-b border-gray-800 pb-2 w-full text-center"><i class="fa-solid fa-receipt mr-2"></i> XEM TRƯỚC HÓA ĐƠN</h2>
-            
+
             <div id="receipt-preview" class="bg-white text-black p-4 shadow-[0_0_20px_rgba(212,175,55,0.2)] border-2 border-dashed border-gray-300" style="width: 80mm; font-family: 'Courier New', Courier, monospace;">
                 <div style="text-align: center; margin-bottom: 10px;">
                     <h2 style="margin: 0; font-size: 18px; font-weight: bold;">ACEPOKER</h2>
@@ -114,13 +129,13 @@
                     Chúc quý khách may mắn!
                 </div>
             </div>
-            
+
             <button class="mt-6 bg-[#1a1a1a] border border-[#333] hover:bg-[#222] text-gray-300 font-bold px-6 py-3 rounded tracking-widest uppercase text-xs transition" onclick="window.print()">
                 <i class="fa-solid fa-print mr-2"></i> CHỈ IN LẠI VÉ
             </button>
         </div>
     </div>
-    
+
     <!-- RIGHT PANEL -->
     <div class="w-[480px] p-8 bg-[#161616] flex flex-col shadow-[-10px_0_20px_rgba(0,0,0,0.8)] z-10 overflow-y-auto">
         <div class="flex justify-between items-center w-full mb-8 border-b border-[#d4af37]/30 pb-5">
@@ -129,7 +144,7 @@
                 <i class="fa-solid fa-address-book mr-1"></i> KHO HỘI VIÊN
             </button>
         </div>
-        
+
         <div id="alert-box" class="hidden p-4 mb-6 rounded border font-bold text-sm text-center uppercase tracking-wider"></div>
 
         <div class="space-y-6">
@@ -137,7 +152,7 @@
                 <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Chọn Giải Đấu:</label>
                 <select id="tour-select" class="input-mafia text-sm" onchange="filterMembers()"><option value="">-- Vui lòng chọn giải --</option></select>
             </div>
-            
+
             <div class="relative">
                 <div class="flex justify-between items-end mb-2">
                     <label class="block text-[11px] font-bold text-[#d4af37] uppercase tracking-widest">SĐT Hoặc Tên Hội Viên:</label>
@@ -170,7 +185,7 @@
         <div class="bg-[#111] border border-[#d4af37]/50 rounded-xl p-8 w-full max-w-4xl shadow-[0_0_50px_rgba(212,175,55,0.3)] flex flex-col max-h-[90vh]">
             <h3 class="font-mafia text-3xl text-[#ff4c4c] mb-2 text-center uppercase tracking-widest"><i class="fa-solid fa-triangle-exclamation mr-2"></i> KÍCH HOẠT HỒ SƠ HỘI VIÊN</h3>
             <p class="text-gray-400 text-xs text-center mb-8 uppercase tracking-widest border-b border-[#333] pb-4">Yêu cầu KYC bằng khuôn mặt để xuất vé</p>
-            
+
             <div class="flex gap-8 overflow-y-auto pr-2 pb-2">
                 <!-- Cột thông tin -->
                 <div class="flex-1 space-y-5">
@@ -221,7 +236,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="flex gap-4 mt-8 pt-6 border-t border-[#333]">
                 <button class="flex-1 bg-[#1a1a1a] border border-[#333] text-gray-400 py-4 rounded font-bold uppercase tracking-widest text-xs hover:bg-[#222]" onclick="closeRegisterModal()">Hủy Bỏ</button>
                 <button id="btn-submit-register" class="flex-[2] btn-gold py-4 rounded font-bold uppercase tracking-widest text-xs shadow-lg" onclick="registerAndSubmit()"><i class="fa-solid fa-bolt mr-2"></i> Ký Duyệt & Xuất Vé</button>
@@ -241,7 +256,7 @@
                 </div>
                 <button class="text-gray-500 hover:text-white transition" onclick="document.getElementById('members-modal').classList.replace('flex','hidden')"><i class="fa-solid fa-xmark text-3xl"></i></button>
             </div>
-            
+
             <div class="flex-1 overflow-y-auto pr-2">
                 <table class="w-full text-left text-xs text-gray-300">
                     <thead class="bg-[#1f1f1f] sticky top-0 text-[#d4af37] border-b border-[#333] z-10">
@@ -264,11 +279,11 @@
                 <h3 class="font-mafia text-2xl text-gold uppercase tracking-widest"><i class="fa-solid fa-id-card-clip mr-2"></i> HỒ SƠ HỘI VIÊN VIP</h3>
                 <button class="text-gray-500 hover:text-white transition" onclick="document.getElementById('profile-modal').classList.replace('flex','hidden')"><i class="fa-solid fa-xmark text-3xl"></i></button>
             </div>
-            
+
             <div class="flex flex-1 overflow-hidden">
                 <!-- Trái: Info -->
                 <div class="w-[380px] bg-[#0a0a0a] border-r border-[#333] p-8 flex flex-col items-center overflow-y-auto relative">
-                    
+
                     <!-- Edit Actions -->
                     <div id="profile-btn-group" class="absolute top-5 right-5 z-10">
                         <button class="bg-[#1f1f1f] border border-[#d4af37]/50 text-[#d4af37] px-3 py-1.5 rounded font-bold uppercase tracking-widest text-[10px] hover:bg-[#d4af37]/20 transition shadow-md" onclick="toggleEditProfile(true)">
@@ -285,7 +300,7 @@
                         <img id="profile-avatar" src="https://via.placeholder.com/150/1a1a1a/d4af37?text=NO+IMAGE" class="w-full h-full object-cover">
                         <video id="profile-video" autoplay playsinline class="w-full h-full object-cover hidden scale-x-[-1]"></video>
                     </div>
-                    
+
                     <!-- Camera Capture for Edit Mode -->
                     <button id="btn-recapture" class="hidden mb-6 bg-[#1a1a1a] border border-[#333] text-gray-300 px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:bg-[#222] transition shadow-md" onclick="startProfileCamera()">
                         <i class="fa-solid fa-camera text-[#d4af37] mr-1"></i> CHỤP LẠI ẢNH
@@ -297,7 +312,7 @@
                         <div class="text-3xl font-mafia text-white mb-2 tracking-wider text-center drop-shadow" id="profile-name"></div>
                         <div class="text-emerald-400 font-mono text-sm font-bold mb-1 tracking-widest" id="profile-phone"></div>
                         <div class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-6">DOB: <span id="profile-dob" class="text-gray-200"></span></div>
-                        
+
                         <div class="w-full space-y-4 text-[11px]">
                             <div class="bg-[#161616] p-4 rounded border border-[#222]">
                                 <div class="text-gray-500 font-bold uppercase tracking-widest mb-2"><i class="fa-solid fa-map-location-dot mr-1 text-[#d4af37]"></i> Địa Chỉ</div>
@@ -335,13 +350,13 @@
                         <div class="border-t border-[#333] pt-4 mt-2">
                             <label class="block text-[10px] font-bold text-[#d4af37] mb-1 uppercase tracking-widest">Tên Ngân Hàng</label>
                             <input type="text" id="edit-bank-name" class="w-full bg-[#161616] border border-[#333] text-gray-300 p-2.5 rounded text-sm focus:outline-none focus:border-[#d4af37] shadow-inner mb-4">
-                            
+
                             <label class="block text-[10px] font-bold text-[#d4af37] mb-1 uppercase tracking-widest">Số Tài Khoản</label>
                             <input type="text" id="edit-bank-account" class="w-full bg-[#161616] border border-[#333] text-blue-400 font-mono font-bold p-2.5 rounded text-sm focus:outline-none focus:border-[#d4af37] shadow-inner">
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Phải: History -->
                 <div class="flex-1 p-8 flex flex-col bg-[#111]">
                     <div class="text-[#d4af37] font-bold uppercase tracking-widest mb-6 flex items-center text-sm border-b border-[#333] pb-3">
@@ -367,7 +382,28 @@
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
-        const socket = io('https://akpoker.onrender.com');
+
+        const token = sessionStorage.getItem('acepoker_token');
+        if (!token) {
+            alert('Lỗi: Bạn chưa đăng nhập hoặc phiên đã hết hạn!');
+            window.location.href = './index.html';
+        }
+        const socket = io('https://akpoker.onrender.com', { auth: { token } });
+
+        socket.on('connect_error', (err) => {
+            if (err.message.includes('Authentication error')) {
+                alert('Xác thực thất bại! Đang chuyển hướng về trang chủ...');
+                sessionStorage.removeItem('acepoker_token');
+                window.location.href = './index.html';
+            }
+        });
+
+        socket.on('token_expired', () => {
+            alert('Phiên làm việc hết hạn. Hệ thống yêu cầu đăng nhập lại để làm mới phiên làm việc!');
+            sessionStorage.removeItem('acepoker_token');
+            window.location.href = './index.html';
+        });
+
         let currentTours = [];
         let currentMembers = [];
         const alertBox = document.getElementById('alert-box');
@@ -375,7 +411,7 @@
         // WEBCAM KY LOGIC
         let stream = null;
         let avatarBase64 = null;
-        
+
         async function startCamera() {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
@@ -403,32 +439,32 @@
         function captureKYC() {
             const video = document.getElementById('kyc-video');
             if(!stream || video.classList.contains('hidden')) return alert("Vui lòng Bật Mâm (Camera) trước khi chụp!");
-            
+
             const size = 150;
             const canvas = document.createElement('canvas');
             canvas.width = size;
             canvas.height = size;
             const ctx = canvas.getContext('2d');
-            
+
             // Calculate crop to make it square
             const minDim = Math.min(video.videoWidth, video.videoHeight);
             const sx = (video.videoWidth - minDim) / 2;
             const sy = (video.videoHeight - minDim) / 2;
-            
+
             // Flip horizontal for mirror effect
             ctx.translate(size, 0);
             ctx.scale(-1, 1);
-            
+
             ctx.drawImage(video, sx, sy, minDim, minDim, 0, 0, size, size);
-            
+
             avatarBase64 = canvas.toDataURL('image/jpeg', 0.7);
-            
+
             const preview = document.getElementById('kyc-preview');
             preview.src = avatarBase64;
             preview.classList.remove('hidden');
             video.classList.add('hidden');
             document.getElementById('webcam-container').classList.replace('border-emerald-500', 'border-[#d4af37]');
-            
+
             stopCamera();
         }
 
@@ -443,22 +479,22 @@
             setTimeout(() => alertBox.classList.add('hidden'), 4000);
         }
 
-        
+
         function updateReceiptPreview() {
             const select = document.getElementById('tour-select');
             const phone = document.getElementById('player-search').value.trim();
             const buyIn = document.getElementById('buy-in').value;
-            
+
             const member = currentMembers.find(m => m.phone === phone);
             const tourId = select.value;
             const tour = currentTours.find(t => t.id === tourId);
-            
+
             const name = member ? member.name : (phone || '...');
             const tourName = tour ? tour.name : '...';
-            
+
             const now = new Date();
             const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
-            
+
             document.getElementById('rp-name').innerText = name;
             document.getElementById('rp-tour').innerText = tourName;
             document.getElementById('rp-buyin').innerText = (buyIn !== '' && buyIn !== null && buyIn !== undefined) ? new Intl.NumberFormat('vi-VN').format(buyIn) + ' VNĐ' : '...';
@@ -469,7 +505,7 @@
             const val = document.getElementById('player-search').value.toLowerCase().trim();
             const list = document.getElementById('autocomplete-list');
             list.innerHTML = '';
-            
+
             if (!val) { list.classList.add('hidden'); return; }
 
             const alivePhones = new Set();
@@ -480,7 +516,7 @@
                     });
                 }
             });
-            
+
             const filtered = currentMembers.filter(m => {
                 const isMatch = m.name.toLowerCase().includes(val) || m.phone.includes(val);
                 const isNotAlive = !alivePhones.has(m.phone);
@@ -488,7 +524,7 @@
             });
 
             if (filtered.length === 0) { list.classList.add('hidden'); return; }
-            
+
             filtered.forEach(m => {
                 const div = document.createElement('div');
                 div.className = 'p-3 border-b border-[#333] hover:bg-[#d4af37]/20 cursor-pointer text-sm font-bold text-gray-200 transition';
@@ -538,7 +574,7 @@
         function openProfileModal(phone) {
             const member = currentMembers.find(m => m.phone === phone);
             if(!member) return;
-            
+
             currentEditingMember = member;
             editingPhone = phone;
 
@@ -558,7 +594,7 @@
             const tbody = document.getElementById('profile-history-body');
             tbody.innerHTML = '';
             const history = (member.play_history || []).slice().sort((a,b) => b.time - a.time);
-            
+
             if(history.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3" class="text-center p-8 text-gray-600 font-bold uppercase tracking-widest bg-[#161616]">Chưa có lịch sử thi đấu</td></tr>`;
             } else {
@@ -589,31 +625,31 @@
                 document.getElementById('edit-address').value = currentEditingMember.address || '';
                 document.getElementById('edit-bank-name').value = currentEditingMember.bank_name || '';
                 document.getElementById('edit-bank-account').value = currentEditingMember.bank_account || '';
-                
+
                 editAvatarBase64 = null;
 
                 document.getElementById('profile-btn-group').classList.add('hidden');
                 document.getElementById('profile-edit-actions').classList.remove('hidden');
                 document.getElementById('profile-edit-actions').classList.add('flex');
-                
+
                 document.getElementById('profile-view-mode').classList.add('hidden');
                 document.getElementById('profile-edit-mode').classList.remove('hidden');
                 document.getElementById('profile-edit-mode').classList.add('flex');
-                
+
                 document.getElementById('btn-recapture').classList.remove('hidden');
             } else {
                 stopProfileCamera();
                 document.getElementById('profile-btn-group').classList.remove('hidden');
                 document.getElementById('profile-edit-actions').classList.add('hidden');
                 document.getElementById('profile-edit-actions').classList.remove('flex');
-                
+
                 document.getElementById('profile-view-mode').classList.remove('hidden');
                 document.getElementById('profile-edit-mode').classList.add('hidden');
                 document.getElementById('profile-edit-mode').classList.remove('flex');
-                
+
                 document.getElementById('btn-recapture').classList.add('hidden');
                 document.getElementById('profile-cam-error').classList.add('hidden');
-                
+
                 if(currentEditingMember) {
                     document.getElementById('profile-avatar').src = currentEditingMember.avatar_base64 || 'https://via.placeholder.com/150/1a1a1a/d4af37?text=NO+IMAGE';
                 }
@@ -630,7 +666,7 @@
                 video.classList.remove('hidden');
                 document.getElementById('profile-avatar').classList.add('hidden');
                 document.getElementById('profile-cam-error').classList.add('hidden');
-                
+
                 // Đổi nút thành nút Chụp Ngay
                 const btn = document.getElementById('btn-recapture');
                 btn.innerHTML = '<i class="fa-solid fa-camera mr-1"></i> CHỤP NGAY';
@@ -662,7 +698,7 @@
         function captureProfileKYC() {
             const video = document.getElementById('profile-video');
             if(!profileStream || video.classList.contains('hidden')) return;
-            
+
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -670,14 +706,14 @@
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
             ctx.drawImage(video, 0, 0);
-            
+
             editAvatarBase64 = canvas.toDataURL('image/jpeg', 0.8);
-            
+
             const img = document.getElementById('profile-avatar');
             img.src = editAvatarBase64;
             img.classList.remove('hidden');
             video.classList.add('hidden');
-            
+
             stopProfileCamera();
         }
 
@@ -695,7 +731,7 @@
             const payload = {
                 phone: editingPhone,
                 new_phone: newPhone !== editingPhone ? newPhone : undefined,
-                name, dob, address, bank_name, bank_account, 
+                name, dob, address, bank_name, bank_account,
                 avatar_base64: editAvatarBase64 || undefined
             };
 
@@ -712,7 +748,7 @@
                     currentEditingMember.bank_name = bank_name;
                     currentEditingMember.bank_account = bank_account;
                     if(editAvatarBase64) currentEditingMember.avatar_base64 = editAvatarBase64;
-                    
+
                     openProfileModal(editingPhone); // Gọi lại để render trạng thái View
                 } else {
                     alert(res.message);
@@ -721,11 +757,11 @@
         }
 
 
-        
+
         function selectTour(tId) {
             const select = document.getElementById('tour-select');
             select.value = tId;
-            
+
             // Tự động điền mức phí
             const tour = currentTours.find(t => t.id === tId);
             if (tour) {
@@ -734,7 +770,7 @@
 
             select.dispatchEvent(new Event('change'));
             updateReceiptPreview();
-            
+
             document.querySelectorAll('.tour-card-item').forEach(el => {
                 el.classList.remove('border-[#d4af37]', 'shadow-[0_0_15px_rgba(212,175,55,0.4)]');
                 el.classList.add('border-[#333]');
@@ -760,26 +796,26 @@
         function sellTicket() {
             const tId = document.getElementById('tour-select').value;
             const phoneVal = document.getElementById('player-search').value.trim();
-            
+
             if(!tId) return showAlert('Chọn giải đấu!', true);
             if(!phoneVal) return showAlert('Nhập SĐT hội viên!', true);
 
-            const payload = { 
-                tour_id: tId, 
-                member_phone: phoneVal, 
-                buy_in_amount: Number(document.getElementById('buy-in').value), 
-                is_paid: !document.getElementById('unpaid-checkbox').checked 
+            const payload = {
+                tour_id: tId,
+                member_phone: phoneVal,
+                buy_in_amount: Number(document.getElementById('buy-in').value),
+                is_paid: !document.getElementById('unpaid-checkbox').checked
             };
-            
+
             const btn = document.getElementById('btn-sell');
             btn.disabled = true;
             socket.emit('sell_ticket', payload, (res) => {
                 btn.disabled = false;
-                if(res.success) { 
+                if(res.success) {
                     printReceipt(payload.member_phone, payload.tour_id, payload.buy_in_amount, res.assigned_table, res.assigned_seat);
-                    showAlert(res.message, false); 
-                    document.getElementById('player-search').value=''; 
-                    document.getElementById('unpaid-checkbox').checked=false; 
+                    showAlert(res.message, false);
+                    document.getElementById('player-search').value='';
+                    document.getElementById('unpaid-checkbox').checked=false;
                 } else {
                     if (res.code === 'MEMBER_NOT_FOUND') {
                         showRegisterModal(phoneVal);
@@ -802,7 +838,7 @@
             document.getElementById('reg-address').value = '';
             document.getElementById('reg-bank-name').value = '';
             document.getElementById('reg-bank-account').value = '';
-            
+
             const btnSubmit = document.getElementById('btn-submit-register');
             if (autoSell) {
                 btnSubmit.innerHTML = '<i class="fa-solid fa-bolt mr-2"></i> Ký Duyệt & Xuất Vé';
@@ -835,7 +871,7 @@
             const address = document.getElementById('reg-address').value.trim();
             const bank_name = document.getElementById('reg-bank-name').value.trim();
             const bank_account = document.getElementById('reg-bank-account').value.trim();
-            
+
             if (!phone || !name) return alert('Vui lòng điền đủ SĐT và Tên khách hàng!');
 
             const payload = {
@@ -847,7 +883,7 @@
                     closeRegisterModal();
                     // Autofill the phone number
                     document.getElementById('player-search').value = phone;
-                    
+
                     if (autoSellAfterRegister) {
                         sellTicket();
                     } else {
@@ -864,12 +900,12 @@
             currentMembers = members;
         });
 
-        socket.on('update_tours', (tours) => { 
-            currentTours = tours; 
+        socket.on('update_tours', (tours) => {
+            currentTours = tours;
             const select = document.getElementById('tour-select');
             const grid = document.getElementById('tv-grid');
             const selVal = select.value;
-            
+
             select.innerHTML = '<option value="">-- Vui lòng chọn giải --</option>';
             grid.innerHTML = '';
 
@@ -894,7 +930,7 @@
                 `;
                 grid.appendChild(card);
             });
-            
+
             filterMembers();
         });
     </script>

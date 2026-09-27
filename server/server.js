@@ -50,7 +50,7 @@ let db = {
   tour_templates: [],
   tables: Array.from({ length: 8 }, (_, i) => ({ id: i + 1, is_locked: false, tour_id: null, dealer_name: null, dealer_time: null })),
   players: {},
-  staff: [], 
+  staff: [],
   time_logs: [],
   members: [],
   financial: { net_cash: 0, total_debt: 0, total_rake: 0 }
@@ -64,7 +64,7 @@ if (fdb) {
       console.error('[FIREBASE] Cảnh báo: Hết thời gian kết nối (URL sai hoặc mạng lỗi). Hệ thống tự động chuyển sang chạy trên RAM!');
       isFirebaseLoaded = true;
       broadcastState(true);
-      io.emit('staff_data_updated', db.staff);
+      broadcastState(true);
     }, 3000);
 
     fdb.ref('/').once('value', (snapshot) => {
@@ -96,7 +96,7 @@ if (fdb) {
       }
       isFirebaseLoaded = true;
       broadcastState(true);
-      io.emit('staff_data_updated', db.staff);
+      broadcastState(true);
     });
   }
   loadFromFirebase();
@@ -110,35 +110,45 @@ function saveToFirebase(path, data) {
   }
 }
 
+function sendTargetedState(sock, activeTours) {
+    if (!isFirebaseLoaded) return;
+    const role = sock.user.role;
+
+    const tTours = getToursForRole(activeTours, role);
+    if (role !== 'kiosk') {
+      sock.emit('update_tours', tTours);
+    }
+
+    if (['god', 'td'].includes(role)) {
+      sock.emit('update_tour_templates', db.tour_templates);
+    }
+
+    if (['god', 'td', 'floor', 'cashier'].includes(role)) {
+      sock.emit('update_tables', db.tables);
+      sock.emit('update_members', getMembersForRole(db.members, role));
+    }
+
+    const staffList = getStaffForRole(db.staff, role);
+    sock.emit('update_staff_list', staffList);
+    sock.emit('staff_data_updated', staffList);
+
+    if (role === 'god') {
+      sock.emit('update_god_mode', {
+          financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 },
+          staff: staffList,
+          all_tours: tTours
+      });
+    }
+}
+
 function broadcastState(skipSave = false) {
   if (!isFirebaseLoaded) return;
   const activeTours = db.tournaments.filter(t => t.status !== 'archived');
   
-  // Create a safe version of staff without PINs
-  const safeStaff = db.staff.map(s => {
-      const copy = { ...s };
-      delete copy.pin;
-      delete copy.cccd;
-      return copy;
+  io.sockets.sockets.forEach(sock => {
+      if (!sock.user || !sock.user.role) return;
+      sendTargetedState(sock, activeTours);
   });
-
-  // Basic broadcast for everyone (TV, Kiosk)
-  io.emit('update_tours', activeTours);
-  
-  // Specific roles get full tables and members
-  io.to('role_god').to('role_td').to('role_floor').to('role_cashier').emit('update_tables', db.tables);
-  io.to('role_god').to('role_cashier').emit('update_members', db.members);
-  
-  // God mode gets EVERYTHING including finances and raw staff list
-  io.to('role_god').emit('update_god_mode', {
-    financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 },
-    staff: db.staff, 
-    all_tours: db.tournaments
-  });
-  
-  // Safe staff list to others
-  io.to('role_td').to('role_floor').to('role_cashier').to('role_kiosk').emit('update_staff_list', safeStaff);
-  io.to('role_god').emit('update_staff_list', db.staff); // God gets the real one
 
   if (!skipSave) {
     saveToFirebase('tournaments', db.tournaments);
@@ -152,13 +162,18 @@ function broadcastState(skipSave = false) {
 
 setInterval(() => {
   let stateChanged = false;
+  const nowMs = Date.now();
   db.tournaments.forEach(t => {
+    if (t.status === 'pending' && t.scheduled_start && nowMs >= t.scheduled_start) {
+        t.status = 'running';
+        stateChanged = true;
+    }
     if (t.status === 'running') {
       t.time_remaining -= 1;
-      
+
       if (t.time_remaining <= 0) {
         t.current_level_idx += 1;
-        
+
         if (t.current_level_idx >= t.blinds_structure.length) {
             t.current_level_idx = t.blinds_structure.length - 1;
             t.time_remaining = 0;
@@ -181,26 +196,94 @@ setInterval(() => {
     broadcastState();
   } else {
     const activeTours = db.tournaments.filter(t => t.status !== 'archived');
-    io.emit('update_tours', activeTours);
+    broadcastState(true);
   }
 }, 1000);
 
 
 // ==================== AUTHENTICATION MIDDLEWARE ====================
+const ALLOWED_ROLES = ['god', 'td', 'floor', 'cashier', 'kiosk', 'tv'];
+
+function getStaffForRole(staffList, role) {
+    return staffList.map(s => {
+        const copy = { ...s };
+        delete copy.pin; // MIGRATION NOTE: PINs should be hashed. For now, cleartext PINs are NEVER sent to any client.
+        if (role !== 'god') {
+            delete copy.base_salary;
+            delete copy.dealer_bonus;
+            delete copy.cccd;
+            delete copy.address;
+            delete copy.bank_account;
+            delete copy.bank_name;
+            delete copy.dob;
+        }
+        return copy;
+    });
+}
+
+function getMembersForRole(membersList, role) {
+    return membersList.map(m => {
+        const copy = { ...m };
+        delete copy.bank_account;
+        delete copy.bank_name;
+        delete copy.dob;
+        delete copy.address;
+        delete copy.avatar_base64;
+        delete copy.play_history;
+        if (!['god', 'cashier'].includes(role)) {
+            delete copy.phone;
+        }
+        return copy;
+    });
+}
+
+function getToursForRole(tours, role) {
+    if (role === 'kiosk') return [];
+    return tours.map(t => {
+        const copy = { ...t };
+        if (role === 'tv') {
+            copy.fund = { payout_pool: t.fund.payout_pool || (t.fund.total_paid * 0.85) };
+            copy.players = t.players.map(p => ({ status: p.status, rank: p.rank }));
+            delete copy.settings;
+        } else if (role === 'floor') {
+            copy.fund = {};
+            copy.players = t.players.map(p => ({ status: p.status, table_id: p.table_id, seat: p.seat, name: p.name }));
+        } else if (role === 'cashier') {
+            copy.players = t.players.map(p => ({ status: p.status, phone: p.phone, name: p.name }));
+        }
+        return copy;
+    });
+}
+
+setInterval(() => {
+    const now = Math.floor(Date.now() / 1000);
+    io.sockets.sockets.forEach(sock => {
+        if (!sock.user || !sock.user.role) return;
+        if (sock.user.exp && now >= sock.user.exp) {
+            sock.emit('token_expired');
+            sock.disconnect(true);
+        }
+    });
+}, 30000); // Check every 30 seconds
+
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth.token;
     if (!token) return next(new Error("Authentication error: Missing token"));
-    
+
     const decodedToken = await admin.auth().verifyIdToken(token);
-    
+
     let role = decodedToken.role;
     if (!role) {
         const snap = await admin.database().ref('user_roles/' + decodedToken.uid).once('value');
-        role = snap.val() || 'viewer';
+        role = snap.val();
     }
 
-    socket.user = { uid: decodedToken.uid, role: role };
+    if (!ALLOWED_ROLES.includes(role)) {
+        return next(new Error("Authentication error: Role không hợp lệ hoặc bị từ chối"));
+    }
+
+    socket.user = { uid: decodedToken.uid, role: role, exp: decodedToken.exp };
     socket.join('role_' + role);
     next();
   } catch (error) {
@@ -211,8 +294,17 @@ io.use(async (socket, next) => {
 
 function requireRole(socket, allowedRoles, handler) {
   return (...args) => {
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (socket.user.exp && nowSeconds >= socket.user.exp) {
+        console.warn(`[AUTH] Token expired during active session for ${socket.user.uid}`);
+        socket.emit('token_expired');
+        socket.disconnect(true);
+        const cb = args[args.length - 1];
+        if (typeof cb === 'function') cb({ success: false, message: 'Phiên đăng nhập đã hết hạn.' });
+        return;
+    }
+
     if (!socket.user || !allowedRoles.includes(socket.user.role)) {
-      console.warn("[AUTH] Unauthorized access by " + (socket.user ? socket.user.uid : 'unknown') + " for restricted event.");
       const cb = args[args.length - 1];
       if (typeof cb === 'function') cb({ success: false, message: 'Lỗi Phân Quyền!' });
       return;
@@ -220,32 +312,14 @@ function requireRole(socket, allowedRoles, handler) {
     handler(...args);
   };
 }
-// ===================================================================
 
 io.on('connection', (socket) => {
 
-  if(isFirebaseLoaded) {
-    const activeTours = db.tournaments.filter(t => t.status !== 'archived');
-    socket.emit('update_tours', activeTours);
-    socket.emit('update_tour_templates', db.tour_templates);
-    socket.emit('update_tables', db.tables);
-    socket.emit('update_staff_list', db.staff);
-    socket.emit('update_members', db.members);
-    socket.emit('staff_data_updated', db.staff);
-    socket.emit('update_god_mode', { financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 }, staff: db.staff, all_tours: db.tournaments });
-  }
+
+  if(isFirebaseLoaded) { sendTargetedState(socket, db.tournaments.filter(t => t.status !== 'archived')); }
 
   socket.on('request_initial_data', requireRole(socket, ['god', 'td', 'floor', 'cashier', 'kiosk', 'tv'], () => {
-    if(isFirebaseLoaded) {
-      const activeTours = db.tournaments.filter(t => t.status !== 'archived');
-      socket.emit('update_tours', activeTours);
-      socket.emit('update_tour_templates', db.tour_templates);
-      socket.emit('update_tables', db.tables);
-      socket.emit('update_staff_list', db.staff);
-      socket.emit('update_members', db.members);
-      socket.emit('staff_data_updated', db.staff);
-      socket.emit('update_god_mode', { financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 }, staff: db.staff, all_tours: db.tournaments });
-    }
+    sendTargetedState(socket, db.tournaments.filter(t => t.status !== 'archived'));
   }));
 
   socket.on('add_staff', requireRole(socket, ['god'], (payload, callback) => {
@@ -273,10 +347,10 @@ io.on('connection', (socket) => {
     const newTemplate = { id: templateId, ...templateData };
     if (!db.tour_templates) db.tour_templates = [];
     db.tour_templates.push(newTemplate);
-    
+
     broadcastState(); // Save to firebase
     io.emit('update_tour_templates', db.tour_templates); // Broadcast to all connected clients
-    
+
     if (callback) callback({ success: true, message: 'Đã lưu mẫu giải đấu thành công!' });
   }));
 
@@ -296,7 +370,7 @@ io.on('connection', (socket) => {
     if(cccd_date) db.staff[staffIndex].cccd_date = cccd_date;
     if(address) db.staff[staffIndex].address = address;
     if(photo !== undefined) db.staff[staffIndex].photo = photo;
-    
+
     broadcastState();
     if (callback) callback({ success: true, message: 'Cập nhật nhân sự thành công!' });
   }));
@@ -333,13 +407,13 @@ io.on('connection', (socket) => {
     if (!s) { if(callback) callback({success: false, message: 'Không tìm thấy nhân sự!'}); return; }
     if (s.pin !== pin) { if(callback) callback({success: false, message: 'Mã PIN sai!'}); return; }
     if (s.status !== 'offline') { if(callback) callback({success: false, message: 'Đã check-in rồi!'}); return; }
-    
+
     s.status = 'waiting';
     s.last_in = Date.now();
     s.total_dealing_ms = 0;
     s.session_start = null;
     db.time_logs.push({ staff_id, name: s.name, type: 'IN', time: s.last_in });
-    
+
     broadcastState();
     if (callback) callback({ success: true, message: 'Check-IN thành công!' });
   }));
@@ -351,7 +425,7 @@ io.on('connection', (socket) => {
     if (!s) { if(callback) callback({success: false, message: 'Không tìm thấy nhân sự!'}); return; }
     if (s.pin !== pin) { if(callback) callback({success: false, message: 'Mã PIN sai!'}); return; }
     if (s.status === 'offline') { if(callback) callback({success: false, message: 'Đang offline!'}); return; }
-    
+
     const now = Date.now();
     if (s.last_in) {
       const diffMins = Math.floor((now - s.last_in) / 60000);
@@ -364,7 +438,7 @@ io.on('connection', (socket) => {
     s.status = 'offline';
     s.last_in = null;
     db.time_logs.push({ staff_id, name: s.name, type: 'OUT', time: now });
-    
+
     broadcastState();
     if (callback) callback({ success: true, message: 'Check-OUT thành công!' });
   }));
@@ -387,14 +461,14 @@ io.on('connection', (socket) => {
       if (callback) callback({ success: false, message: 'Không tìm thấy hội viên!' });
       return;
     }
-    
+
     if (new_phone && new_phone !== phone) {
       if (db.members.find(m => m.phone === new_phone)) {
         if (callback) callback({ success: false, message: 'Số điện thoại mới đã tồn tại!' });
         return;
       }
       member.phone = new_phone;
-      
+
       // Update phone in active tournaments
       db.tournaments.forEach(tour => {
         if (tour.status !== 'archived' && tour.status !== 'finished') {
@@ -411,13 +485,13 @@ io.on('connection', (socket) => {
     member.bank_name = bank_name || member.bank_name;
     member.bank_account = bank_account || member.bank_account;
     if (avatar_base64) member.avatar_base64 = avatar_base64;
-    
+
     broadcastState();
     if (callback) callback({ success: true, message: 'Cập nhật hồ sơ thành công!' });
   }));
 
   socket.on('create_tour', requireRole(socket, ['god', 'td'], (data) => {
-    const { name, selectedTableIds, settings, starting_stack, buyin_fee, buy_in_fee } = data;
+    const { name, selectedTableIds, settings, starting_stack, buyin_fee, buy_in_fee, scheduled_start } = data;
 console.log('CREATE_TOUR DATA:', data);
     const tablesToLock = db.tables.filter(t => selectedTableIds.includes(t.id));
     const canLock = tablesToLock.every(t => !t.is_locked);
@@ -425,17 +499,20 @@ console.log('CREATE_TOUR DATA:', data);
     if (canLock && name && selectedTableIds.length > 0) {
       const tourId = 'T' + Date.now();
       tablesToLock.forEach(t => { t.is_locked = true; t.tour_id = tourId; });
-      
+
       const newTour = {
         id: tourId, name: name, tables: selectedTableIds, entries: 0, dealer_assigned: false, buyin_fee: buyin_fee || buy_in_fee || 0,
-        status: 'paused', players: [], 
+        status: scheduled_start ? 'pending' : 'paused', players: [],
+        scheduled_start: scheduled_start || null,
         fund: { total_paid: 0, expenses: 0, debt: 0, net_fund: 0, payout_pool: 0 },
-        settings: settings || { level_time: 20, late_reg_level: 6 },
+        settings: settings || { level_time: 20, late_reg_level: 6, min_players: 6 },
         starting_stack: Number(starting_stack) || 100000,
         current_level_idx: 0,
         time_remaining: (settings && settings.level_time ? settings.level_time : 20) * 60,
         blinds_structure: data.blinds_structure || JSON.parse(JSON.stringify(defaultBlinds))
       };
+
+      if (!newTour.settings.min_players) newTour.settings.min_players = 6;
 
       db.tournaments.push(newTour);
       broadcastState();
@@ -511,19 +588,19 @@ console.log('CREATE_TOUR DATA:', data);
     let assigned_table = null;
     let assigned_seat = null;
     let minPlayers = 999;
-    
+
     for (let tableId of t.tables) {
         const aliveCount = t.players.filter(p => p.table_id === tableId && p.status === 'alive').length;
         if (aliveCount < minPlayers) {
             minPlayers = aliveCount;
         }
     }
-    
+
     if (minPlayers >= 9) {
         if (callback) callback({ success: false, message: "Hệ thống báo: TẤT CẢ CÁC BÀN ĐÃ ĐẦY (9/9)! Hãy yêu cầu Floor mở thêm bàn mới trước khi Thu ngân có thể bán vé!"});
         return;
     }
-    
+
     for (let tableId of t.tables) {
         const alivePlayers = t.players.filter(p => p.table_id === tableId && p.status === 'alive');
         if (alivePlayers.length === minPlayers) {
@@ -538,12 +615,12 @@ console.log('CREATE_TOUR DATA:', data);
             break;
         }
     }
-    
+
     t.players.push({ phone: member_phone, name: member.name, status: 'alive', table_id: assigned_table, seat: assigned_seat });
-    
+
     t.entries += 1;
     const amount = Number(buy_in_amount) || 0;
-    
+
     member.total_tours += 1;
     member.play_history = member.play_history || [];
     member.play_history.push({ tour_name: t.name, buy_in_amount: amount, time: Date.now() });
@@ -559,7 +636,7 @@ console.log('CREATE_TOUR DATA:', data);
     if(callback) callback({ success: true, assigned_table, assigned_seat, message: `In Vé Thành Công! Giá vé áp dụng: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)}` });
   }));
 
-  
+
   socket.on('add_table_to_tour', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
     const { tour_id, table_id } = payload;
     const t = db.tournaments.find(t => t.id === tour_id);
@@ -584,7 +661,7 @@ console.log('CREATE_TOUR DATA:', data);
 
         t.tables = t.tables.filter(id => id !== table_id);
         tbl.is_locked = false;
-        
+
         // Trả dealer về waiting
         if (tbl.dealer_name) {
             const staff = db.staff.find(s => s.name === tbl.dealer_name);
@@ -598,13 +675,13 @@ console.log('CREATE_TOUR DATA:', data);
             tbl.dealer_name = null;
             tbl.dealer_time = null;
         }
-        
+
         broadcastState();
-        io.emit('staff_data_updated', db.staff);
+        broadcastState(true);
     }
   }));
 
-  
+
   socket.on('unassign_dealer', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
     const table = db.tables.find(tbl => tbl.id === payload.table_id);
     if (table && table.dealer_name) {
@@ -618,16 +695,16 @@ console.log('CREATE_TOUR DATA:', data);
       }
       table.dealer_name = null;
       table.dealer_time = null;
-      
+
       const t = db.tournaments.find(t => t.id === payload.tour_id);
       if (t) {
         // Check if any other table has a dealer
         const hasDealer = db.tables.some(tbl => t.tables.includes(tbl.id) && tbl.dealer_name);
         t.dealer_assigned = hasDealer;
       }
-      
+
       broadcastState();
-      io.emit('staff_data_updated', db.staff);
+      broadcastState(true);
     }
   }));
 
@@ -645,22 +722,22 @@ console.log('CREATE_TOUR DATA:', data);
               }
           }
       }
-      
+
       table.dealer_name = payload.dealer_name;
       table.dealer_time = Date.now();
-      
+
       // Mark new dealer as busy
       const newStaff = db.staff.find(s => s.name === payload.dealer_name);
       if (newStaff) {
           newStaff.status = 'busy';
           newStaff.session_start = Date.now();
       }
-      
+
       const t = db.tournaments.find(t => t.id === payload.tour_id);
-      if (t) t.dealer_assigned = true; 
-      
+      if (t) t.dealer_assigned = true;
+
       broadcastState();
-      io.emit('staff_data_updated', db.staff); // update floor_ipad dropdowns
+      broadcastState(true); // update floor_ipad dropdowns
     }
   }));
 
@@ -671,7 +748,7 @@ console.log('CREATE_TOUR DATA:', data);
       const p = t.players.find(p => p.phone === player_phone && p.status === 'alive');
       if (p) {
         p.table_id = parseInt(new_table_id);
-        
+
         // Find empty seat at new table
         let new_seat = 1;
         const playersAtNewTable = t.players.filter(x => x.table_id === p.table_id && x.status === 'alive' && x.phone !== p.phone);
@@ -680,7 +757,7 @@ console.log('CREATE_TOUR DATA:', data);
             if(!occupiedSeats.includes(i)) { new_seat = i; break; }
         }
         p.seat = new_seat;
-        
+
         broadcastState();
       }
     }
@@ -690,14 +767,14 @@ console.log('CREATE_TOUR DATA:', data);
     const t = db.tournaments.find(t => t.id === payload.tour_id);
     if (t) {
       const p = t.players.find(p => (p.phone === payload.player_phone || p.name === payload.player_name) && p.status === 'alive');
-      if (p) { 
+      if (p) {
         const aliveCount = t.players.filter(x => x.status === 'alive').length;
         p.rank = aliveCount; // Hạng của player chính là số người còn sống tại thời điểm bị bust
-        p.status = 'busted'; 
-        
+        p.status = 'busted';
+
         if (!t.itm_results) t.itm_results = {};
         t.itm_results[aliveCount] = p.name || p.phone;
-        
+
         // Nếu chỉ còn 1 người sống sót duy nhất, tự động gán hạng 1 cho người đó (Winner)
         if (aliveCount - 1 === 1) {
             const winner = t.players.find(x => x.status === 'alive');
@@ -706,13 +783,13 @@ console.log('CREATE_TOUR DATA:', data);
                 t.itm_results[1] = winner.name || winner.phone;
             }
         }
-        
-        broadcastState(); 
+
+        broadcastState();
       }
     }
   }));
 
-  
+
   socket.on('adjust_time', requireRole(socket, ['god', 'td'], (tourId, seconds) => {
     const t = db.tournaments.find(t => t.id === tourId);
     if (t && (t.status === 'running' || t.status === 'paused')) {
@@ -729,7 +806,7 @@ console.log('CREATE_TOUR DATA:', data);
         t.entries = entries;
         const currentAlivePlayers = t.players.filter(p => p.status === 'alive');
         const diff = alive - currentAlivePlayers.length;
-        
+
         if (diff > 0) {
             // Need to add dummy alive players
             for(let i = 0; i < diff; i++) {
@@ -753,11 +830,11 @@ console.log('CREATE_TOUR DATA:', data);
                 }
             }
         }
-        
+
         // Recalculate net_fund if needed? Wait, buy-in amounts might be off.
         // Let's just adjust total_paid based on entries
         // Actually, just let the manual force_edit fix the entries number for display.
-        
+
         broadcastState();
     }
   }));
@@ -766,8 +843,8 @@ console.log('CREATE_TOUR DATA:', data);
     const t = db.tournaments.find(t => t.id === tourId);
     if (t && (t.status === 'running' || t.status === 'paused')) {
       t.status = 'finished';
-      t.fund.payout_pool = t.fund.total_paid * 0.85; 
-      
+      t.fund.payout_pool = t.fund.total_paid * 0.85;
+
       // Xóa dealer khỏi các bàn của giải này
       if (t.tables && Array.isArray(t.tables)) {
         t.tables.forEach(tableId => {
@@ -787,9 +864,9 @@ console.log('CREATE_TOUR DATA:', data);
         });
         t.dealer_assigned = false;
       }
-      
+
       broadcastState();
-      io.emit('staff_data_updated', db.staff);
+      broadcastState(true);
     }
   }));
 

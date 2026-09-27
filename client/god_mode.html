@@ -16,11 +16,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #080808; 
+            background-color: #080808;
             color: #e2e8f0;
         }
         .font-mafia { font-family: 'Playfair Display', serif; }
@@ -47,7 +47,7 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #080808; }
         ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
-    
+
         /* Tối ưu hóa UI/UX cho màn hình cảm ứng & di động */
         button, select, input {
             min-height: 48px !important;
@@ -69,16 +69,31 @@
             .h-screen { height: auto !important; min-height: 100vh; overflow-y: auto !important; }
             body { overflow-y: auto !important; }
             .glass-panel { padding: 15px !important; }
-            
+
             /* Dành cho các tour card/bàn */
             .grid-cols-2, .grid-cols-3, .xl\:grid-cols-2 { grid-template-columns: 1fr !important; }
-            
+
             /* Đảm bảo khoảng cách chạm trên mobile */
             .tour-card { margin-bottom: 24px; }
             .poker-table-bg { margin: 24px 0; }
         }
 
     </style>
+
+    <!-- FIREBASE AUTH SETUP -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "STAGING_API_KEY",
+            authDomain: "acepoker-staging.firebaseapp.com",
+            projectId: "acepoker-staging"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
+
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
     <!-- HEADER & STATUS -->
@@ -106,7 +121,7 @@
 
     <!-- MAIN CONTENT -->
     <main class="flex-1 overflow-y-auto p-6 space-y-6">
-        
+
         <!-- SECTION 1: TỔNG QUAN TÀI CHÍNH -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="glass-panel rounded-xl p-6 border-l-4 border-[#2ecc71] flex items-center justify-between">
@@ -133,7 +148,7 @@
 
         <!-- SECTION 2: CHIA ĐÔI MÀN HÌNH -->
         <div class="flex flex-col lg:flex-row gap-6 h-[calc(100vh-280px)] min-h-[400px]">
-            
+
             <div class="lg:w-[40%] glass-panel rounded-xl p-6 flex flex-col">
                 <h2 class="font-mafia text-lg text-[#d4af37] border-b border-[#333] pb-4 mb-4 uppercase tracking-widest"><i class="fa-solid fa-users-viewfinder mr-2"></i> Mạng Lưới Nhân Sự</h2>
                 <div class="overflow-y-auto pr-2 space-y-3 flex-1" id="staff-list"></div>
@@ -143,23 +158,44 @@
                 <h2 class="font-mafia text-lg text-[#d4af37] border-b border-[#333] pb-4 mb-4 uppercase tracking-widest"><i class="fa-solid fa-trophy mr-2"></i> Lịch Sử Giải Đấu</h2>
                 <div class="overflow-y-auto pr-2 space-y-4 flex-1" id="tour-list"></div>
             </div>
-            
+
         </div>
     </main>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
-        const socket = io('https://akpoker.onrender.com');
+
+        const token = sessionStorage.getItem('acepoker_token');
+        if (!token) {
+            alert('Lỗi: Bạn chưa đăng nhập hoặc phiên đã hết hạn!');
+            window.location.href = './index.html';
+        }
+        const socket = io('https://akpoker.onrender.com', { auth: { token } });
+
+        socket.on('connect_error', (err) => {
+            if (err.message.includes('Authentication error')) {
+                alert('Xác thực thất bại! Đang chuyển hướng về trang chủ...');
+                sessionStorage.removeItem('acepoker_token');
+                window.location.href = './index.html';
+            }
+        });
+
+        socket.on('token_expired', () => {
+            alert('Phiên làm việc hết hạn. Hệ thống yêu cầu đăng nhập lại để làm mới phiên làm việc!');
+            sessionStorage.removeItem('acepoker_token');
+            window.location.href = './index.html';
+        });
+
 
         socket.on('connect', () => {
             socket.emit('request_initial_data');
         });
-        
+
         function formatMoney(amount) {
             return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
         }
 
-        
+
         function calculateTotalFinances(all_tours) {
             let totalNet = 0;
             let totalDebt = 0;
@@ -171,17 +207,17 @@
                     const debt = (t.fund && t.fund.debt) ? t.fund.debt : 0;
                     const expenses = (t.fund && t.fund.expenses) ? t.fund.expenses : 0;
                     const prizePool = (t.fund && t.fund.payout_pool) ? t.fund.payout_pool : (paid * 0.85); // fallback
-                    
+
                     const buyinFee = Number(t.buyin_fee) || 0;
                     const entries = Number(t.entries) || 0;
-                    
+
                     // Tính Rake theo chuẩn: (Tổng số vé * Mức phí Buy-in) - Prize Pool
                     // Nếu buyin_fee không được setup (bằng 0), fallback: Rake = Tổng thu - Prize Pool
                     let expectedTotal = (entries * buyinFee);
                     if (expectedTotal === 0) expectedTotal = paid + debt;
-                    
+
                     let rake = expectedTotal - prizePool - expenses;
-                    
+
                     // Cộng dồn
                     totalNet += (paid - expenses);
                     totalDebt += debt;
@@ -205,7 +241,7 @@
                 let statusBadge = '';
                 let bgClass = 'bg-[#151515] border-[#333]';
                 let iconColor = 'text-gray-600';
-                
+
                 if (s.status === 'offline') {
                     statusBadge = '<span class="px-2 py-1 bg-[#111] text-gray-600 text-[9px] font-bold rounded uppercase">OFFLINE</span>';
                 } else if (s.status === 'waiting') {
@@ -236,11 +272,11 @@
 
             const tourListDiv = document.getElementById('tour-list');
             tourListDiv.innerHTML = '';
-            
+
             [...all_tours].reverse().forEach(t => {
                 let statusStyle = '';
                 let iconStr = '';
-                
+
                 if (t.status === 'running') {
                     statusStyle = 'bg-[#800020]/30 text-red-400 border-[#800020] animate-pulse';
                     iconStr = '<i class="fa-solid fa-satellite-dish mr-1"></i>LIVE';
@@ -257,7 +293,7 @@
 
                 let poolText = '';
                 let poolLabel = '';
-                
+
                 if (t.status === 'finished' || t.status === 'archived') {
                     poolText = formatMoney(t.fund.payout_pool);
                 } else if (t.entries > 0) {
@@ -272,7 +308,7 @@
 
                 const item = document.createElement('div');
                 item.className = `flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-lg border border-[#333] bg-[#151515] ${opacityClass}`;
-                
+
                 item.innerHTML = `
                     <div class="flex-1 mb-4 sm:mb-0">
                         <div class="flex items-center space-x-3 mb-3">

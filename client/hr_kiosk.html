@@ -12,7 +12,7 @@
         .font-mafia { font-family: 'Playfair Display', serif; }
         .text-gold { color: #d4af37; }
         .panel-bg { background: #161616; border: 1px solid rgba(212, 175, 55, 0.2); }
-    
+
         /* Tối ưu hóa UI/UX cho màn hình cảm ứng & di động */
         button, select, input {
             min-height: 48px !important;
@@ -34,16 +34,31 @@
             .h-screen { height: auto !important; min-height: 100vh; overflow-y: auto !important; }
             body { overflow-y: auto !important; }
             .glass-panel { padding: 15px !important; }
-            
+
             /* Dành cho các tour card/bàn */
             .grid-cols-2, .grid-cols-3, .xl\:grid-cols-2 { grid-template-columns: 1fr !important; }
-            
+
             /* Đảm bảo khoảng cách chạm trên mobile */
             .tour-card { margin-bottom: 24px; }
             .poker-table-bg { margin: 24px 0; }
         }
 
     </style>
+
+    <!-- FIREBASE AUTH SETUP -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "STAGING_API_KEY",
+            authDomain: "acepoker-staging.firebaseapp.com",
+            projectId: "acepoker-staging"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
+
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
     <header class="p-6 bg-[#0a0a0a] border-b border-[#d4af37]/30 text-center">
@@ -54,19 +69,19 @@
     <div class="flex-1 flex justify-center items-center p-8 bg-black">
         <div class="w-full max-w-md panel-bg p-8 rounded-xl shadow-2xl relative">
             <h2 class="text-2xl font-mafia text-[#d4af37] mb-6 tracking-widest uppercase text-center border-b border-[#333] pb-4">ĐĂNG NHẬP CA LÀM</h2>
-            
+
             <div class="mb-4">
                 <label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">Chọn Nhân Viên</label>
                 <select id="kiosk-staff" class="w-full bg-[#1a1a1a] border border-[#333] p-3 rounded text-white focus:border-[#d4af37] outline-none text-lg">
                     <!-- Staff list here -->
                 </select>
             </div>
-            
+
             <div class="mb-4">
                 <label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">Mã PIN CÁ NHÂN</label>
                 <input type="password" id="kiosk-pin" class="w-full bg-[#1a1a1a] border border-[#333] p-3 rounded text-white focus:border-[#d4af37] outline-none text-3xl tracking-[0.5em] text-center cursor-default" placeholder="****" maxlength="4" readonly>
             </div>
-            
+
             <!-- Virtual Numpad -->
             <div class="grid grid-cols-3 gap-2 mb-6" style="grid-template-columns: repeat(3, minmax(0, 1fr)) !important;">
                 <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-xl py-3 rounded transition-colors border border-[#333]" data-key="1">1</button>
@@ -91,7 +106,7 @@
                     <i class="fa-solid fa-right-from-bracket text-2xl mb-1"></i> CHECK-OUT
                 </button>
             </div>
-            
+
             <div class="mt-6 text-center">
                  <a href="./index.html" class="text-xs text-gray-500 hover:text-white uppercase tracking-widest underline"><i class="fa-solid fa-arrow-left"></i> Về Sảnh</a>
             </div>
@@ -100,7 +115,28 @@
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
-        const socket = io('https://akpoker.onrender.com');
+
+        const token = sessionStorage.getItem('acepoker_token');
+        if (!token) {
+            alert('Lỗi: Bạn chưa đăng nhập hoặc phiên đã hết hạn!');
+            window.location.href = './index.html';
+        }
+        const socket = io('https://akpoker.onrender.com', { auth: { token } });
+
+        socket.on('connect_error', (err) => {
+            if (err.message.includes('Authentication error')) {
+                alert('Xác thực thất bại! Đang chuyển hướng về trang chủ...');
+                sessionStorage.removeItem('acepoker_token');
+                window.location.href = './index.html';
+            }
+        });
+
+        socket.on('token_expired', () => {
+            alert('Phiên làm việc hết hạn. Hệ thống yêu cầu đăng nhập lại để làm mới phiên làm việc!');
+            sessionStorage.removeItem('acepoker_token');
+            window.location.href = './index.html';
+        });
+
         let currentStaffList = [];
 
         socket.on('connect', () => {
@@ -118,24 +154,24 @@
             const select = document.getElementById('kiosk-staff');
             const currentVal = select.value;
             select.innerHTML = '<option value="">-- Chọn Tên Bạn --</option>';
-            
+
             currentStaffList.forEach(s => {
                 let statusInfo = s.status === 'offline' ? '(OFF)' : '(IN)';
                 select.innerHTML += `<option value="${s.id}">${s.id} - ${s.name} ${statusInfo}</option>`;
             });
-            
+
             if(currentVal) select.value = currentVal;
         }
 
         function handleClock(type) {
             const staffId = document.getElementById('kiosk-staff').value;
             const pin = document.getElementById('kiosk-pin').value;
-            
+
             if (!staffId) return alert("Vui lòng chọn tên nhân viên!");
             if (!pin) return alert("Vui lòng nhập mã PIN!");
 
             const eventName = type === 'in' ? 'clock_in' : 'clock_out';
-            
+
             socket.emit(eventName, { staff_id: staffId, pin }, (res) => {
                 if (res.success) {
                     alert(res.message);
@@ -161,7 +197,7 @@
             const key = e.key;
             if (['0','1','2','3','4','5','6','7','8','9','Backspace'].includes(key)) {
                 handleKioskPin(key);
-                
+
                 // Highlight button
                 const btn = document.querySelector(`.numpad-btn[data-key="${key}"]`);
                 if (btn) {

@@ -19,7 +19,7 @@
         .glass-panel { background: #111; border: 1px solid #333; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
-    
+
         /* Tối ưu hóa UI/UX cho màn hình cảm ứng & di động */
         button, select, input {
             min-height: 48px !important;
@@ -41,16 +41,31 @@
             .h-screen { height: auto !important; min-height: 100vh; overflow-y: auto !important; }
             body { overflow-y: auto !important; }
             .glass-panel { padding: 15px !important; }
-            
+
             /* Dành cho các tour card/bàn */
             .grid-cols-2, .grid-cols-3, .xl\:grid-cols-2 { grid-template-columns: 1fr !important; }
-            
+
             /* Đảm bảo khoảng cách chạm trên mobile */
             .tour-card { margin-bottom: 24px; }
             .poker-table-bg { margin: 24px 0; }
         }
 
     </style>
+
+    <!-- FIREBASE AUTH SETUP -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "STAGING_API_KEY",
+            authDomain: "acepoker-staging.firebaseapp.com",
+            projectId: "acepoker-staging"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
+
 </head>
 <body class="p-6 h-screen flex flex-col">
     <header class="flex justify-between items-center mb-6 border-b border-[#333] pb-4">
@@ -74,7 +89,7 @@
                     [+] Tạo Mới
                 </button>
             </div>
-            
+
             <div>
                 <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Mã NV (ID)</label>
                 <input type="text" id="hr-id" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none" placeholder="VD: NV01">
@@ -186,11 +201,32 @@
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
-        const socket = io('https://akpoker.onrender.com');
 
-        
-        
-        
+        const token = sessionStorage.getItem('acepoker_token');
+        if (!token) {
+            alert('Lỗi: Bạn chưa đăng nhập hoặc phiên đã hết hạn!');
+            window.location.href = './index.html';
+        }
+        const socket = io('https://akpoker.onrender.com', { auth: { token } });
+
+        socket.on('connect_error', (err) => {
+            if (err.message.includes('Authentication error')) {
+                alert('Xác thực thất bại! Đang chuyển hướng về trang chủ...');
+                sessionStorage.removeItem('acepoker_token');
+                window.location.href = './index.html';
+            }
+        });
+
+        socket.on('token_expired', () => {
+            alert('Phiên làm việc hết hạn. Hệ thống yêu cầu đăng nhập lại để làm mới phiên làm việc!');
+            sessionStorage.removeItem('acepoker_token');
+            window.location.href = './index.html';
+        });
+
+
+
+
+
         socket.on('connect', () => {
             socket.emit('request_initial_data');
         });
@@ -198,7 +234,7 @@
         socket.on('update_staff_list', (staffList) => {
             const tbody = document.getElementById('staff-table');
             tbody.innerHTML = '';
-            
+
             if(staffList) {
                 staffList.sort((a, b) => {
                     const aResigned = a.work_status === 'RESIGNED' ? 1 : 0;
@@ -210,41 +246,41 @@
                     const isResigned = s.work_status === 'RESIGNED';
                     const hours = (s.total_minutes / 60).toFixed(2);
                     const salary = (s.total_minutes / 60) * s.base_salary;
-                    
-                    
+
+
                     const isDealer = s.role === 'Dealer' || s.role === 'TD' || s.role === 'Floor';
                     const baseSalary = (s.total_minutes / 60) * s.base_salary;
-                    
+
                     let dealingHours = 0;
                     let dealingMins = 0;
                     let dealingBonus = 0;
-                    
+
                     if (s.total_dealing_ms) {
                         const totalMins = Math.floor(s.total_dealing_ms / 60000);
                         dealingHours = Math.floor(totalMins / 60);
                         dealingMins = totalMins % 60;
                         dealingBonus = (totalMins / 60) * (s.dealer_bonus || 30000);
                     }
-                    
+
                     const totalSalary = baseSalary + dealingBonus;
-                    
+
                     const timeDealingStr = s.total_dealing_ms ? `${dealingHours}h ${dealingMins}m` : '-';
                     const bonusStr = s.total_dealing_ms ? new Intl.NumberFormat('vi-VN', {style:'currency', currency:'VND'}).format(dealingBonus) : '-';
 
                     let statusColor = s.status === 'offline' ? 'text-gray-500' : 'text-[#2ecc71]';
                     if(s.status === 'waiting') statusColor = 'text-[#d4af37]';
                     let statusText = s.status;
-                    
+
                     let rowClass = "border-b border-[#222] hover:bg-[#333] cursor-pointer transition-colors";
                     let textNameClass = "text-white";
-                    
+
                     if (isResigned) {
                         rowClass += " opacity-50";
                         statusText = "ĐÃ THÔI VIỆC";
                         statusColor = "text-red-500";
                         textNameClass = "text-gray-500";
                     }
-                    
+
                     tbody.innerHTML += `
                         <tr class="${rowClass}" onclick='editStaff(this.getAttribute("data-staff"))' data-staff='${JSON.stringify(s).replace(/'/g, "&apos;").replace(/"/g, "&quot;")}' >
                             <td class="p-3 text-gray-400 font-bold">${s.id}</td>
@@ -261,7 +297,7 @@
             }
         });
 
-        
+
         let isEditing = false;
         let currentPhotoBase64 = '';
         let stream = null;
@@ -274,7 +310,7 @@
                 video.classList.remove('hidden');
                 document.getElementById('photo-preview').classList.add('hidden');
                 document.getElementById('photo-placeholder').classList.add('hidden');
-                
+
                 document.getElementById('btn-start-camera').classList.add('hidden');
                 document.getElementById('btn-take-photo').classList.remove('hidden');
             } catch (err) {
@@ -287,21 +323,21 @@
             const video = document.getElementById('camera-stream');
             const canvas = document.getElementById('photo-canvas');
             const ctx = canvas.getContext('2d');
-            
+
             // Draw video frame to 300x300 canvas
             ctx.drawImage(video, 0, 0, 300, 300);
             currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-            
+
             // Stop camera
             stream.getTracks().forEach(track => track.stop());
             stream = null;
-            
+
             // Show preview
             video.classList.add('hidden');
             const preview = document.getElementById('photo-preview');
             preview.src = currentPhotoBase64;
             preview.classList.remove('hidden');
-            
+
             document.getElementById('btn-start-camera').classList.remove('hidden');
             document.getElementById('btn-start-camera').innerHTML = '<i class="fa-solid fa-camera mr-1"></i> Chụp Lại';
             document.getElementById('btn-take-photo').classList.add('hidden');
@@ -313,18 +349,18 @@
             document.getElementById('hr-id').value = s.id;
             document.getElementById('hr-id').disabled = true;
             document.getElementById('hr-id').classList.add('opacity-50', 'cursor-not-allowed');
-            
+
             document.getElementById('hr-name').value = s.name;
             document.getElementById('hr-pin').value = s.pin || '';
             document.getElementById('hr-role').value = s.role;
             document.getElementById('hr-salary').value = s.base_salary;
             document.getElementById('hr-dealer-bonus').value = s.dealer_bonus || '30000';
-            
+
             document.getElementById('hr-dob').value = s.dob || '';
             document.getElementById('hr-cccd').value = s.cccd || '';
             document.getElementById('hr-cccd-date').value = s.cccd_date || '';
             document.getElementById('hr-address').value = s.address || '';
-            
+
             if (s.photo) {
                 currentPhotoBase64 = s.photo;
                 const preview = document.getElementById('photo-preview');
@@ -338,7 +374,7 @@
                 document.getElementById('photo-placeholder').classList.remove('hidden');
                 document.getElementById('btn-start-camera').innerHTML = '<i class="fa-solid fa-camera mr-1"></i> Bật Camera';
             }
-            
+
             if(stream) {
                 stream.getTracks().forEach(track => track.stop());
                 stream = null;
@@ -346,7 +382,7 @@
                 document.getElementById('btn-start-camera').classList.remove('hidden');
                 document.getElementById('btn-take-photo').classList.add('hidden');
             }
-            
+
             document.getElementById('btn-submit').innerHTML = '<i class="fa-solid fa-save mr-2"></i> CẬP NHẬT';
             document.getElementById('btn-submit').classList.replace('bg-[#d4af37]', 'bg-blue-600');
             document.getElementById('btn-submit').classList.replace('hover:bg-[#b5952f]', 'hover:bg-blue-500');
@@ -360,7 +396,7 @@
             hrIdInput.value = '';
             hrIdInput.disabled = false;
             hrIdInput.classList.remove('opacity-50', 'cursor-not-allowed');
-            
+
             document.getElementById('hr-name').value = '';
             document.getElementById('hr-pin').value = '';
             document.getElementById('hr-role').value = 'Dealer';
@@ -370,12 +406,12 @@
             document.getElementById('hr-cccd').value = '';
             document.getElementById('hr-cccd-date').value = '';
             document.getElementById('hr-address').value = '';
-            
+
             currentPhotoBase64 = '';
             document.getElementById('photo-preview').classList.add('hidden');
             document.getElementById('photo-placeholder').classList.remove('hidden');
             document.getElementById('btn-start-camera').innerHTML = '<i class="fa-solid fa-camera mr-1"></i> Bật Camera';
-            
+
             if(stream) {
                 stream.getTracks().forEach(track => track.stop());
                 stream = null;
@@ -384,13 +420,13 @@
                 document.getElementById('btn-take-photo').classList.add('hidden');
             }
 
-            
+
             document.getElementById('btn-submit').innerHTML = '<i class="fa-solid fa-save mr-2"></i> LƯU HỒ SƠ';
             document.getElementById('btn-submit').classList.replace('bg-blue-600', 'bg-[#d4af37]');
             document.getElementById('btn-submit').classList.replace('hover:bg-blue-500', 'hover:bg-[#b5952f]');
             document.getElementById('btn-cancel').classList.add('hidden');
             document.getElementById('btn-resign').classList.add('hidden');
-            
+
             hrIdInput.focus();
         }
 
@@ -411,9 +447,9 @@
 
             };
             if(!payload.id || !payload.name || ( !isEditing && !payload.pin )) return alert("Vui lòng nhập đủ thông tin ID, Tên, và PIN");
-            
+
             const eventName = isEditing ? 'update_staff' : 'add_staff';
-            
+
             socket.emit(eventName, payload, (res) => {
                 alert(res.message);
                 if(res.success) {
