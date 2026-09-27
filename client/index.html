@@ -223,17 +223,18 @@
 
         function openPinModal(link, role) {
             targetLink = link;
-            emailInput.value = '';
-            pwdInput.value = '';
-            errorMsg.classList.add('hidden');
-            modal.classList.remove('hidden');
+            if(emailInput) emailInput.value = '';
+            if(pwdInput) pwdInput.value = '';
+            if(errorMsg) errorMsg.classList.add('hidden');
+            if(modal) modal.classList.remove('hidden');
         }
 
         function closePinModal() {
-            modal.classList.add('hidden');
+            if(modal) modal.classList.add('hidden');
         }
 
         async function verifyPin() {
+            if(!emailInput || !pwdInput) return;
             const email = emailInput.value;
             const pwd = pwdInput.value;
 
@@ -244,55 +245,9 @@
                 sessionStorage.setItem('acepoker_token', token);
                 window.location.href = targetLink;
             } catch(e) {
-                errorMsg.innerText = e.message || "Đăng nhập thất bại!";
-                errorMsg.classList.remove('hidden');
-            }
-        }
-            else if (targetRole === 'cashier' && pin === '6666') { isValid = true; assignedRole = 'cashier'; }
-            else if (targetRole === 'td' && pin === '8888') { isValid = true; assignedRole = 'td'; }
-            else if (targetRole === 'floor' && pin === '1111') { isValid = true; assignedRole = 'floor'; }
-            else if (targetRole === 'god' && pin === '9999') { isValid = true; assignedRole = 'god'; }
-
-            if (isValid) {
-                sessionStorage.setItem('acepoker_role', assignedRole);
-                window.location.href = targetLink;
-            } else {
-                errorMsg.classList.remove('hidden');
-                input.value = '';
-                input.focus();
-            }
-        }
-
-
-        });
-
-        window.addEventListener('keydown', (e) => {
-            if (modal.classList.contains('hidden')) return;
-            const key = e.key;
-            if (['0','1','2','3','4','5','6','7','8','9','Backspace','Enter'].includes(key)) {
-                handlePinInput(key);
-
-                // Highlight button
-                const btn = document.querySelector(`.numpad-btn[data-key="${key}"]`);
-                if (btn) {
-                    btn.classList.add('bg-white', 'text-black', 'scale-95');
-                    setTimeout(() => btn.classList.remove('bg-white', 'text-black', 'scale-95'), 150);
-                }
-            }
-        });
-
-        function handlePinInput(key) {
-            errorMsg.classList.add('hidden');
-            if (key === 'Backspace') {
-                input.value = input.value.slice(0, -1);
-            } else if (key === 'Enter') {
-                if(input.value.length === 4) verifyPin();
-            } else {
-                if (input.value.length < 4) {
-                    input.value += key;
-                    if(input.value.length === 4) {
-                        setTimeout(() => verifyPin(), 100);
-                    }
+                if(errorMsg) {
+                    errorMsg.innerText = e.message || "Đăng nhập thất bại!";
+                    errorMsg.classList.remove('hidden');
                 }
             }
         }
