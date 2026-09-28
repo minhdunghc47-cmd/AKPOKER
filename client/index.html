@@ -278,7 +278,7 @@
                     input.value = '';
                 }
             } catch(e) {
-                errorMsg.innerText = "Lỗi kết nối tới máy chủ!";
+                errorMsg.innerText = "Lỗi: " + (e.message || e); console.error(e);
                 errorMsg.classList.remove('hidden');
                 input.value = '';
             }
