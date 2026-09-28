@@ -180,58 +180,43 @@
     
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAsEfStDuNNNk6bWDxdlSNMpOjljMXUZZs",
-            authDomain: "acepoker-1991.firebaseapp.com",
-            databaseURL: "https://acepoker-1991-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "acepoker-1991",
-            storageBucket: "acepoker-1991.firebasestorage.app",
-            messagingSenderId: "1043270358527",
-            appId: "1:1043270358527:web:b273250d09c371ee5fc3ca"
-        };
-        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-            
-        }
-        if (!firebase.apps.length) {
-            
-        }
-        // Cấu hình Firebase (Staging) sẽ được điền ở đây
-        
-        
-
+        // No Firebase Auth Needed
         let socket = null;
 
         function connectSocket(token) {
-            socket = io('https://akpoker.onrender.com', {
-                auth: { token: token }
-            });
+            socket = io('https://akpoker.onrender.com');
 
-            // ... status UI handlers ...
             socket.on('connect', () => {
-                document.getElementById('status-box').className = "absolute bottom-6 right-8 flex items-center space-x-3 bg-[#111] px-4 py-2 rounded-full border border-[#2ecc71]/40 shadow-lg z-20";
-                document.getElementById('status-dot').className = "w-2.5 h-2.5 bg-[#2ecc71] rounded-full pulse-dot";
-                document.getElementById('status-text').className = "text-[#2ecc71] font-bold text-[10px] tracking-widest uppercase";
-                document.getElementById('status-text').innerText = "Connected (Authenticated)";
+                const statusBox = document.getElementById('status-box');
+                const statusDot = document.getElementById('status-dot');
+                const statusText = document.getElementById('status-text');
+                
+                if (statusBox) statusBox.className = "absolute bottom-6 right-8 flex items-center space-x-3 bg-[#111] px-4 py-2 rounded-full border border-[#2ecc71]/40 shadow-lg z-20";
+                if (statusDot) statusDot.className = "w-2.5 h-2.5 bg-[#2ecc71] rounded-full pulse-dot";
+                if (statusText) {
+                    statusText.className = "text-[#2ecc71] font-bold text-[10px] tracking-widest uppercase";
+                    statusText.innerText = "Connected";
+                }
             });
 
             socket.on('connect_error', (err) => {
-                document.getElementById('status-text').innerText = "Lỗi Kết Nối";
-                document.getElementById('status-dot').className = "w-2.5 h-2.5 bg-red-500 rounded-full";
-                alert("Lỗi kết nối Socket: " + err.message);
-                sessionStorage.removeItem('acepoker_token');
+                const statusDot = document.getElementById('status-dot');
+                const statusText = document.getElementById('status-text');
+                if (statusText) statusText.innerText = "Lỗi Kết Nối";
+                if (statusDot) statusDot.className = "w-2.5 h-2.5 bg-red-500 rounded-full";
             });
         }
 
-        // Tạm thời để trống socket lúc đầu, chỉ kết nối khi có token trong localStorage (nếu đã đăng nhập)
         window.onload = () => {
             const token = sessionStorage.getItem('acepoker_token');
             if (token) {
-                document.getElementById('status-text').innerText = "Đang xác thực...";
+                const statusText = document.getElementById('status-text');
+                if (statusText) statusText.innerText = "Đang kết nối...";
                 connectSocket(token);
             }
         };
 
-                                // Modal Logic
+        // Modal Logic
         let targetLink = '';
         let targetRole = '';
         const modal = document.getElementById('pin-modal');
@@ -265,86 +250,11 @@
                 sessionStorage.setItem('acepoker_token', assignedRole); // send role directly
                 window.location.href = targetLink;
             } else {
-                errorMsg.innerText = "Mã PIN không hợp lệ!";
-                errorMsg.classList.remove('hidden');
-                input.value = '';
-            }
-        }
-
-        function handlePinInput(key) {
-            if(errorMsg) errorMsg.classList.add('hidden');
-            if (key === 'Backspace') {
-                input.value = input.value.slice(0, -1);
-            } else if (key === 'Enter') {
-                if(input.value.length === 4) verifyPin();
-            } else {
-                if (input.value.length < 4) {
-                    input.value += key;
-                    if(input.value.length === 4) {
-                        setTimeout(() => verifyPin(), 100);
-                    }
-                }
-            }
-        }
-
-        // Add event listeners for numpad buttons
-        document.querySelectorAll('.numpad-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                handlePinInput(btn.getAttribute('data-key'));
-            });
-        });
-
-        window.addEventListener('keydown', (e) => {
-            if (modal && !modal.classList.contains('hidden')) {
-                const key = e.key;
-                if (['0','1','2','3','4','5','6','7','8','9','Backspace','Enter'].includes(key)) {
-                    handlePinInput(key);
-                    
-                    // Highlight button
-                    const btn = document.querySelector(`.numpad-btn[data-key="${key}"]`);
-                    if (btn) {
-                        btn.classList.add('bg-white', 'text-black', 'scale-95');
-                        setTimeout(() => btn.classList.remove('bg-white', 'text-black', 'scale-95'), 150);
-                    }
-                }
-            }
-        });
-        });
-
-        window.addEventListener('keydown', (e) => {
-            if (modal && !modal.classList.contains('hidden')) {
-                const key = e.key;
-                if (['0','1','2','3','4','5','6','7','8','9','Backspace','Enter'].includes(key)) {
-                    handlePinInput(key);
-                    
-                    // Highlight button
-                    const btn = document.querySelector(`.numpad-btn[data-key="${key}"]`);
-                    if (btn) {
-                        btn.classList.add('bg-white', 'text-black', 'scale-95');
-                        setTimeout(() => btn.classList.remove('bg-white', 'text-black', 'scale-95'), 150);
-                    }
-                }
-            }
-        });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Sign in with Firebase using the custom token
-                    const userCredential = await firebase.auth().signInWithCustomToken(data.token);
-                    const token = await userCredential.user.getIdToken();
-                    
-                    sessionStorage.setItem('acepoker_token', token);
-                    window.location.href = targetLink;
-                } else {
-                    errorMsg.innerText = data.message || "Mã PIN không hợp lệ!";
+                if (errorMsg) {
+                    errorMsg.innerText = "Mã PIN không hợp lệ!";
                     errorMsg.classList.remove('hidden');
-                    input.value = '';
                 }
-            } catch(e) {
-                errorMsg.innerText = "Lỗi: " + (e.message || e); console.error(e);
-                errorMsg.classList.remove('hidden');
-                input.value = '';
+                if (input) input.value = '';
             }
         }
 
