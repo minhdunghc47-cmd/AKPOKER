@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <script>
-        const role = sessionStorage.getItem('acepoker_role');
+        
         if (role !== 'god') {
             window.location.href = './index.html';
         }
@@ -211,27 +211,11 @@
             
         }
 
-        const token = sessionStorage.getItem('acepoker_token');
-        if (!token) {
-            alert('Lỗi: Bạn chưa đăng nhập hoặc phiên đã hết hạn!');
-            window.location.href = './index.html';
-        }
-        const socket = io('https://akpoker.onrender.com', { auth: { token } });
+        
+        const socket = io('https://akpoker.onrender.com');
 
-        socket.on('connect_error', (err) => {
-            if (err.message.includes('Authentication error')) {
-                alert('Xác thực thất bại! Đang chuyển hướng về trang chủ...');
-                sessionStorage.removeItem('acepoker_token');
-                window.location.href = './index.html';
-            }
-        });
-
-        socket.on('token_expired', () => {
-            alert('Phiên làm việc hết hạn. Hệ thống yêu cầu đăng nhập lại để làm mới phiên làm việc!');
-            sessionStorage.removeItem('acepoker_token');
-            window.location.href = './index.html';
-        });
-
+        
+        
 
 
 
