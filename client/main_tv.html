@@ -217,7 +217,38 @@
         
         
     let currentTours = [];
+    
     let broadcastTourId = null;
+    let localPendingInterval = null;
+
+    function renderPendingClock() {
+        if (!currentTours) return;
+        const tour = currentTours.find(t => t.id === broadcastTourId);
+        if (!tour) return;
+        
+        if (tour.status === 'pending' && tour.scheduled_start) {
+            const now = Date.now();
+            let diffSec = Math.floor((tour.scheduled_start - now) / 1000);
+            
+            if (diffSec < 0) diffSec = 0;
+            
+            const clockEl = document.getElementById('tv-clock');
+            if (clockEl) {
+                clockEl.innerText = formatTime(diffSec);
+                clockEl.style.color = '#fff';
+                clockEl.style.textShadow = '0 0 30px rgba(255,255,255,0.3)';
+                clockEl.classList.remove('pulse-clock');
+            }
+            
+            const levelName = document.getElementById('tv-level-name');
+            if (levelName) {
+                levelName.innerText = "BẮT ĐẦU SAU";
+                levelName.style.color = '#3b82f6';
+                levelName.style.textShadow = '0 0 20px rgba(59, 130, 246, 0.4)';
+            }
+        }
+    }
+
     let realtimeInterval = null;
 
     function formatMoney(n) {
@@ -249,6 +280,7 @@
             const ss = now.getSeconds().toString().padStart(2,'0');
             const el = document.getElementById('tv-realtime');
             if(el) el.innerText = `${hh}:${mm}:${ss}`;
+            renderPendingClock();
         }, 1000);
     }
 
@@ -328,11 +360,23 @@
         const bbCount = avg > 0 ? Math.floor(avg / bbAmount) : 0;
         document.getElementById('tv-avg-bb').innerText = `${bbCount} BB`;
 
-        document.getElementById('tv-level-name').innerText = isBreak ? 'BREAK TIME' : `LEVEL ${blind?.level || 0}`;
+        if (tour.status === 'pending' && tour.scheduled_start) {
+            document.getElementById('tv-level-name').innerText = "BẮT ĐẦU SAU";
+            document.getElementById('tv-level-name').style.color = '#3b82f6';
+            document.getElementById('tv-level-name').style.textShadow = '0 0 20px rgba(59, 130, 246, 0.4)';
+        } else {
+            document.getElementById('tv-level-name').innerText = isBreak ? 'BREAK TIME' : `LEVEL ${blind?.level || 0}`;
+            document.getElementById('tv-level-name').style.color = '';
+            document.getElementById('tv-level-name').style.textShadow = '';
+        }
 
         // Clock
         const clockEl = document.getElementById('tv-clock');
-        clockEl.innerText = formatTime(tour.time_remaining);
+        if (tour.status === 'pending' && tour.scheduled_start) {
+            renderPendingClock();
+        } else {
+            clockEl.innerText = formatTime(tour.time_remaining);
+        }
         const danger = tour.time_remaining <= 60 && !isBreak && tour.status === 'running';
         if(danger) {
             clockEl.style.color = '#ff2a4b';
