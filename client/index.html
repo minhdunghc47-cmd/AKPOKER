@@ -146,31 +146,23 @@
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
             <div class="text-center mb-6">
-                <i class="fa-solid fa-lock text-3xl text-[#d4af37] mb-3"></i>
-                <h2 class="text-xl font-mafia text-[#d4af37] uppercase tracking-widest">Yêu Cầu Mã PIN</h2>
-                <p class="text-xs text-gray-500 mt-2 uppercase">Vui lòng xác thực quyền truy cập</p>
+                <i class="fa-solid fa-user-shield text-3xl text-[#d4af37] mb-3"></i>
+                <h2 class="text-xl font-mafia text-[#d4af37] uppercase tracking-widest">Đăng Nhập</h2>
+                <p class="text-xs text-gray-500 mt-2 uppercase">Vui lòng xác thực tài khoản</p>
             </div>
 
-            <input type="password" id="pin-input" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#d4af37] rounded-lg px-4 py-3 text-center text-3xl text-white tracking-[0.5em] mb-6 outline-none transition-colors cursor-default" placeholder="****" maxlength="4" autocomplete="off" readonly>
-
-            <p id="pin-error" class="text-red-500 text-xs text-center font-bold uppercase hidden mb-4 -mt-2">Mã PIN không hợp lệ!</p>
-
-            <!-- Virtual Numpad -->
-            <div class="grid grid-cols-3 gap-3" style="grid-template-columns: repeat(3, minmax(0, 1fr)) !important;">
-                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="1">1</button>
-                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="2">2</button>
-                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="3">3</button>
-                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="4">4</button>
-                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="5">5</button>
-                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="6">6</button>
-                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="7">7</button>
-                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="8">8</button>
-                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="9">9</button>
-                <button class="numpad-btn bg-[#800020] hover:bg-red-700 text-white font-bold text-xl py-4 rounded-lg transition-colors border border-red-900" data-key="Backspace"><i class="fa-solid fa-delete-left"></i></button>
-                <button class="numpad-btn bg-[#222] hover:bg-[#333] text-white font-bold text-2xl py-4 rounded-lg transition-colors border border-[#333]" data-key="0">0</button>
-                <button class="numpad-btn bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold text-xl py-4 rounded-lg transition-colors border border-[#b5952f]" data-key="Enter"><i class="fa-solid fa-check"></i></button>
+            <div class="space-y-4 mb-6">
+                <input type="email" id="email-input" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#d4af37] rounded-lg px-4 py-3 text-white tracking-widest outline-none transition-colors" placeholder="Email" autocomplete="email">
+                <input type="password" id="password-input" class="w-full bg-[#0a0a0a] border border-[#333] focus:border-[#d4af37] rounded-lg px-4 py-3 text-white tracking-widest outline-none transition-colors" placeholder="Mật khẩu" autocomplete="current-password" onkeypress="if(event.key === 'Enter') verifyPin()">
             </div>
+
+            <p id="pin-error" class="text-red-500 text-xs text-center font-bold uppercase hidden mb-4">Đăng nhập thất bại!</p>
+
+            <button onclick="verifyPin()" class="w-full bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold text-lg py-4 rounded-lg transition-colors border border-[#b5952f] uppercase tracking-widest">
+                Xác Nhận
+            </button>
         </div>
+    </div>
     </div>
 
 
@@ -182,11 +174,13 @@
     <script>
         // Cấu hình Firebase (Staging) sẽ được điền ở đây
         const firebaseConfig = {
-            // apiKey: "...",
-            // authDomain: "...",
-            // projectId: "..."
+            apiKey: "STAGING_API_KEY",
+            authDomain: "acepoker-staging.firebaseapp.com",
+            projectId: "acepoker-staging"
         };
-        // firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
 
         let socket = null;
 
