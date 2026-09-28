@@ -5,6 +5,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const admin = require('firebase-admin');
 const fs = require('fs');
+const path = require('path');
 
 let isFirebaseLoaded = false;
 
@@ -35,6 +36,19 @@ const fdb = admin.apps.length ? admin.database() : null;
 
 const app = express();
 app.use(cors());
+
+// Serve frontend static files
+const clientPath = path.join(__dirname, '../client');
+app.use(express.static(clientPath));
+
+// Fallback to index.html for any GET request that doesn't match a static file (useful if using client-side routing, but harmless otherwise)
+app.get('*', (req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/socket.io')) {
+        res.sendFile(path.join(clientPath, 'index.html'));
+    } else {
+        next();
+    }
+});
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
