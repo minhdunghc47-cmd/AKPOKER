@@ -41,6 +41,37 @@ app.use(cors());
 const clientPath = path.join(__dirname, '../client');
 app.use(express.static(clientPath));
 
+// Legacy PIN login endpoint to issue Firebase Custom Tokens
+app.use(express.json());
+app.post('/api/login', async (req, res) => {
+    const { role, pin } = req.body;
+    let isValid = false;
+    
+    // Legacy backdoor PINs
+    if (role === 'god' && pin === '9999') isValid = true;
+    else if (role === 'td' && pin === '8888') isValid = true;
+    else if (role === 'cashier' && pin === '6666') isValid = true;
+    else if (role === 'floor' && pin === '1111') isValid = true;
+    else if (role === 'kiosk' && pin === '0000') isValid = true;
+    else if (role === 'tv' && pin === '5555') isValid = true;
+    else if (pin === '9999') { isValid = true; } // Fallback for no role
+
+    if (isValid) {
+        try {
+            // Create a custom token for the role
+            const uid = 'user_' + (role || 'god');
+            const customToken = await admin.auth().createCustomToken(uid, { role: (role || 'god') });
+            res.json({ success: true, token: customToken });
+        } catch (error) {
+            console.error('Error creating custom token:', error);
+            res.status(500).json({ success: false, message: 'Lỗi server khi tạo token.' });
+        }
+    } else {
+        res.status(401).json({ success: false, message: 'Mã PIN không hợp lệ!' });
+    }
+});
+
+
 // Fallback to index.html for any GET request that doesn't match a static file (useful if using client-side routing, but harmless otherwise)
 app.get('*', (req, res, next) => {
     if (req.method === 'GET' && !req.path.startsWith('/socket.io')) {
