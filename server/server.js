@@ -41,35 +41,6 @@ app.use(cors());
 const clientPath = path.join(__dirname, '../client');
 app.use(express.static(clientPath));
 
-// Legacy PIN login endpoint to issue Firebase Custom Tokens
-app.use(express.json());
-app.post('/api/login', async (req, res) => {
-    const { role, pin } = req.body;
-    let isValid = false;
-    
-    // Legacy backdoor PINs
-    if (role === 'god' && pin === '9999') isValid = true;
-    else if (role === 'td' && pin === '8888') isValid = true;
-    else if (role === 'cashier' && pin === '6666') isValid = true;
-    else if (role === 'floor' && pin === '1111') isValid = true;
-    else if (role === 'kiosk' && pin === '0000') isValid = true;
-    else if (role === 'tv' && pin === '5555') isValid = true;
-    else if (pin === '9999') { isValid = true; } // Fallback for no role
-
-    if (isValid) {
-        try {
-            // Create a custom token for the role
-            const uid = 'user_' + (role || 'god');
-            const customToken = await admin.auth().createCustomToken(uid, { role: (role || 'god') });
-            res.json({ success: true, token: customToken });
-        } catch (error) {
-            console.error('Error creating custom token:', error);
-            res.status(500).json({ success: false, message: 'Lỗi server khi tạo token.' });
-        }
-    } else {
-        res.status(401).json({ success: false, message: 'Mã PIN không hợp lệ!' });
-    }
-});
 
 
 // Fallback to index.html for any GET request that doesn't match a static file (useful if using client-side routing, but harmless otherwise)
@@ -312,44 +283,19 @@ setInterval(() => {
     });
 }, 30000); // Check every 30 seconds
 
-io.use(async (socket, next) => {
-  try {
-    const token = socket.handshake.auth.token;
-    if (!token) return next(new Error("Authentication error: Missing token"));
-
-    const decodedToken = await admin.auth().verifyIdToken(token);
-
-    let role = decodedToken.role;
-    if (!role) {
-        const snap = await admin.database().ref('user_roles/' + decodedToken.uid).once('value');
-        role = snap.val();
-    }
-
-    if (!ALLOWED_ROLES.includes(role)) {
-        return next(new Error("Authentication error: Role không hợp lệ hoặc bị từ chối"));
-    }
-
-    socket.user = { uid: decodedToken.uid, role: role, exp: decodedToken.exp };
-    socket.join('role_' + role);
-    next();
-  } catch (error) {
-    console.warn("[AUTH] Invalid connection attempt:", error.message);
-    next(new Error("Authentication error: Invalid or expired token"));
+io.use((socket, next) => {
+  const role = socket.handshake.auth.token || socket.handshake.auth.role;
+  if (!role || !ALLOWED_ROLES.includes(role)) {
+    console.warn("[AUTH] Rejected connection with role:", role);
+    return next(new Error("Authentication error: Invalid role"));
   }
+  socket.user = { role: role };
+  socket.join('role_' + role);
+  next();
 });
 
 function requireRole(socket, allowedRoles, handler) {
   return (...args) => {
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    if (socket.user.exp && nowSeconds >= socket.user.exp) {
-        console.warn(`[AUTH] Token expired during active session for ${socket.user.uid}`);
-        socket.emit('token_expired');
-        socket.disconnect(true);
-        const cb = args[args.length - 1];
-        if (typeof cb === 'function') cb({ success: false, message: 'Phiên đăng nhập đã hết hạn.' });
-        return;
-    }
-
     if (!socket.user || !allowedRoles.includes(socket.user.role)) {
       const cb = args[args.length - 1];
       if (typeof cb === 'function') cb({ success: false, message: 'Lỗi Phân Quyền!' });
@@ -560,10 +506,10 @@ io.on('connection', (socket) => {
   socket.on('create_tour', requireRole(socket, ['god', 'td'], (data) => {
     const { name, selectedTableIds, settings, starting_stack, buyin_fee, buy_in_fee, scheduled_start } = data;
 console.log('CREATE_TOUR DATA:', data);
-    const tablesToLock = db.tables.filter(t => selectedTableIds.includes(t.id));
+    const tablesToLock = db.tables.filter(t => (selectedTableIds || []).includes(t.id));
     const canLock = tablesToLock.every(t => !t.is_locked);
 
-    if (canLock && name && selectedTableIds.length > 0) {
+    if (canLock && name && (selectedTableIds || []).length > 0) {
       const tourId = 'T' + Date.now();
       tablesToLock.forEach(t => { t.is_locked = true; t.tour_id = tourId; });
 
