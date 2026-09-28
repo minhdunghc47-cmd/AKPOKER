@@ -91,14 +91,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script>
-        const firebaseConfig = {
-            apiKey: "STAGING_API_KEY",
-            authDomain: "acepoker-staging.firebaseapp.com",
-            projectId: "acepoker-staging"
-        };
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        
+        
     </script>
 
 </head>
@@ -382,6 +376,21 @@
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAsEfStDuNNNk6bWDxdlSNMpOjljMXUZZs",
+            authDomain: "acepoker-1991.firebaseapp.com",
+            databaseURL: "https://acepoker-1991-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "acepoker-1991",
+            storageBucket: "acepoker-1991.firebasestorage.app",
+            messagingSenderId: "1043270358527",
+            appId: "1:1043270358527:web:b273250d09c371ee5fc3ca"
+        };
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+            
+        }
+        if (!firebase.apps.length) {
+            
+        }
 
         const token = sessionStorage.getItem('acepoker_token');
         if (!token) {
