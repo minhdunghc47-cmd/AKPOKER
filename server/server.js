@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
@@ -324,12 +325,13 @@ io.on('connection', (socket) => {
 
   socket.on('add_staff', requireRole(socket, ['god'], (payload, callback) => {
     const { id, name, pin, role, base_salary, dob, cccd, cccd_date, address, photo } = payload;
+    const hashedPin = pin ? bcrypt.hashSync(pin, 10) : '';
     if (db.staff.find(s => s.id === id)) {
       if (callback) callback({ success: false, message: 'Mã nhân viên đã tồn tại!' });
       return;
     }
     db.staff.push({
-      id, name, pin, role,
+      id, name, pin: hashedPin, role,
       base_salary: Number(base_salary) || 50000,
       dob, cccd, cccd_date, address, photo,
       status: 'offline',
@@ -356,13 +358,15 @@ io.on('connection', (socket) => {
 
   socket.on('update_staff', requireRole(socket, ['god'], (payload, callback) => {
     const { id, name, pin, role, base_salary, dob, cccd, cccd_date, address, photo } = payload;
+    let hashedPin = null;
+    if (pin) hashedPin = bcrypt.hashSync(pin, 10);
     const staffIndex = db.staff.findIndex(s => s.id === id);
     if (staffIndex === -1) {
       if (callback) callback({ success: false, message: 'Không tìm thấy nhân viên!' });
       return;
     }
     db.staff[staffIndex].name = name;
-    if(pin) db.staff[staffIndex].pin = pin;
+    if(hashedPin) db.staff[staffIndex].pin = hashedPin;
     db.staff[staffIndex].role = role;
     db.staff[staffIndex].base_salary = Number(base_salary) || 50000;
     if(dob) db.staff[staffIndex].dob = dob;
@@ -405,7 +409,16 @@ io.on('connection', (socket) => {
     const s = db.staff.find(s => s.id === staff_id);
     if(s && s.work_status === 'RESIGNED') { if(callback) callback({success: false, message: 'Tài khoản đã bị khóa do thôi việc. Không thể chấm công!'}); return; }
     if (!s) { if(callback) callback({success: false, message: 'Không tìm thấy nhân sự!'}); return; }
-    if (s.pin !== pin) { if(callback) callback({success: false, message: 'Mã PIN sai!'}); return; }
+    // Support both bcrypt hashes and legacy cleartext for safety during migration
+    let isPinValid = false;
+    if (s.pin) {
+        if (s.pin.startsWith('$2a$') || s.pin.startsWith('$2b$')) {
+            isPinValid = bcrypt.compareSync(pin, s.pin);
+        } else {
+            isPinValid = (s.pin === pin);
+        }
+    }
+    if (!isPinValid) { if(callback) callback({success: false, message: 'Mã PIN sai!'}); return; }
     if (s.status !== 'offline') { if(callback) callback({success: false, message: 'Đã check-in rồi!'}); return; }
 
     s.status = 'waiting';
@@ -423,7 +436,16 @@ io.on('connection', (socket) => {
     const s = db.staff.find(s => s.id === staff_id);
     if(s && s.work_status === 'RESIGNED') { if(callback) callback({success: false, message: 'Tài khoản đã bị khóa do thôi việc. Không thể chấm công!'}); return; }
     if (!s) { if(callback) callback({success: false, message: 'Không tìm thấy nhân sự!'}); return; }
-    if (s.pin !== pin) { if(callback) callback({success: false, message: 'Mã PIN sai!'}); return; }
+    // Support both bcrypt hashes and legacy cleartext for safety during migration
+    let isPinValidOut = false;
+    if (s.pin) {
+        if (s.pin.startsWith('$2a$') || s.pin.startsWith('$2b$')) {
+            isPinValidOut = bcrypt.compareSync(pin, s.pin);
+        } else {
+            isPinValidOut = (s.pin === pin);
+        }
+    }
+    if (!isPinValidOut) { if(callback) callback({success: false, message: 'Mã PIN sai!'}); return; }
     if (s.status === 'offline') { if(callback) callback({success: false, message: 'Đang offline!'}); return; }
 
     const now = Date.now();
