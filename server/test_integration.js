@@ -8,11 +8,11 @@ const adminStub = {
   auth: () => ({
     verifyIdToken: async (token) => {
       const now = Math.floor(Date.now() / 1000);
-      if (token === 'VALID_TOKEN_GOD') return { uid: 'u1', role: 'god', exp: now + 3600 };
-      if (token === 'VALID_TOKEN_TD') return { uid: 'u2', role: 'td', exp: now + 3600 };
-      if (token === 'VALID_TOKEN_TV') return { uid: 'u3', role: 'tv', exp: now + 3600 };
-      if (token === 'VALID_TOKEN_KIOSK') return { uid: 'u4', role: 'kiosk', exp: now + 3600 };
-      if (token === 'EXPIRING_TOKEN_TD') return { uid: 'u5', role: 'td', exp: now + 1 }; 
+      if (token === 'god') return { uid: 'u1', role: 'god', exp: now + 3600 };
+      if (token === 'td') return { uid: 'u2', role: 'td', exp: now + 3600 };
+      if (token === 'tv') return { uid: 'u3', role: 'tv', exp: now + 3600 };
+      if (token === 'kiosk') return { uid: 'u4', role: 'kiosk', exp: now + 3600 };
+      if (token === 'td') return { uid: 'u5', role: 'td', exp: now + 1 }; 
       if (token === 'NO_ROLE_TOKEN') return { uid: 'u7', exp: now + 3600 };
       if (token === 'ADMIN2_TOKEN') return { uid: 'u8', role: 'admin2', exp: now + 3600 };
       throw new Error("Invalid token");
@@ -53,7 +53,7 @@ async function runTests() {
 
   // Seed Data Setup using GOD role
   await new Promise(resolve => {
-    const god = Client(`http://localhost:${port}`, { auth: { token: 'VALID_TOKEN_GOD' } });
+    const god = Client(`http://localhost:${port}`, { auth: { token: 'god' } });
     god.on('connect', () => {
         god.emit('add_staff', { id: 's99', name: 'Secret Staff', pin: 'SECRET_PIN_123', cccd: 'CCCD123', base_salary: 5000000 }, () => {
             god.emit('register_member', { phone: '0987654321', name: 'Rich Member', bank_account: 'BANK123', address: 'SECRET_ADDRESS' }, () => {
@@ -83,7 +83,7 @@ async function runTests() {
   });
 
   await new Promise(resolve => {
-    const client = Client(`http://localhost:${port}`, { auth: { token: 'VALID_TOKEN_KIOSK' } });
+    const client = Client(`http://localhost:${port}`, { auth: { token: 'kiosk' } });
     let gotTours = false;
     let gotMembers = false;
     client.on('update_tours', () => gotTours = true);
@@ -104,7 +104,7 @@ async function runTests() {
   });
 
   await new Promise(resolve => {
-    const client = Client(`http://localhost:${port}`, { auth: { token: 'VALID_TOKEN_TV' } });
+    const client = Client(`http://localhost:${port}`, { auth: { token: 'tv' } });
     let checkedTours = false;
     client.on('update_tours', (tours) => {
        if (tours.length > 0) {
@@ -131,7 +131,7 @@ async function runTests() {
   });
 
   await new Promise(resolve => {
-    const client = Client(`http://localhost:${port}`, { auth: { token: 'VALID_TOKEN_GOD' } });
+    const client = Client(`http://localhost:${port}`, { auth: { token: 'god' } });
     client.on('update_staff_list', (data) => {
        const hasPin = data.some(s => s.pin !== undefined);
        check('Kể cả GOD nhận update_staff_list cũng KHÔNG chứa PIN (Cleartext)', !hasPin);
@@ -146,7 +146,7 @@ async function runTests() {
   });
 
   await new Promise(resolve => {
-    const client = Client(`http://localhost:${port}`, { auth: { token: 'EXPIRING_TOKEN_TD' } });
+    const client = Client(`http://localhost:${port}`, { auth: { token: 'td' } });
     let disconnected = false;
     client.on('disconnect', () => {
         disconnected = true;

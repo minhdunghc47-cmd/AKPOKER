@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <script>
-        
+        const role = sessionStorage.getItem('acepoker_token') || '';
         if (role !== 'god') {
             window.location.href = './index.html';
         }

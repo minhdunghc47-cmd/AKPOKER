@@ -81,7 +81,6 @@ if (fdb) {
       console.error('[FIREBASE] Cảnh báo: Hết thời gian kết nối (URL sai hoặc mạng lỗi). Hệ thống tự động chuyển sang chạy trên RAM!');
       isFirebaseLoaded = true;
       broadcastState(true);
-      broadcastState(true);
     }, 3000);
 
     fdb.ref('/').once('value', (snapshot) => {
@@ -112,7 +111,6 @@ if (fdb) {
         }
       }
       isFirebaseLoaded = true;
-      broadcastState(true);
       broadcastState(true);
     });
   }
@@ -211,8 +209,9 @@ setInterval(() => {
 
   if (stateChanged) {
     broadcastState();
-  } else {
-    const activeTours = db.tournaments.filter(t => t.status !== 'archived');
+  }
+  // Only broadcast time changes every 5 seconds to reduce bandwidth
+  else if (Date.now() % 5000 < 1050) {
     broadcastState(true);
   }
 }, 1000);
@@ -260,7 +259,9 @@ function getToursForRole(tours, role) {
         const copy = { ...t };
         if (role === 'tv') {
             copy.fund = { payout_pool: t.fund.payout_pool || (t.fund.total_paid * 0.85) };
-            copy.players = t.players.map(p => ({ status: p.status, rank: p.rank }));
+            const aliveCount = t.alive_override !== undefined ? t.alive_override : t.players.filter(p => p.status === 'alive').length;
+            copy.alive_override = aliveCount;
+            copy.players = t.players.filter(p => !p.phone || !p.phone.startsWith('DUMMY_')).map(p => ({ status: p.status, rank: p.rank }));
             delete copy.settings;
         } else if (role === 'floor') {
             copy.fund = {};
@@ -448,6 +449,10 @@ io.on('connection', (socket) => {
     s.last_in = null;
     db.time_logs.push({ staff_id, name: s.name, type: 'OUT', time: now });
 
+    // Auto-cleanup: keep only last 90 days of logs
+    const cutoff90d = Date.now() - (90 * 24 * 60 * 60 * 1000);
+    db.time_logs = db.time_logs.filter(log => log.time >= cutoff90d);
+
     broadcastState();
     if (callback) callback({ success: true, message: 'Check-OUT thành công!' });
   }));
@@ -501,7 +506,6 @@ io.on('connection', (socket) => {
 
   socket.on('create_tour', requireRole(socket, ['god', 'td'], (data) => {
     const { name, selectedTableIds, settings, starting_stack, buyin_fee, buy_in_fee, scheduled_start } = data;
-console.log('CREATE_TOUR DATA:', data);
     const tablesToLock = db.tables.filter(t => (selectedTableIds || []).includes(t.id));
     const canLock = tablesToLock.every(t => !t.is_locked);
 
@@ -686,7 +690,6 @@ console.log('CREATE_TOUR DATA:', data);
         }
 
         broadcastState();
-        broadcastState(true);
     }
   }));
 
@@ -713,7 +716,6 @@ console.log('CREATE_TOUR DATA:', data);
       }
 
       broadcastState();
-      broadcastState(true);
     }
   }));
 
@@ -746,7 +748,6 @@ console.log('CREATE_TOUR DATA:', data);
       if (t) t.dealer_assigned = true;
 
       broadcastState();
-      broadcastState(true); // update floor_ipad dropdowns
     }
   }));
 
@@ -812,38 +813,9 @@ console.log('CREATE_TOUR DATA:', data);
     const { tour_id, entries, alive } = payload;
     const t = db.tournaments.find(t => t.id === tour_id);
     if (t) {
-        t.entries = entries;
-        const currentAlivePlayers = t.players.filter(p => p.status === 'alive');
-        const diff = alive - currentAlivePlayers.length;
-
-        if (diff > 0) {
-            // Need to add dummy alive players
-            for(let i = 0; i < diff; i++) {
-                const dummyTable = t.tables[0] || null;
-                t.players.push({
-                    phone: 'DUMMY_' + Date.now() + '_' + i,
-                    name: 'Manual Edit',
-                    status: 'alive',
-                    table_id: dummyTable,
-                    seat: 99 // dummy
-                });
-            }
-        } else if (diff < 0) {
-            // Need to bust out some alive players
-            let toRemove = Math.abs(diff);
-            for (let p of t.players) {
-                if (p.status === 'alive') {
-                    p.status = 'busted';
-                    toRemove--;
-                    if (toRemove === 0) break;
-                }
-            }
-        }
-
-        // Recalculate net_fund if needed? Wait, buy-in amounts might be off.
-        // Let's just adjust total_paid based on entries
-        // Actually, just let the manual force_edit fix the entries number for display.
-
+        // Use override counters instead of mutating actual player list with dummy data
+        t.entries = Number(entries) || t.entries;
+        t.alive_override = Number(alive);
         broadcastState();
     }
   }));
@@ -875,7 +847,6 @@ console.log('CREATE_TOUR DATA:', data);
       }
 
       broadcastState();
-      broadcastState(true);
     }
   }));
 

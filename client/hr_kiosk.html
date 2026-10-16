@@ -118,15 +118,8 @@
             messagingSenderId: "1043270358527",
             appId: "1:1043270358527:web:b273250d09c371ee5fc3ca"
         };
-        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-            
-        }
-        if (!firebase.apps.length) {
-            
-        }
-
         
-        const socket = io('https://akpoker.onrender.com');
+        const socket = io('https://akpoker.onrender.com', { auth: { token: 'kiosk' } });
 
         
         
@@ -148,7 +141,9 @@
             const currentVal = select.value;
             select.innerHTML = '<option value="">-- Chọn Tên Bạn --</option>';
 
-            currentStaffList.forEach(s => {
+            // Ẩn nhân viên đã thôi việc
+            const activeStaff = currentStaffList.filter(s => s.work_status !== 'RESIGNED');
+            activeStaff.forEach(s => {
                 let statusInfo = s.status === 'offline' ? '(OFF)' : '(IN)';
                 select.innerHTML += `<option value="${s.id}">${s.id} - ${s.name} ${statusInfo}</option>`;
             });
