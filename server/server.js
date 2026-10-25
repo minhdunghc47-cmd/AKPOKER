@@ -1,3 +1,4 @@
+// ACE POKER SERVER - v2.4.0 (Champion Celebration & Smart Payouts)
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const http = require('http');
@@ -1311,20 +1312,30 @@ io.on('connection', (socket) => {
     if (!t) return callback && callback({ success: false, message: 'Không tìm thấy giải đấu!' });
 
     t.payouts = t.payouts || [];
-    const ticket_id = 'PO-' + Date.now().toString().slice(-6);
     const now = Date.now();
     const dateFormatted = new Date(now).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+    // Kiểm tra xem hạng này đã được in/ghi nhận trước đó chưa
+    const existingIdx = t.payouts.findIndex(p => Number(p.rank) === Number(rank));
+    const ticket_id = (existingIdx !== -1 && t.payouts[existingIdx].ticket_id)
+      ? t.payouts[existingIdx].ticket_id
+      : ('PO-' + Date.now().toString().slice(-6));
 
     const payoutItem = {
       ticket_id,
       rank: Number(rank),
-      phone,
-      name,
+      phone: phone || '',
+      name: name || 'Khách Vô Danh',
       amount: Number(amount),
       time: now,
       time_formatted: dateFormatted
     };
-    t.payouts.push(payoutItem);
+
+    if (existingIdx !== -1) {
+      t.payouts[existingIdx] = payoutItem;
+    } else {
+      t.payouts.push(payoutItem);
+    }
     t.itm_results = t.itm_results || {};
     t.itm_results[rank] = name;
 
@@ -1332,7 +1343,7 @@ io.on('connection', (socket) => {
     if (callback) callback({
       success: true,
       payout: payoutItem,
-      message: `Đã ghi nhận Payout Hạng ${rank} cho ${name} (${amount.toLocaleString('vi-VN')} VNĐ)`
+      message: `Đã ghi nhận Payout Hạng ${rank} cho ${name} (${Number(amount).toLocaleString('vi-VN')} VNĐ)`
     });
   }));
 

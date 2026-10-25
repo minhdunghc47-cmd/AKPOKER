@@ -46,6 +46,22 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #050b14; }
         ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
+
+        @keyframes spinRays {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .champion-rays-bg {
+            background: repeating-conic-gradient(
+                from 0deg,
+                rgba(212, 175, 55, 0.12) 0deg 15deg,
+                transparent 15deg 30deg
+            );
+            animation: spinRays 70s linear infinite;
+        }
+        .champion-gold-glow {
+            text-shadow: 0 0 20px rgba(255,215,0,0.8), 0 0 40px rgba(212,175,55,0.6), 0 0 70px rgba(212,175,55,0.4);
+        }
     </style>
 
     <!-- FIREBASE AUTH SETUP -->
@@ -84,7 +100,7 @@
 </div>
 
 <!-- MAIN TV UI (3 COLUMNS) -->
-<div id="main-tv" class="hidden flex-col h-full w-full">
+<div id="main-tv" class="hidden flex-col h-full w-full relative">
 
     <!-- HEADER (BRANDING: ACE POKER CLUB) -->
     <div class="h-[12vh] bg-gradient-to-b from-[#0a1128] to-[#050b14] border-b border-[#d4af37]/30 flex justify-between items-center px-10 shadow-[0_5px_30px_rgba(0,0,0,0.8)] z-10 shrink-0">
@@ -265,6 +281,115 @@
         </div>
 
     </div>
+
+    <!-- CHAMPION CEREMONY OVERLAY (LỄ VINH DANH NHÀ VÔ ĐỊCH) -->
+    <div id="tv-champion-ceremony" class="hidden absolute inset-0 z-40 bg-[#040812]/95 flex flex-col items-center justify-between overflow-hidden">
+        <!-- Spinning Rays Background -->
+        <div class="champion-rays-bg absolute inset-0 pointer-events-none opacity-30"></div>
+        <!-- Confetti Canvas -->
+        <canvas id="champion-confetti-canvas" class="absolute inset-0 pointer-events-none z-10 w-full h-full"></canvas>
+
+        <!-- Top Mini Toolbar (Toggle / Re-open) -->
+        <div class="w-full px-8 py-3 flex justify-between items-center z-20 shrink-0 border-b border-[#d4af37]/30 bg-black/50 backdrop-blur-md">
+            <div class="flex items-center gap-3">
+                <span class="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-extrabold text-xs rounded-full uppercase tracking-widest shadow-[0_0_15px_rgba(234,179,8,0.6)]">
+                    ★ ACE POKER CLUB ★
+                </span>
+                <span id="champ-tour-name" class="font-mafia text-xl text-yellow-300 tracking-wider truncate max-w-lg">TOURNAMENT CONCLUDED</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="playChime('fanfare')" class="px-3 py-1.5 bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#d4af37]/50 text-[#d4af37] text-xs font-bold rounded-lg transition flex items-center gap-2">
+                    <i class="fa-solid fa-music"></i> PHÁT LẠI NHẠC VINH DANH
+                </button>
+                <button onclick="toggleChampionOverlay()" class="px-3 py-1.5 bg-gray-900/80 hover:bg-gray-800 border border-gray-600 text-gray-300 text-xs font-bold rounded-lg transition flex items-center gap-2">
+                    <i class="fa-solid fa-clock"></i> THU GỌN / XEM ĐỒNG HỒ
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Hero: Champion Announcement -->
+        <div class="flex-1 flex flex-col items-center justify-center text-center z-20 px-6 max-w-5xl w-full">
+            <!-- Golden Trophy -->
+            <div class="relative mb-3">
+                <div class="w-24 h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-b from-yellow-200 via-[#d4af37] to-amber-700 flex items-center justify-center shadow-[0_0_60px_rgba(212,175,55,0.85)] border-4 border-yellow-200 animate-bounce">
+                    <i class="fa-solid fa-trophy text-5xl md:text-6xl text-black drop-shadow"></i>
+                </div>
+                <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black px-4 py-0.5 rounded-full border border-yellow-400 text-yellow-400 font-teko text-xl tracking-widest uppercase">
+                    #1 VÔ ĐỊCH
+                </div>
+            </div>
+
+            <h2 class="font-mafia text-3xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-amber-500 tracking-[0.2em] uppercase drop-shadow-[0_4px_20px_rgba(234,179,8,0.5)]">
+                NHÀ VÔ ĐỊCH TOURNAMENT
+            </h2>
+
+            <!-- Champion Name in Giant 3D Gold Typography -->
+            <div id="champ-name" class="font-mafia text-6xl md:text-8xl text-white tracking-widest my-2 champion-gold-glow uppercase truncate max-w-4xl">
+                NGUYỄN VĂN A
+            </div>
+
+            <!-- Prize Amount -->
+            <div class="flex items-center gap-3 bg-gradient-to-r from-yellow-500/20 via-black/80 to-yellow-500/20 border-2 border-[#d4af37] px-8 py-2 rounded-2xl shadow-[0_0_40px_rgba(212,175,55,0.4)] mt-1">
+                <span class="text-gray-400 text-sm md:text-base uppercase tracking-widest font-bold">TIỀN THƯỞNG:</span>
+                <span id="champ-prize" class="font-teko text-5xl md:text-6xl text-emerald-400 font-bold tracking-wider drop-shadow-[0_0_15px_rgba(52,211,153,0.6)]">
+                    0 ₫
+                </span>
+            </div>
+        </div>
+
+        <!-- Bottom Podium (Top 1-2-3 Bục Vinh Danh) -->
+        <div class="w-full max-w-4xl px-6 pb-6 z-20 flex items-end justify-center gap-4">
+            <!-- Rank 2: Runner Up (Silver) -->
+            <div class="flex-1 flex flex-col items-center">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-b from-gray-200 to-gray-500 flex items-center justify-center text-black font-bold text-lg shadow-[0_0_20px_rgba(200,200,200,0.5)] mb-2">
+                    🥈
+                </div>
+                <div class="text-xs uppercase text-gray-400 tracking-wider font-bold mb-1">Á QUÂN (#2)</div>
+                <div id="podium-rank2-name" class="text-sm font-bold text-gray-200 truncate max-w-[200px] mb-1">---</div>
+                <div id="podium-rank2-prize" class="font-teko text-2xl text-emerald-400 font-bold mb-2">0 ₫</div>
+                <div class="w-full h-24 bg-gradient-to-t from-gray-900 to-gray-700/80 rounded-t-xl border-t-4 border-gray-300 flex items-center justify-center shadow-lg">
+                    <span class="font-mafia text-3xl text-gray-400">2ND</span>
+                </div>
+            </div>
+
+            <!-- Rank 1: Champion (Gold, Taller Center) -->
+            <div class="flex-1 flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-b from-yellow-200 via-yellow-400 to-amber-600 flex items-center justify-center text-black font-bold text-2xl shadow-[0_0_30px_rgba(234,179,8,0.8)] mb-2 border-2 border-white animate-pulse">
+                    🏆
+                </div>
+                <div class="text-xs uppercase text-yellow-400 tracking-wider font-extrabold mb-1">QUÁN QUÂN (#1)</div>
+                <div id="podium-rank1-name" class="text-base font-extrabold text-yellow-300 truncate max-w-[220px] mb-1">---</div>
+                <div id="podium-rank1-prize" class="font-teko text-3xl text-emerald-400 font-bold mb-2">0 ₫</div>
+                <div class="w-full h-36 bg-gradient-to-t from-yellow-950/90 to-yellow-600/80 rounded-t-xl border-t-4 border-yellow-300 flex items-center justify-center shadow-[0_0_30px_rgba(234,179,8,0.4)]">
+                    <span class="font-mafia text-4xl text-yellow-300">1ST</span>
+                </div>
+            </div>
+
+            <!-- Rank 3: 2nd Runner Up (Bronze) -->
+            <div class="flex-1 flex flex-col items-center">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-b from-amber-600 to-amber-900 flex items-center justify-center text-black font-bold text-lg shadow-[0_0_20px_rgba(217,119,6,0.5)] mb-2">
+                    🥉
+                </div>
+                <div class="text-xs uppercase text-amber-500 tracking-wider font-bold mb-1">HẠNG 3 (#3)</div>
+                <div id="podium-rank3-name" class="text-sm font-bold text-gray-200 truncate max-w-[200px] mb-1">---</div>
+                <div id="podium-rank3-prize" class="font-teko text-2xl text-emerald-400 font-bold mb-2">0 ₫</div>
+                <div class="w-full h-16 bg-gradient-to-t from-gray-900 to-amber-950/80 rounded-t-xl border-t-4 border-amber-600 flex items-center justify-center shadow-lg">
+                    <span class="font-mafia text-2xl text-amber-500">3RD</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING CHAMPION BAR (WHEN COLLAPSED) -->
+    <div id="tv-champion-minibar" class="hidden absolute top-0 left-0 right-0 z-30 bg-gradient-to-r from-yellow-900 via-amber-600 to-yellow-900 px-6 py-2 border-b-2 border-yellow-300 shadow-[0_0_30px_rgba(234,179,8,0.8)] flex items-center justify-between cursor-pointer" onclick="toggleChampionOverlay()">
+        <div class="flex items-center gap-3">
+            <span class="text-xl animate-bounce">🏆</span>
+            <span class="font-mafia text-black text-lg tracking-wider">GIẢI ĐẤU ĐÃ KẾT THÚC — NHÀ VÔ ĐỊCH: <span id="minibar-champ-name" class="underline uppercase">NGUYỄN VĂN A</span></span>
+        </div>
+        <span class="bg-black text-yellow-400 text-xs px-3 py-1 rounded font-bold uppercase tracking-wider hover:bg-yellow-400 hover:text-black transition">
+            <i class="fa-solid fa-trophy mr-1"></i> XEM LỄ VINH DANH
+        </span>
+    </div>
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -284,6 +409,10 @@
     // Audio & State Tracking
     let lastLevelIdx = null;
     let lastSecondBeeped = null;
+    let lastChampionAnnouncedTourId = null;
+    let championOverlayCollapsed = false;
+    let confettiAnimationId = null;
+    let confettiParticles = [];
 
     function formatMoney(n) {
         if(!n) return '0';
@@ -385,6 +514,32 @@
                     gain.connect(ctx.destination);
                     osc.start(ctx.currentTime + idx * 0.15);
                     osc.stop(ctx.currentTime + idx * 0.15 + 0.25);
+                });
+            } else if (type === 'fanfare') {
+                const notes = [
+                    { f: 523.25, t: 0, d: 0.18 },
+                    { f: 659.25, t: 0.18, d: 0.18 },
+                    { f: 783.99, t: 0.36, d: 0.18 },
+                    { f: 1046.50, t: 0.54, d: 0.6 },
+                    { f: 523.25, t: 0.54, d: 0.6 },
+                    { f: 783.99, t: 0.54, d: 0.6 },
+                    { f: 880.00, t: 1.15, d: 0.18 },
+                    { f: 987.77, t: 1.33, d: 0.18 },
+                    { f: 1046.50, t: 1.51, d: 1.2 },
+                    { f: 1318.51, t: 1.51, d: 1.2 },
+                    { f: 1567.98, t: 1.51, d: 1.2 }
+                ];
+                notes.forEach(n => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(n.f, ctx.currentTime + n.t);
+                    gain.gain.setValueAtTime(0.28, ctx.currentTime + n.t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + n.t + n.d);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + n.t);
+                    osc.stop(ctx.currentTime + n.t + n.d);
                 });
             }
         } catch(e) {}
@@ -557,8 +712,16 @@
         const bbCount = avg > 0 ? Math.floor(avg / bbAmount) : 0;
         document.getElementById('tv-avg-bb').innerText = `${bbCount} BB`;
 
+        const alivePlayers = (tour.players || []).filter(p => p.status === 'alive');
+        const isFinished = tour.status === 'finished';
+        const isChampionFound = isFinished || (alive === 1 && (tour.entries || 0) > 1);
+
         // Level Header
-        if (tour.status === 'pending' && tour.scheduled_start) {
+        if (isChampionFound) {
+            document.getElementById('tv-level-name').innerText = "🏆 GIẢI ĐẤU HOÀN TẤT";
+            document.getElementById('tv-level-name').style.color = '#d4af37';
+            document.getElementById('tv-level-name').style.textShadow = '0 0 25px rgba(212,175,55,0.7)';
+        } else if (tour.status === 'pending' && tour.scheduled_start) {
             document.getElementById('tv-level-name').innerText = "BẮT ĐẦU SAU";
             document.getElementById('tv-level-name').style.color = '#3b82f6';
             document.getElementById('tv-level-name').style.textShadow = '0 0 20px rgba(59, 130, 246, 0.4)';
@@ -570,22 +733,27 @@
 
         // Clock Display
         const clockEl = document.getElementById('tv-clock');
-        if (tour.status === 'pending' && tour.scheduled_start) {
+        if (isChampionFound) {
+            clockEl.innerText = "CHAMPION";
+            clockEl.style.color = '#d4af37';
+            clockEl.style.textShadow = '0 0 35px rgba(212,175,55,0.9)';
+            clockEl.classList.remove('pulse-clock');
+        } else if (tour.status === 'pending' && tour.scheduled_start) {
             renderPendingClock();
         } else {
             clockEl.innerText = formatTime(tour.time_remaining);
         }
 
         const danger = tour.time_remaining <= 60 && !isBreak && tour.status === 'running';
-        if(danger) {
+        if(danger && !isChampionFound) {
             clockEl.style.color = '#ff2a4b';
             clockEl.style.textShadow = '0 0 40px rgba(255,0,50,0.9)';
             clockEl.classList.add('pulse-clock');
-        } else if(isBreak) {
+        } else if(isBreak && !isChampionFound) {
             clockEl.style.color = '#ff4c4c';
             clockEl.style.textShadow = '0 0 30px rgba(255,76,76,0.6)';
             clockEl.classList.remove('pulse-clock');
-        } else {
+        } else if(!isChampionFound) {
             clockEl.style.color = '#ffffff';
             clockEl.style.textShadow = '0 0 30px rgba(255,255,255,0.4)';
             clockEl.classList.remove('pulse-clock');
@@ -664,6 +832,9 @@
 
         // --- RENDER SLIDE 3: UPCOMING BLINDS ---
         renderSlideBlinds(tour);
+
+        // --- RENDER CHAMPION CEREMONY ---
+        renderChampionCeremony(tour, isChampionFound, alivePlayers);
     }
 
     function renderSlidePayout(tour, currentLvlNum, lateRegLvlNum) {
@@ -840,6 +1011,154 @@
                 `;
             }
             list.appendChild(row);
+        }
+    }
+
+    // --- CHAMPION CEREMONY LOGIC ---
+    function renderChampionCeremony(tour, isChampionFound, alivePlayers) {
+        const ceremonyEl = document.getElementById('tv-champion-ceremony');
+        const minibarEl = document.getElementById('tv-champion-minibar');
+        if (!ceremonyEl || !minibarEl) return;
+
+        if (!isChampionFound) {
+            ceremonyEl.classList.add('hidden');
+            minibarEl.classList.add('hidden');
+            stopConfetti();
+            lastChampionAnnouncedTourId = null;
+            return;
+        }
+
+        // Get Champion Name
+        const itmResults = tour.itm_results || {};
+        let championName = itmResults[1] || (alivePlayers && alivePlayers.length === 1 ? (alivePlayers[0].name || alivePlayers[0].phone) : (tour.winner || 'VÔ ĐỊCH'));
+
+        // Calculate Payout Pool
+        const pool = (tour.fund && tour.fund.payout_pool) ? tour.fund.payout_pool : ((tour.entries || 0) * (tour.buyin_fee || 0) * 0.85);
+        let payouts = [];
+        const e = tour.entries || 0;
+        if (pool > 0) {
+            if (e <= 5) payouts = [{ rank: 1, amount: pool }];
+            else if (e <= 10) payouts = [{ rank: 1, amount: pool * 0.65 }, { rank: 2, amount: pool * 0.35 }];
+            else if (e <= 20) payouts = [{ rank: 1, amount: pool * 0.50 }, { rank: 2, amount: pool * 0.30 }, { rank: 3, amount: pool * 0.20 }];
+            else if (e <= 40) payouts = [{ rank: 1, amount: pool * 0.45 }, { rank: 2, amount: pool * 0.25 }, { rank: 3, amount: pool * 0.15 }, { rank: 4, amount: pool * 0.10 }, { rank: 5, amount: pool * 0.05 }];
+            else payouts = [{ rank: 1, amount: pool * 0.40 }, { rank: 2, amount: pool * 0.25 }, { rank: 3, amount: pool * 0.15 }, { rank: 4, amount: pool * 0.10 }, { rank: 5, amount: pool * 0.06 }, { rank: 6, amount: pool * 0.04 }];
+        }
+
+        const p1Amount = payouts.find(p => p.rank === 1)?.amount || 0;
+        const p2Amount = payouts.find(p => p.rank === 2)?.amount || 0;
+        const p3Amount = payouts.find(p => p.rank === 3)?.amount || 0;
+
+        // Populate Ceremony Overlay DOM
+        document.getElementById('champ-tour-name').innerText = tour.name || 'ACE POKER CHAMPIONSHIP';
+        document.getElementById('champ-name').innerText = championName;
+        document.getElementById('champ-prize').innerText = formatMoney(p1Amount) + ' ₫';
+        document.getElementById('minibar-champ-name').innerText = championName;
+
+        // Podium Top 1-2-3
+        document.getElementById('podium-rank1-name').innerText = championName;
+        document.getElementById('podium-rank1-prize').innerText = formatMoney(p1Amount) + ' ₫';
+
+        document.getElementById('podium-rank2-name').innerText = itmResults[2] || (p2Amount > 0 ? 'Đang cập nhật' : '—');
+        document.getElementById('podium-rank2-prize').innerText = p2Amount > 0 ? formatMoney(p2Amount) + ' ₫' : '—';
+
+        document.getElementById('podium-rank3-name').innerText = itmResults[3] || (p3Amount > 0 ? 'Đang cập nhật' : '—');
+        document.getElementById('podium-rank3-prize').innerText = p3Amount > 0 ? formatMoney(p3Amount) + ' ₫' : '—';
+
+        // Play Fanfare & Auto Open on First Detection
+        if (lastChampionAnnouncedTourId !== tour.id) {
+            lastChampionAnnouncedTourId = tour.id;
+            championOverlayCollapsed = false;
+            playChime('fanfare');
+        }
+
+        if (championOverlayCollapsed) {
+            ceremonyEl.classList.add('hidden');
+            minibarEl.classList.remove('hidden');
+            stopConfetti();
+        } else {
+            ceremonyEl.classList.remove('hidden');
+            minibarEl.classList.add('hidden');
+            startConfetti();
+        }
+    }
+
+    function toggleChampionOverlay() {
+        championOverlayCollapsed = !championOverlayCollapsed;
+        const ceremonyEl = document.getElementById('tv-champion-ceremony');
+        const minibarEl = document.getElementById('tv-champion-minibar');
+        if (championOverlayCollapsed) {
+            if (ceremonyEl) ceremonyEl.classList.add('hidden');
+            if (minibarEl) minibarEl.classList.remove('hidden');
+            stopConfetti();
+        } else {
+            if (ceremonyEl) ceremonyEl.classList.remove('hidden');
+            if (minibarEl) minibarEl.classList.add('hidden');
+            startConfetti();
+        }
+    }
+
+    function startConfetti() {
+        const canvas = document.getElementById('champion-confetti-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const colors = ['#ffd700', '#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#ec4899', '#ffffff'];
+        confettiParticles = [];
+        for (let i = 0; i < 90; i++) {
+            confettiParticles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                size: Math.random() * 9 + 5,
+                speedY: Math.random() * 3 + 2,
+                speedX: (Math.random() - 0.5) * 2,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rotation: Math.random() * 360,
+                rotationSpeed: (Math.random() - 0.5) * 6,
+                shape: Math.random() > 0.4 ? 'rect' : 'circle'
+            });
+        }
+
+        if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            confettiParticles.forEach(p => {
+                p.y += p.speedY;
+                p.x += p.speedX;
+                p.rotation += p.rotationSpeed;
+                if (p.y > canvas.height + 20) {
+                    p.y = -20;
+                    p.x = Math.random() * canvas.width;
+                }
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                if (p.shape === 'rect') {
+                    ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            });
+            confettiAnimationId = requestAnimationFrame(loop);
+        }
+        loop();
+    }
+
+    function stopConfetti() {
+        if (confettiAnimationId) {
+            cancelAnimationFrame(confettiAnimationId);
+            confettiAnimationId = null;
+        }
+        const canvas = document.getElementById('champion-confetti-canvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
     }
 </script>

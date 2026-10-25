@@ -253,11 +253,12 @@
                         <table class="w-full text-left text-xs text-gray-300">
                             <thead class="bg-[#161616] sticky top-0 text-[#d4af37] border-b border-[#333]">
                                 <tr>
-                                    <th class="p-3 font-bold uppercase tracking-wider w-16 text-center">Hạng</th>
+                                    <th class="p-3 font-bold uppercase tracking-wider w-14 text-center">Hạng</th>
                                     <th class="p-3 font-bold uppercase tracking-wider text-center">Tỷ Lệ</th>
-                                    <th class="p-3 font-bold uppercase tracking-wider text-right">Tiền Thưởng (VNĐ)</th>
-                                    <th class="p-3 font-bold uppercase tracking-wider">Hội Viên Nhận</th>
-                                    <th class="p-3 font-bold uppercase tracking-wider text-center w-24">Thao Tác</th>
+                                    <th class="p-3 font-bold uppercase tracking-wider text-right">Tiền Thưởng</th>
+                                    <th class="p-3 font-bold uppercase tracking-wider">Hội Viên ITM</th>
+                                    <th class="p-3 font-bold uppercase tracking-wider text-center">Trạng Thái</th>
+                                    <th class="p-3 font-bold uppercase tracking-wider text-center w-36">In Phiếu 80mm</th>
                                 </tr>
                             </thead>
                             <tbody id="pm-payout-rows"></tbody>
@@ -876,17 +877,65 @@
             currentCalculatedPayouts.forEach(p => {
                 const tr = document.createElement('tr');
                 tr.className = 'border-b border-[#222] hover:bg-[#1a1a1a] transition cursor-pointer';
-                const recipientName = itmResults[p.rank] || '<span class="text-gray-500 italic">Chưa ghi nhận</span>';
-                tr.innerHTML = `
-                    <td class="p-3 font-bold text-center text-[#d4af37]">${p.rank}</td>
-                    <td class="p-3 text-center text-gray-400 font-mono">${p.pct}%</td>
-                    <td class="p-3 text-right font-bold text-emerald-400 font-mono">${formatMoney(p.amount)}</td>
-                    <td class="p-3 font-bold text-white">${recipientName}</td>
-                    <td class="p-3 text-center">
-                        <button class="bg-[#1f1f1f] border border-[#d4af37]/40 text-[#d4af37] px-2 py-1 rounded text-[10px] font-bold hover:bg-[#d4af37] hover:text-black transition" onclick="selectPayoutRow(${p.rank})">
-                            CHỌN
+
+                const existingPayout = (tour.payouts || []).find(po => Number(po.rank) === Number(p.rank));
+                const bustedPlayerStr = itmResults[p.rank] || (p.rank === 1 && tour.winner ? tour.winner : null);
+
+                // Tìm kiếm thông tin hội viên tương ứng
+                const matchedPlayer = (tour.players || []).find(pl => (pl.name && pl.name === bustedPlayerStr) || (pl.phone && pl.phone === bustedPlayerStr));
+                const finalName = existingPayout?.name || (matchedPlayer ? matchedPlayer.name : (bustedPlayerStr || ''));
+                const finalPhone = existingPayout?.phone || (matchedPlayer ? matchedPlayer.phone : '');
+
+                let recipientDisplay = '';
+                if (finalName) {
+                    recipientDisplay = `
+                        <div class="font-bold text-white uppercase flex items-center gap-1.5">
+                            <span>${finalName}</span>
+                            ${finalPhone ? `<span class="text-[10px] text-gray-400 font-mono font-normal">(${finalPhone})</span>` : ''}
+                        </div>
+                    `;
+                } else {
+                    recipientDisplay = `<span class="text-gray-500 italic text-[11px]">Chưa xác định</span>`;
+                }
+
+                let statusBadge = '';
+                let actionButtons = '';
+
+                if (existingPayout) {
+                    statusBadge = `
+                        <span class="inline-flex items-center gap-1 bg-emerald-950/80 border border-emerald-500/60 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold">
+                            <i class="fa-solid fa-circle-check"></i> ĐÃ IN (${existingPayout.ticket_id})
+                        </span>
+                    `;
+                    actionButtons = `
+                        <button class="bg-[#1f1f1f] border border-gray-600 hover:border-[#d4af37] text-gray-300 hover:text-white px-2 py-1 rounded text-[10px] font-bold transition mr-1" onclick="quickPrintPayoutRow(${p.rank})" title="In lại phiếu nhiệt 80mm">
+                            <i class="fa-solid fa-print mr-1"></i>In Lại
                         </button>
-                    </td>
+                        <button class="bg-[#161616] border border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white px-2 py-1 rounded text-[10px] font-bold transition" onclick="selectPayoutRow(${p.rank})" title="Sửa thông tin">
+                            Sửa
+                        </button>
+                    `;
+                } else {
+                    statusBadge = finalName
+                        ? `<span class="inline-flex items-center gap-1 bg-yellow-950/80 border border-yellow-500/50 text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-clock"></i> CHỜ IN</span>`
+                        : `<span class="inline-flex items-center gap-1 bg-gray-900 border border-gray-700 text-gray-500 px-2 py-0.5 rounded text-[10px]">CHƯA ITM</span>`;
+                    actionButtons = `
+                        <button class="bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black px-2.5 py-1 rounded text-[10px] font-extrabold hover:brightness-110 shadow-sm transition mr-1" onclick="quickPrintPayoutRow(${p.rank})" title="In phiếu nhanh 1 chạm">
+                            <i class="fa-solid fa-bolt mr-1"></i>In Phiếu
+                        </button>
+                        <button class="bg-[#1f1f1f] border border-[#d4af37]/40 text-[#d4af37] px-2 py-1 rounded text-[10px] font-bold hover:bg-[#d4af37] hover:text-black transition" onclick="selectPayoutRow(${p.rank})" title="Nạp vào form">
+                            Chọn
+                        </button>
+                    `;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-center text-[#d4af37] text-sm">${p.rank === 1 ? '🏆 1' : p.rank}</td>
+                    <td class="p-3 text-center text-gray-400 font-mono">${p.pct}%</td>
+                    <td class="p-3 text-right font-bold text-emerald-400 font-mono text-sm">${formatMoney(p.amount)}</td>
+                    <td class="p-3">${recipientDisplay}</td>
+                    <td class="p-3 text-center">${statusBadge}</td>
+                    <td class="p-3 text-center whitespace-nowrap">${actionButtons}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -915,6 +964,11 @@
 
             onRankSelectChange();
 
+            // Tự động nạp thông tin hàng đầu tiên nếu có
+            if (currentCalculatedPayouts.length > 0) {
+                selectPayoutRow(currentCalculatedPayouts[0].rank);
+            }
+
             document.getElementById('payout-modal').classList.replace('hidden', 'flex');
         }
 
@@ -925,6 +979,34 @@
         function selectPayoutRow(rank) {
             document.getElementById('pm-select-rank').value = rank;
             onRankSelectChange();
+
+            if (!currentPayoutTour) return;
+            const itmResults = currentPayoutTour.itm_results || {};
+            const existingPayout = (currentPayoutTour.payouts || []).find(po => Number(po.rank) === Number(rank));
+            let targetNameOrPhone = existingPayout?.phone || existingPayout?.name || itmResults[rank] || (rank === 1 && currentPayoutTour.winner ? currentPayoutTour.winner : '');
+
+            const playerSelect = document.getElementById('pm-select-player');
+            const phoneInput = document.getElementById('pm-input-phone');
+
+            let matched = false;
+            for (let i = 0; i < playerSelect.options.length; i++) {
+                const opt = playerSelect.options[i];
+                if (targetNameOrPhone && (opt.value === targetNameOrPhone || opt.dataset.name === targetNameOrPhone || opt.dataset.phone === targetNameOrPhone)) {
+                    playerSelect.selectedIndex = i;
+                    if (opt.dataset.phone) phoneInput.value = opt.dataset.phone;
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (!matched) {
+                if (existingPayout) {
+                    phoneInput.value = existingPayout.phone || '';
+                } else {
+                    const matchedPl = (currentPayoutTour.players || []).find(pl => (pl.name && pl.name === targetNameOrPhone) || (pl.phone && pl.phone === targetNameOrPhone));
+                    phoneInput.value = matchedPl ? (matchedPl.phone || '') : '';
+                }
+            }
         }
 
         function onRankSelectChange() {
@@ -941,6 +1023,60 @@
             if (selectedOpt && selectedOpt.dataset.phone) {
                 document.getElementById('pm-input-phone').value = selectedOpt.dataset.phone;
             }
+        }
+
+        function quickPrintPayoutRow(rank) {
+            if (!currentPayoutTour) return;
+            const payout = currentCalculatedPayouts.find(p => p.rank === rank);
+            if (!payout) return;
+
+            const itmResults = currentPayoutTour.itm_results || {};
+            const existing = (currentPayoutTour.payouts || []).find(po => Number(po.rank) === Number(rank));
+            let name = existing?.name || itmResults[rank] || (rank === 1 && currentPayoutTour.winner ? currentPayoutTour.winner : '');
+            let phone = existing?.phone || '';
+
+            const matchedPlayer = (currentPayoutTour.players || []).find(pl => (pl.name && pl.name === name) || (pl.phone && pl.phone === name));
+            if (matchedPlayer) {
+                name = matchedPlayer.name;
+                if (!phone) phone = matchedPlayer.phone || '';
+            }
+
+            if (!name) {
+                const inputName = prompt(`Nhập tên hoặc SĐT hội viên nhận giải Hạng ${rank}:`);
+                if (!inputName || !inputName.trim()) return;
+                name = inputName.trim();
+            }
+
+            socket.emit('record_payout', {
+                tour_id: currentPayoutTour.id,
+                rank,
+                phone,
+                name,
+                amount: payout.amount
+            }, (res) => {
+                if (res && res.success) {
+                    const pItem = res.payout;
+                    document.getElementById('pr-ticket-id').innerText = pItem.ticket_id;
+                    document.getElementById('pr-tour-name').innerText = currentPayoutTour.name;
+                    document.getElementById('pr-time').innerText = pItem.time_formatted;
+                    document.getElementById('pr-name').innerText = pItem.name;
+                    document.getElementById('pr-phone').innerText = pItem.phone || '---';
+                    document.getElementById('pr-rank').innerText = `HẠNG ${pItem.rank} (${payout.label || ''})`;
+                    document.getElementById('pr-amount').innerText = new Intl.NumberFormat('vi-VN').format(pItem.amount) + ' VNĐ';
+
+                    window.print();
+
+                    // Cập nhật mảng payouts cục bộ và render lại bảng
+                    currentPayoutTour.payouts = currentPayoutTour.payouts || [];
+                    const existingIdx = currentPayoutTour.payouts.findIndex(p => Number(p.rank) === Number(rank));
+                    if (existingIdx !== -1) currentPayoutTour.payouts[existingIdx] = pItem;
+                    else currentPayoutTour.payouts.push(pItem);
+
+                    openPayoutModal(currentPayoutTour.id);
+                } else {
+                    alert((res && res.message) || 'Có lỗi xảy ra khi ghi nhận payout!');
+                }
+            });
         }
 
         function recordAndPrintPayout() {
@@ -965,7 +1101,6 @@
                 amount
             }, (res) => {
                 if (res.success) {
-                    // Cập nhật dữ liệu vào khung in 80mm
                     const pItem = res.payout;
                     document.getElementById('pr-ticket-id').innerText = pItem.ticket_id;
                     document.getElementById('pr-tour-name').innerText = currentPayoutTour.name;
@@ -975,10 +1110,16 @@
                     document.getElementById('pr-rank').innerText = `HẠNG ${pItem.rank} (${payout ? payout.label : ''})`;
                     document.getElementById('pr-amount').innerText = new Intl.NumberFormat('vi-VN').format(pItem.amount) + ' VNĐ';
 
-                    // Kích hoạt in hóa đơn nhiệt 80mm
                     window.print();
+
+                    // Cập nhật lại modal ngay lập tức
+                    currentPayoutTour.payouts = currentPayoutTour.payouts || [];
+                    const existingIdx = currentPayoutTour.payouts.findIndex(p => Number(p.rank) === Number(rank));
+                    if (existingIdx !== -1) currentPayoutTour.payouts[existingIdx] = pItem;
+                    else currentPayoutTour.payouts.push(pItem);
+
+                    openPayoutModal(currentPayoutTour.id);
                     alert(res.message);
-                    closePayoutModal();
                 } else {
                     alert("LỖI GHI NHẬN PAYOUT: " + res.message);
                 }
