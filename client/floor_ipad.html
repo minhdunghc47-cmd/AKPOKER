@@ -296,6 +296,9 @@
         let activeMenuSeatId = null;
         let pendingDealerTableId = null;
         let pendingMovePhone = null;
+        let pendingMoveName = null;
+        let pendingCurrentTableId = null;
+        let selectedTargetSeat = null;
 
         const seatPositions = [
             { id: 1, x: 82, y: 18 }, { id: 2, x: 95, y: 50 }, { id: 3, x: 82, y: 82 },
@@ -785,11 +788,6 @@
         // =====================
         // MOVE TABLE & SEAT-TO-SEAT MODAL
         // =====================
-        let selectedTargetSeat = null;
-        let pendingMovePhone = null;
-        let pendingMoveName = null;
-        let pendingCurrentTableId = null;
-
         function openMoveModal(phone, name, currentTableId) {
             closeAllMenus();
             pendingMovePhone = phone;
