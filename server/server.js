@@ -991,6 +991,195 @@ io.on('connection', (socket) => {
     }
   }));
 
+  // --- CÁC TÍNH NĂNG TOURNAMENT DIRECTOR (TD) THEO CHUẨN BEE POKER TOUR ---
+  // 1. GỘP BÀN TỰ ĐỘNG (AUTO MERGE TABLES)
+  socket.on('merge_tables', requireRole(socket, ['god', 'td'], (tourId, callback) => {
+    const t = db.tournaments.find(tour => tour.id === tourId);
+    if (!t) return callback && callback({ success: false, message: 'Không tìm thấy giải đấu!' });
+    if (!t.tables || t.tables.length <= 1) {
+      return callback && callback({ success: false, message: 'Giải đấu chỉ còn 1 bàn, không thể gộp bàn!' });
+    }
+
+    // Đếm số người alive trên từng bàn
+    const tableStats = t.tables.map(tblId => {
+      const aliveInTable = t.players.filter(p => p.table_id === tblId && p.status === 'alive');
+      return { tableId: tblId, count: aliveInTable.length, players: aliveInTable };
+    });
+
+    // Sắp xếp tăng dần theo số lượng người (bàn ít người nhất sẽ là nguồn gộp)
+    tableStats.sort((a, b) => a.count - b.count);
+    const source = tableStats[0];
+    const remainingTables = tableStats.slice(1);
+
+    // Tính tổng ghế trống trên các bàn còn lại (mỗi bàn tối đa 9 người)
+    const totalEmptySeats = remainingTables.reduce((sum, item) => sum + (9 - item.count), 0);
+    if (totalEmptySeats < source.count) {
+      return callback && callback({ 
+        success: false, 
+        message: `Không đủ ghế trống trên các bàn còn lại để gộp (Bàn ${source.tableId} có ${source.count} người, nhưng các bàn còn lại chỉ còn ${totalEmptySeats} ghế trống)!` 
+      });
+    }
+
+    // Chuyển ngẫu nhiên từng người từ source table sang các bàn còn lại
+    const movedDetails = [];
+    source.players.forEach(p => {
+      // Chọn bàn có ít người nhất để cân bằng bàn
+      remainingTables.sort((a, b) => a.count - b.count);
+      const targetTable = remainingTables.find(tbl => tbl.count < 9);
+      if (targetTable) {
+        const occupied = t.players
+          .filter(pl => pl.table_id === targetTable.tableId && pl.status === 'alive')
+          .map(pl => pl.seat);
+        const emptySeats = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(s => !occupied.includes(s));
+        const newSeat = emptySeats[Math.floor(Math.random() * emptySeats.length)];
+
+        p.table_id = targetTable.tableId;
+        p.seat = newSeat;
+        targetTable.count += 1;
+        movedDetails.push({ name: p.name, fromTable: source.tableId, toTable: targetTable.tableId, seat: newSeat });
+      }
+    });
+
+    // Giải phóng source table khỏi giải đấu
+    t.tables = t.tables.filter(id => id !== source.tableId);
+    const tblObj = db.tables.find(tbl => tbl.id === source.tableId);
+    if (tblObj) {
+      tblObj.is_locked = false;
+      tblObj.tour_id = null;
+      if (tblObj.dealer_name) {
+        const staff = db.staff.find(s => s.name === tblObj.dealer_name);
+        if (staff && staff.status === 'busy') {
+          staff.status = 'waiting';
+          if (staff.session_start) {
+            staff.total_dealing_ms = (staff.total_dealing_ms || 0) + (Date.now() - staff.session_start);
+            staff.session_start = null;
+          }
+        }
+        tblObj.dealer_name = null;
+        tblObj.dealer_time = null;
+      }
+    }
+
+    broadcastState();
+    if (callback) callback({
+      success: true,
+      message: `Gộp Bàn ${source.tableId} thành công! Đã dời ${movedDetails.length} người sang các bàn còn lại.`,
+      movedDetails
+    });
+  }));
+
+  // 2. BỐC THĂM BÀN CHUNG KẾT (FINAL TABLE REDRAW)
+  socket.on('final_table_redraw', requireRole(socket, ['god', 'td'], (tourId, callback) => {
+    const t = db.tournaments.find(tour => tour.id === tourId);
+    if (!t) return callback && callback({ success: false, message: 'Không tìm thấy giải đấu!' });
+
+    const alivePlayers = t.players.filter(p => p.status === 'alive');
+    if (alivePlayers.length > 9) {
+      return callback && callback({ 
+        success: false, 
+        message: `Giải đấu hiện còn ${alivePlayers.length} người chơi (nhiều hơn 9 người)! Cần tối đa 9 người để bốc thăm Bàn Chung Kết.` 
+      });
+    }
+    if (alivePlayers.length === 0) {
+      return callback && callback({ success: false, message: 'Không có người chơi còn sống!' });
+    }
+
+    // Chọn Bàn Chung Kết (Bàn đầu tiên trong danh sách bàn hiện tại)
+    const finalTableId = t.tables[0];
+    const tablesToRelease = t.tables.filter(id => id !== finalTableId);
+
+    // Giải phóng các bàn phụ
+    tablesToRelease.forEach(tblId => {
+      const tblObj = db.tables.find(tbl => tbl.id === tblId);
+      if (tblObj) {
+        tblObj.is_locked = false;
+        tblObj.tour_id = null;
+        if (tblObj.dealer_name) {
+          const staff = db.staff.find(s => s.name === tblObj.dealer_name);
+          if (staff && staff.status === 'busy') {
+            staff.status = 'waiting';
+            if (staff.session_start) {
+              staff.total_dealing_ms = (staff.total_dealing_ms || 0) + (Date.now() - staff.session_start);
+              staff.session_start = null;
+            }
+          }
+          tblObj.dealer_name = null;
+          tblObj.dealer_time = null;
+        }
+      }
+    });
+
+    t.tables = [finalTableId];
+    t.is_final_table = true;
+
+    // Xáo trộn ngẫu nhiên người chơi alive (Fisher-Yates)
+    const shuffled = [...alivePlayers];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    // Bốc thăm ghế từ 1 đến số lượng người
+    const seats = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    shuffled.forEach((p, idx) => {
+      p.table_id = finalTableId;
+      p.seat = seats[idx];
+    });
+
+    broadcastState();
+    if (callback) callback({
+      success: true,
+      message: `Đã bốc thăm ngẫu nhiên Bàn Chung Kết (Bàn ${finalTableId}) cho ${shuffled.length} cơ thủ!`,
+      finalTableId
+    });
+  }));
+
+  // 3. BẬT / TẮT CHẾ ĐỘ HAND-FOR-HAND (BUBBLE TIME)
+  socket.on('toggle_hand_for_hand', requireRole(socket, ['god', 'td'], (tourId, callback) => {
+    const t = db.tournaments.find(tour => tour.id === tourId);
+    if (!t) return callback && callback({ success: false, message: 'Không tìm thấy giải đấu!' });
+
+    t.hand_for_hand = !t.hand_for_hand;
+    broadcastState();
+    if (callback) callback({
+      success: true,
+      hand_for_hand: t.hand_for_hand,
+      message: t.hand_for_hand ? 'ĐÃ KÍCH HOẠT CHẾ ĐỘ HAND-FOR-HAND!' : 'ĐÃ TẮT CHẾ ĐỘ HAND-FOR-HAND.'
+    });
+  }));
+
+  // 4. XÁC NHẬN & GHI NHẬN PAYOUT (IN PHIẾU THƯỞNG)
+  socket.on('record_payout', requireRole(socket, ['god', 'td'], (payload, callback) => {
+    const { tour_id, rank, phone, name, amount } = payload;
+    const t = db.tournaments.find(tour => tour.id === tour_id);
+    if (!t) return callback && callback({ success: false, message: 'Không tìm thấy giải đấu!' });
+
+    t.payouts = t.payouts || [];
+    const ticket_id = 'PO-' + Date.now().toString().slice(-6);
+    const now = Date.now();
+    const dateFormatted = new Date(now).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+    const payoutItem = {
+      ticket_id,
+      rank: Number(rank),
+      phone,
+      name,
+      amount: Number(amount),
+      time: now,
+      time_formatted: dateFormatted
+    };
+    t.payouts.push(payoutItem);
+    t.itm_results = t.itm_results || {};
+    t.itm_results[rank] = name;
+
+    broadcastState();
+    if (callback) callback({
+      success: true,
+      payout: payoutItem,
+      message: `Đã ghi nhận Payout Hạng ${rank} cho ${name} (${amount.toLocaleString('vi-VN')} VNĐ)`
+    });
+  }));
+
   socket.on('end_tour', requireRole(socket, ['god', 'td'], (tourId) => {
     const t = db.tournaments.find(t => t.id === tourId);
     if (t && (t.status === 'running' || t.status === 'paused')) {

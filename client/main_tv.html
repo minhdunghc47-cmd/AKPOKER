@@ -151,6 +151,14 @@
                     ĐỒNG HỒ ĐANG CHẠY - CHỜ ĐỦ <span id="tv-lock-min-players">6</span> NGƯỜI CHƠI ĐỂ BẮT ĐẦU CHIA BÀI
                 </div>
             </div>
+
+            <!-- HAND FOR HAND BANNER (CHUẨN TDA) -->
+            <div id="tv-h4h-banner" class="hidden absolute top-[15vh] w-full text-center z-50">
+                <div class="inline-block bg-red-700 text-yellow-300 font-mafia text-4xl px-12 py-3 rounded-full shadow-[0_0_60px_rgba(255,0,0,0.9)] border-4 border-yellow-300 animate-pulse tracking-widest whitespace-nowrap">
+                    <i class="fa-solid fa-hand mr-3 text-white"></i> 
+                    CHẾ ĐỘ HAND-FOR-HAND - CÁC BÀN CHIA TỪNG VÁN THEO HIỆU LỆNH TD
+                </div>
+            </div>
             <!-- CLOCK -->
             <div class="w-full flex justify-center items-center my-8 mt-24">
                 <div id="tv-clock" class="font-digital text-[clamp(6rem,15vw,16rem)] leading-none tracking-tighter whitespace-nowrap text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">00:00</div>
@@ -333,6 +341,16 @@
 
         // Header
         document.getElementById('tv-tour-name').innerText = tour.name;
+
+        // Hand-for-Hand Banner Toggle
+        const h4hBanner = document.getElementById('tv-h4h-banner');
+        if (h4hBanner) {
+            if (tour.hand_for_hand) {
+                h4hBanner.classList.remove('hidden');
+            } else {
+                h4hBanner.classList.add('hidden');
+            }
+        }
 
         // Left Col Stats
         const lateRegLvlNum = tour.settings?.late_reg_level || 8;
