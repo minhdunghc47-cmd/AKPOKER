@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ACE POKER CLUB - F&B & BAR KITCHEN</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&family=Oswald:wght@300;400;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050b14;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        .font-teko { font-family: 'Teko', sans-serif; }
+        .font-oswald { font-family: 'Oswald', sans-serif; }
+        .text-gold { color: #d4af37; }
+        .border-gold { border-color: #d4af37; }
+        .bg-gold { background-color: #d4af37; }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #d4af37 0%, #aa801e 100%);
+            color: #000;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+        .btn-gold:hover {
+            filter: brightness(1.15);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+
+        .glass-card {
+            background: #0c1424;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+        .glass-card:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+        }
+
+        /* 80mm ESC-POS Thermal Receipt Printing Styles */
+        @media print {
+            body * { visibility: hidden !important; }
+            #fnb-ticket-print, #fnb-ticket-print * { visibility: visible !important; }
+            #fnb-ticket-print {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 80mm;
+                margin: 0;
+                padding: 0;
+                display: block !important;
+                background: white !important;
+                color: black !important;
+            }
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #081020; }
+        ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col pb-10">
+
+    <!-- TOP HEADER -->
+    <header class="h-20 bg-gradient-to-b from-[#0a1128] to-[#050b14] border-b border-[#d4af37]/30 px-6 flex items-center justify-between shadow-xl sticky top-0 z-40">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-black border-2 border-[#d4af37] flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.5)]">
+                <i class="fa-solid fa-mug-hot text-xl text-[#d4af37]"></i>
+            </div>
+            <div>
+                <div class="font-oswald text-2xl text-white tracking-wider flex items-center gap-2">
+                    <span>ACE<span class="text-[#d4af37]"> POKER</span></span>
+                    <span class="text-xs bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37] px-2 py-0.5 rounded font-bold uppercase tracking-widest">F&B • BAR & BẾP</span>
+                </div>
+                <div class="text-[11px] text-gray-400 uppercase tracking-widest font-semibold">HỆ THỐNG GỌI NƯỚC, ĐỒ ĂN & BƯNG BÀN (KDS)</div>
+            </div>
+        </div>
+
+        <!-- CENTER TABS -->
+        <div class="flex items-center gap-2 bg-[#0c1424] p-1.5 rounded-xl border border-gray-800">
+            <button onclick="switchTab('orders')" id="tab-btn-orders" class="px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md">
+                <i class="fa-solid fa-bell-concierge"></i> ĐƠN HÀNG LIVE
+                <span id="badge-pending-orders" class="bg-red-600 text-white px-2 py-0.2 rounded-full text-[10px] font-extrabold hidden">0</span>
+            </button>
+            <button onclick="switchTab('pos')" id="tab-btn-pos" class="px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-plus-circle"></i> TẠO ĐƠN TẠI BÀN / BAR
+            </button>
+            <button onclick="switchTab('menu')" id="tab-btn-menu" class="px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-utensils"></i> QUẢN LÝ THỰC ĐƠN
+            </button>
+        </div>
+
+        <!-- RIGHT ACTIONS -->
+        <div class="flex items-center gap-4">
+            <button id="btn-sound-toggle" onclick="toggleSound()" class="w-10 h-10 rounded-full bg-[#111827] border border-amber-500/40 text-amber-400 flex items-center justify-center hover:bg-amber-500 hover:text-black transition" title="Bật/Tắt chuông báo đơn mới">
+                <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+            </button>
+            <div class="text-right">
+                <div id="realtime-clock" class="font-teko text-2xl text-emerald-400 leading-none">00:00:00</div>
+                <div class="text-[10px] text-gray-400 uppercase font-mono">LIVE SYNC</div>
+            </div>
+            <a href="./index.html" class="px-3.5 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-300 hover:text-white text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5">
+                <i class="fa-solid fa-house"></i> SẢNH
+            </a>
+        </div>
+    </header>
+
+    <!-- STATS KPI BAR -->
+    <div class="px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="glass-card rounded-xl p-4 flex items-center justify-between border-l-4 border-l-amber-500">
+            <div>
+                <div class="text-xs uppercase text-gray-400 font-bold tracking-wider">Đang Chuẩn Bị (Chờ)</div>
+                <div id="kpi-pending-count" class="font-teko text-4xl text-amber-400 leading-none mt-1">0</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl">
+                <i class="fa-solid fa-fire-burner animate-pulse"></i>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-xl p-4 flex items-center justify-between border-l-4 border-l-blue-500">
+            <div>
+                <div class="text-xs uppercase text-gray-400 font-bold tracking-wider">Đang Bưng Ra Bàn</div>
+                <div id="kpi-delivering-count" class="font-teko text-4xl text-blue-400 leading-none mt-1">0</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 text-xl">
+                <i class="fa-solid fa-person-walking-luggage"></i>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-xl p-4 flex items-center justify-between border-l-4 border-l-emerald-500">
+            <div>
+                <div class="text-xs uppercase text-gray-400 font-bold tracking-wider">Đã Phục Vụ Hôm Nay</div>
+                <div id="kpi-completed-count" class="font-teko text-4xl text-emerald-400 leading-none mt-1">0</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-xl p-4 flex items-center justify-between border-l-4 border-l-[#d4af37]">
+            <div>
+                <div class="text-xs uppercase text-gray-400 font-bold tracking-wider">Tổng Doanh Thu F&B</div>
+                <div id="kpi-revenue-total" class="font-teko text-3xl md:text-4xl text-[#d4af37] leading-none mt-1">0 ₫</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37] text-xl">
+                <i class="fa-solid fa-coins"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN VIEWS CONTAINER -->
+    <main class="flex-1 px-6">
+
+        <!-- ============================================== -->
+        <!-- VIEW 1: LIVE ORDERS STREAM (KDS & RUNNER SCREEN) -->
+        <!-- ============================================== -->
+        <section id="view-orders" class="space-y-4">
+            <!-- Filter & Status Controls -->
+            <div class="flex flex-wrap items-center justify-between gap-4 bg-[#0c1424] p-3 rounded-xl border border-gray-800">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs uppercase text-gray-400 font-bold tracking-wider mr-2"><i class="fa-solid fa-filter text-amber-400"></i> LỌC ĐƠN:</span>
+                    <button onclick="setOrderFilter('all')" id="filter-btn-all" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-[#d4af37] text-black">Tất Cả</button>
+                    <button onclick="setOrderFilter('pending')" id="filter-btn-pending" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-800 text-gray-300 hover:text-white">🕒 Chờ Pha Chế</button>
+                    <button onclick="setOrderFilter('delivering')" id="filter-btn-delivering" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-800 text-gray-300 hover:text-white">🏃 Đang Giao Bàn</button>
+                    <button onclick="setOrderFilter('completed')" id="filter-btn-completed" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-800 text-gray-300 hover:text-white">✅ Đã Xong</button>
+                </div>
+                <div class="flex items-center gap-3">
+                    <select id="filter-table-select" onchange="renderOrders()" class="bg-[#111827] border border-gray-700 text-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg outline-none focus:border-[#d4af37]">
+                        <option value="all">-- Xem Tất Cả Bàn & Bar --</option>
+                        <option value="Bar">Quầy Bar</option>
+                        <option value="1">Bàn 1</option>
+                        <option value="2">Bàn 2</option>
+                        <option value="3">Bàn 3</option>
+                        <option value="4">Bàn 4</option>
+                        <option value="5">Bàn 5</option>
+                        <option value="6">Bàn 6</option>
+                        <option value="7">Bàn 7</option>
+                        <option value="8">Bàn 8</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Orders Grid Cards -->
+            <div id="orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <!-- Injected via JavaScript -->
+            </div>
+            <!-- Empty state -->
+            <div id="orders-empty" class="hidden text-center py-20 bg-[#0c1424] rounded-2xl border border-dashed border-gray-800">
+                <i class="fa-solid fa-mug-hot text-6xl text-gray-700 mb-4"></i>
+                <div class="text-xl font-oswald text-gray-400 uppercase tracking-widest">Hiện Chưa Có Đơn Hàng Nào</div>
+                <p class="text-xs text-gray-600 mt-1">Đơn từ Floor iPad hoặc POS sẽ tự động xuất hiện tại đây.</p>
+            </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- VIEW 2: TẠO ĐƠN TẠI BÀN / BAR (QUICK POS ORDER) -->
+        <!-- ============================================== -->
+        <section id="view-pos" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left: Menu Item Picker (7 Cols) -->
+            <div class="lg:col-span-7 bg-[#0c1424] border border-gray-800 rounded-2xl p-5 flex flex-col space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-800">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-utensils text-[#d4af37]"></i>
+                        <span class="font-oswald text-xl uppercase tracking-wider text-white">CHỌN MÓN TỪ THỰC ĐƠN</span>
+                    </div>
+                    <!-- Category Pills -->
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="setMenuCategoryFilter('all')" id="cat-btn-all" class="px-3 py-1 rounded text-xs font-bold bg-[#d4af37] text-black">Tất Cả</button>
+                        <button onclick="setMenuCategoryFilter('drinks')" id="cat-btn-drinks" class="px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300 hover:text-white">☕ Đồ Uống</button>
+                        <button onclick="setMenuCategoryFilter('food')" id="cat-btn-food" class="px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300 hover:text-white">🍜 Đồ Ăn</button>
+                        <button onclick="setMenuCategoryFilter('extras')" id="cat-btn-extras" class="px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300 hover:text-white">🚬 Khác</button>
+                    </div>
+                </div>
+
+                <!-- Menu Items Grid -->
+                <div id="pos-menu-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto max-h-[650px] pr-1">
+                    <!-- Injected via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Right: Order Ticket & Checkout (5 Cols) -->
+            <div class="lg:col-span-5 bg-[#0c1424] border border-gray-800 rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                <div class="space-y-4">
+                    <div class="pb-3 border-b border-gray-800 flex items-center justify-between">
+                        <span class="font-oswald text-xl uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                            <i class="fa-solid fa-receipt"></i> THÔNG TIN ĐƠN HÀNG
+                        </span>
+                        <button onclick="clearPosCart()" class="text-xs text-red-400 hover:underline">Xóa Giỏ Hàng</button>
+                    </div>
+
+                    <!-- Destination: Table & Seat -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">BÀN GIAO MÓN:</label>
+                            <select id="pos-select-table" onchange="onPosTableChange()" class="w-full bg-[#111827] border border-gray-700 text-white font-bold text-sm p-2.5 rounded-lg outline-none focus:border-[#d4af37]">
+                                <option value="Bar">Quầy Bar</option>
+                                <option value="1">Bàn 1</option>
+                                <option value="2">Bàn 2</option>
+                                <option value="3">Bàn 3</option>
+                                <option value="4">Bàn 4</option>
+                                <option value="5">Bàn 5</option>
+                                <option value="6">Bàn 6</option>
+                                <option value="7">Bàn 7</option>
+                                <option value="8">Bàn 8</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">SỐ GHẾ:</label>
+                            <select id="pos-select-seat" onchange="onPosSeatChange()" class="w-full bg-[#111827] border border-gray-700 text-white font-bold text-sm p-2.5 rounded-lg outline-none focus:border-[#d4af37]">
+                                <option value="">-- Không Chọn Ghế --</option>
+                                <option value="1">Ghế 1</option>
+                                <option value="2">Ghế 2</option>
+                                <option value="3">Ghế 3</option>
+                                <option value="4">Ghế 4</option>
+                                <option value="5">Ghế 5</option>
+                                <option value="6">Ghế 6</option>
+                                <option value="7">Ghế 7</option>
+                                <option value="8">Ghế 8</option>
+                                <option value="9">Ghế 9</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">TÊN HỘI VIÊN:</label>
+                            <input type="text" id="pos-input-name" placeholder="Tên khách (nếu có)..." class="w-full bg-[#111827] border border-gray-700 text-white text-xs p-2.5 rounded-lg outline-none focus:border-[#d4af37]">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">SĐT KHÁCH:</label>
+                            <input type="text" id="pos-input-phone" placeholder="SĐT khách..." class="w-full bg-[#111827] border border-gray-700 text-white text-xs p-2.5 rounded-lg outline-none focus:border-[#d4af37]">
+                        </div>
+                    </div>
+
+                    <!-- Cart Items List -->
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">DANH SÁCH MÓN ĐÃ CHỌN:</label>
+                        <div id="pos-cart-list" class="space-y-2 max-h-[220px] overflow-y-auto pr-1 bg-[#111827] p-2 rounded-xl border border-gray-800">
+                            <!-- Injected via JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Order Note -->
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">GHI CHÚ PHA CHẾ / BẾP:</label>
+                        <input type="text" id="pos-input-note" placeholder="Ví dụ: Ít đá, không đường, cay nhiều..." class="w-full bg-[#111827] border border-gray-700 text-amber-300 text-xs p-2.5 rounded-lg outline-none focus:border-[#d4af37]">
+                    </div>
+
+                    <!-- Payment Status -->
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">TRẠNG THÁI THANH TOÁN:</label>
+                        <select id="pos-select-payment" class="w-full bg-[#111827] border border-gray-700 text-white font-bold text-xs p-2.5 rounded-lg outline-none focus:border-[#d4af37]">
+                            <option value="unpaid">Ghi Nợ Bàn (Thanh toán sau)</option>
+                            <option value="paid">Đã Thu Tiền (Tiền mặt / CK)</option>
+                            <option value="comp">Miễn Phí (CLB Mời / Comp)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Bottom Summary & Submit -->
+                <div class="pt-4 border-t border-gray-800 space-y-3">
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-xs uppercase font-bold text-gray-400 tracking-wider">TỔNG TIỀN PHẢI THU:</span>
+                        <span id="pos-cart-total" class="font-teko text-4xl text-emerald-400 font-bold leading-none">0 ₫</span>
+                    </div>
+                    <button onclick="submitPosOrder()" class="btn-gold w-full py-4 rounded-xl font-oswald text-xl uppercase tracking-widest shadow-lg flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i> GỬI ĐƠN XUỐNG BẾP & BAR
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- VIEW 3: QUẢN LÝ THỰC ĐƠN (MENU MANAGEMENT) -->
+        <!-- ============================================== -->
+        <section id="view-menu" class="hidden space-y-4">
+            <div class="flex items-center justify-between bg-[#0c1424] p-4 rounded-xl border border-gray-800">
+                <div>
+                    <h3 class="font-oswald text-2xl text-white uppercase tracking-wider">DANH MỤC MÓN & GIÁ BÁN F&B</h3>
+                    <p class="text-xs text-gray-400">Quản lý các loại nước uống, thức ăn và tiện ích phục vụ tại bàn poker</p>
+                </div>
+                <button onclick="openAddMenuItemModal()" class="btn-gold px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md">
+                    <i class="fa-solid fa-plus"></i> THÊM MÓN MỚI
+                </button>
+            </div>
+
+            <!-- Menu Table -->
+            <div class="bg-[#0c1424] border border-gray-800 rounded-xl overflow-hidden">
+                <table class="w-full text-left text-xs text-gray-300">
+                    <thead class="bg-[#111827] text-[#d4af37] border-b border-gray-800 font-bold uppercase tracking-wider">
+                        <tr>
+                            <th class="p-4 w-16 text-center">Icon</th>
+                            <th class="p-4">Tên Món</th>
+                            <th class="p-4">Phân Loại</th>
+                            <th class="p-4 text-right">Đơn Giá (VNĐ)</th>
+                            <th class="p-4 text-center">Trạng Thái</th>
+                            <th class="p-4 text-center w-36">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="menu-table-rows">
+                        <!-- Injected via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL THÊM / SỬA MÓN THỰC ĐƠN -->
+    <div id="modal-menu-item" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-[#111827] border border-[#d4af37] rounded-2xl p-6 w-[95%] max-w-md shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h4 id="menu-modal-title" class="font-oswald text-xl text-[#d4af37] uppercase tracking-wider">THÊM MÓN MỚI</h4>
+                <button onclick="closeMenuItemModal()" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+            <input type="hidden" id="item-input-id">
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">TÊN MÓN:</label>
+                <input type="text" id="item-input-name" placeholder="Ví dụ: Cà Phê Muối..." class="w-full bg-[#0a0f1d] border border-gray-700 text-white text-sm p-3 rounded-lg outline-none focus:border-[#d4af37]">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">PHÂN LOẠI:</label>
+                    <select id="item-select-category" class="w-full bg-[#0a0f1d] border border-gray-700 text-white text-sm p-3 rounded-lg outline-none focus:border-[#d4af37]">
+                        <option value="drinks">Đồ Uống (Drinks)</option>
+                        <option value="food">Đồ Ăn (Food)</option>
+                        <option value="extras">Tiện Ích / Thuốc Lá</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">ĐƠN GIÁ (VNĐ):</label>
+                    <input type="number" id="item-input-price" placeholder="Ví dụ: 35000" class="w-full bg-[#0a0f1d] border border-gray-700 text-emerald-400 font-mono font-bold text-sm p-3 rounded-lg outline-none focus:border-[#d4af37]">
+                </div>
+            </div>
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">ICON FONT-AWESOME:</label>
+                <input type="text" id="item-input-icon" placeholder="fa-mug-hot, fa-bowl-food, fa-wine-bottle..." class="w-full bg-[#0a0f1d] border border-gray-700 text-gray-300 text-xs p-3 rounded-lg outline-none focus:border-[#d4af37]">
+            </div>
+            <div class="flex items-center gap-2 pt-2">
+                <input type="checkbox" id="item-check-available" checked class="w-4 h-4 rounded text-amber-500">
+                <label for="item-check-available" class="text-xs text-gray-300 font-bold">Món này đang có sẵn phục vụ (Còn hàng)</label>
+            </div>
+            <div class="pt-4 border-t border-gray-800 flex justify-end gap-3">
+                <button onclick="closeMenuItemModal()" class="px-4 py-2 bg-gray-800 text-gray-300 text-xs font-bold rounded-lg uppercase">Hủy</button>
+                <button onclick="saveMenuItem()" class="btn-gold px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider">Lưu Món</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHUNG IN PHIẾU BẾP / BAR 80MM (CHUẨN ESC-POS) -->
+    <div id="fnb-ticket-print" class="hidden">
+        <div style="width: 80mm; font-family: 'Courier New', Courier, monospace; color: black; background: white; padding: 10px; margin: 0 auto;">
+            <div style="text-align: center; margin-bottom: 6px;">
+                <h2 style="margin: 0; font-size: 18px; font-weight: 900; letter-spacing: 1px;">♠️ ACE POKER CLUB ♠️</h2>
+                <div style="font-size: 12px; font-weight: bold; margin-top: 3px; text-transform: uppercase;">PHIẾU BẾP & QUẦY BAR (KDS)</div>
+                <div style="display: inline-block; background: #000; color: #fff; padding: 1px 8px; font-size: 10px; font-weight: bold; margin-top: 4px; border-radius: 2px;">KITCHEN ORDER TICKET</div>
+            </div>
+            <div style="border-top: 2px dashed black; margin: 6px 0;"></div>
+            
+            <div style="background: #000; color: #fff; padding: 6px; text-align: center; margin: 6px 0; border-radius: 4px;">
+                <div style="font-size: 11px; font-weight: bold;">ĐỊA ĐIỂM GIAO MÓN:</div>
+                <div id="print-destination" style="font-size: 22px; font-weight: 900; letter-spacing: 2px;">BÀN 1 - GHẾ 3</div>
+            </div>
+
+            <div style="font-size: 11px; line-height: 1.6;">
+                <div><b>MÃ ĐƠN:</b> <span id="print-order-id">FB-000000</span></div>
+                <div><b>THỜI GIAN:</b> <span id="print-time">...</span></div>
+                <div><b>HỘI VIÊN:</b> <span id="print-customer">Khách Vãng Lai</span></div>
+                <div style="border-top: 1px dashed #666; margin: 6px 0;"></div>
+                
+                <div style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">CHI TIẾT MÓN ĐẶT:</div>
+                <div id="print-items-list" style="font-size: 13px; line-height: 1.8;">
+                    <!-- Injected via JavaScript -->
+                </div>
+
+                <div style="border-top: 1px dashed #666; margin: 6px 0;"></div>
+                <div id="print-note-box" style="background: #f2f2f2; border: 1px dashed black; padding: 4px; margin: 4px 0; font-size: 11px;">
+                    <b>GHI CHÚ:</b> <span id="print-note">Không có</span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-top: 6px;">
+                    <span>TỔNG TIỀN:</span>
+                    <span id="print-total">0 VNĐ</span>
+                </div>
+                <div style="font-size: 11px; margin-top: 2px;">
+                    <b>THANH TOÁN:</b> <span id="print-payment">Ghi nợ bàn</span>
+                </div>
+            </div>
+            <div style="border-top: 2px dashed black; margin: 8px 0;"></div>
+            <div style="text-align: center; font-size: 10px; font-style: italic;">
+                * Runner vui lòng kiểm tra kẹp khay trước khi bưng ra bàn *
+            </div>
+        </div>
+    </div>
+
+    <!-- SOCKET.IO & APPLICATION SCRIPT -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const SERVER_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname) ? window.location.origin : 'https://akpoker.onrender.com';
+        const socket = io(SERVER_URL, {
+            auth: { token: sessionStorage.getItem('acepoker_session_token') || 'fnb', role: 'fnb' }
+        });
+
+        // App States
+        let fnbMenu = [];
+        let fnbOrders = [];
+        let currentTab = 'orders'; // 'orders' | 'pos' | 'menu'
+        let currentOrderFilter = 'all'; // 'all' | 'pending' | 'delivering' | 'completed'
+        let currentMenuCatFilter = 'all'; // 'all' | 'drinks' | 'food' | 'extras'
+        let posCart = {}; // { [itemId]: { item, qty } }
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        // --- REALTIME CLOCK ---
+        setInterval(() => {
+            const now = new Date();
+            const el = document.getElementById('realtime-clock');
+            if (el) el.innerText = now.toTimeString().split(' ')[0];
+        }, 1000);
+
+        // --- AUDIO CHIME SYNTHESIZER ---
+        function getAudioContext() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            if (soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high';
+                playDingDong();
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-red-500';
+            }
+        }
+
+        function playDingDong() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                [523.25, 659.25, 783.99].forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.12);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime + idx * 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.12 + 0.35);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + idx * 0.12);
+                    osc.stop(ctx.currentTime + idx * 0.12 + 0.35);
+                });
+            } catch(e) {}
+        }
+
+        // --- FORMATTERS ---
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('vi-VN').format(Number(amount) || 0);
+        }
+
+        function timeAgo(timestamp) {
+            if (!timestamp) return 'Vừa xong';
+            const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+            if (diffSec < 60) return 'Vừa xong';
+            const diffMin = Math.floor(diffSec / 60);
+            if (diffMin < 60) return `${diffMin} phút trước`;
+            const diffHour = Math.floor(diffMin / 60);
+            return `${diffHour} giờ trước`;
+        }
+
+        // --- SOCKET LISTENERS ---
+        socket.on('connect', () => {
+            console.log('[F&B] Connected to server as role fnb');
+        });
+
+        socket.on('update_fnb_menu', (menu) => {
+            fnbMenu = menu || [];
+            renderPosMenu();
+            renderMenuTable();
+        });
+
+        socket.on('update_fnb_orders', (orders) => {
+            fnbOrders = orders || [];
+            updateKpiStats();
+            renderOrders();
+        });
+
+        socket.on('new_fnb_order_alert', (order) => {
+            playDingDong();
+        });
+
+        // --- TAB SWITCHING ---
+        function switchTab(tab) {
+            currentTab = tab;
+            ['orders', 'pos', 'menu'].forEach(t => {
+                const view = document.getElementById('view-' + t);
+                const btn = document.getElementById('tab-btn-' + t);
+                if (t === tab) {
+                    if (view) view.classList.remove('hidden');
+                    if (btn) {
+                        btn.className = 'px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md';
+                    }
+                } else {
+                    if (view) view.classList.add('hidden');
+                    if (btn) {
+                        btn.className = 'px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 text-gray-400 hover:text-white';
+                    }
+                }
+            });
+            if (tab === 'pos') renderPosMenu();
+            if (tab === 'orders') renderOrders();
+        }
+
+        // --- KPI STATS UPDATE ---
+        function updateKpiStats() {
+            const pending = fnbOrders.filter(o => o.status === 'pending');
+            const delivering = fnbOrders.filter(o => o.status === 'delivering');
+            const completed = fnbOrders.filter(o => o.status === 'completed');
+
+            let revenue = 0;
+            fnbOrders.forEach(o => {
+                if (o.status !== 'cancelled' && o.payment_status !== 'comp') {
+                    revenue += Number(o.total_amount) || 0;
+                }
+            });
+
+            document.getElementById('kpi-pending-count').innerText = pending.length;
+            document.getElementById('kpi-delivering-count').innerText = delivering.length;
+            document.getElementById('kpi-completed-count').innerText = completed.length;
+            document.getElementById('kpi-revenue-total').innerText = formatMoney(revenue) + ' ₫';
+
+            const badge = document.getElementById('badge-pending-orders');
+            if (pending.length > 0) {
+                badge.innerText = pending.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // --- TAB 1: RENDER LIVE ORDERS (KDS) ---
+        function setOrderFilter(filter) {
+            currentOrderFilter = filter;
+            ['all', 'pending', 'delivering', 'completed'].forEach(f => {
+                const btn = document.getElementById('filter-btn-' + f);
+                if (f === filter) {
+                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-[#d4af37] text-black';
+                } else {
+                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-gray-800 text-gray-300 hover:text-white';
+                }
+            });
+            renderOrders();
+        }
+
+        function renderOrders() {
+            const grid = document.getElementById('orders-grid');
+            const emptyEl = document.getElementById('orders-empty');
+            const tableFilter = document.getElementById('filter-table-select').value;
+            grid.innerHTML = '';
+
+            let list = fnbOrders;
+            if (currentOrderFilter !== 'all') {
+                list = list.filter(o => o.status === currentOrderFilter);
+            }
+            if (tableFilter !== 'all') {
+                list = list.filter(o => o.table_id.toString() === tableFilter);
+            }
+
+            if (list.length === 0) {
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+            emptyEl.classList.add('hidden');
+
+            list.forEach(order => {
+                const card = document.createElement('div');
+                const isPending = order.status === 'pending';
+                const isDelivering = order.status === 'delivering';
+                const isCompleted = order.status === 'completed';
+
+                let borderStyle = 'border-gray-800';
+                let statusBadge = '';
+                if (isPending) {
+                    borderStyle = 'border-amber-500/80 shadow-[0_0_15px_rgba(245,158,11,0.25)]';
+                    statusBadge = '<span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase animate-pulse">🕒 Chờ Làm</span>';
+                } else if (isDelivering) {
+                    borderStyle = 'border-blue-500/80 shadow-[0_0_15px_rgba(59,130,246,0.25)]';
+                    statusBadge = '<span class="bg-blue-500/20 text-blue-400 border border-blue-500/40 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase">🏃 Đang Giao</span>';
+                } else if (isCompleted) {
+                    borderStyle = 'border-emerald-500/40 opacity-75';
+                    statusBadge = '<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase">✅ Đã Xong</span>';
+                } else {
+                    borderStyle = 'border-gray-800 opacity-50';
+                    statusBadge = '<span class="bg-gray-800 text-gray-400 px-2 py-0.5 rounded text-[10px] font-bold uppercase">❌ Đã Hủy</span>';
+                }
+
+                // Table Target Badge
+                const destination = order.table_id === 'Bar' ? 'QUẦY BAR' : `BÀN ${order.table_id} ${order.seat ? `• GHẾ ${order.seat}` : ''}`;
+
+                // Items list html
+                let itemsHtml = '';
+                (order.items || []).forEach(it => {
+                    itemsHtml += `
+                        <div class="flex justify-between items-center text-xs py-1 border-b border-gray-800/60">
+                            <span class="font-bold text-gray-200">
+                                <span class="text-amber-400 font-mono mr-1">x${it.qty}</span> ${it.name}
+                            </span>
+                            <span class="text-gray-400 font-mono text-[11px]">${formatMoney(it.total)} ₫</span>
+                        </div>
+                    `;
+                });
+
+                // Note box
+                let noteHtml = '';
+                if (order.note) {
+                    noteHtml = `
+                        <div class="bg-amber-950/40 border border-amber-600/30 text-amber-300 text-[11px] p-2 rounded-lg mt-2 font-medium flex items-start gap-1.5">
+                            <i class="fa-solid fa-comment-dots text-amber-400 mt-0.5"></i>
+                            <span>${order.note}</span>
+                        </div>
+                    `;
+                }
+
+                // Payment Badge
+                let paymentBadge = '';
+                if (order.payment_status === 'paid') {
+                    paymentBadge = '<span class="text-emerald-400 font-bold text-[10px]"><i class="fa-solid fa-circle-check mr-1"></i>ĐÃ THU TIỀN</span>';
+                } else if (order.payment_status === 'comp') {
+                    paymentBadge = '<span class="text-purple-400 font-bold text-[10px]"><i class="fa-solid fa-gift mr-1"></i>CLB MỜI</span>';
+                } else {
+                    paymentBadge = '<span class="text-amber-400 font-bold text-[10px]"><i class="fa-solid fa-clock mr-1"></i>GHI NỢ BÀN</span>';
+                }
+
+                // Action transition buttons
+                let actionBtns = '';
+                if (isPending) {
+                    actionBtns = `
+                        <button onclick="updateOrderStatus('${order.id}', 'delivering')" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white py-2 rounded-lg text-xs font-bold uppercase transition flex items-center justify-center gap-1.5 shadow">
+                            <i class="fa-solid fa-person-walking-luggage"></i> BƯNG RA BÀN
+                        </button>
+                    `;
+                } else if (isDelivering) {
+                    actionBtns = `
+                        <button onclick="updateOrderStatus('${order.id}', 'completed')" class="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white py-2 rounded-lg text-xs font-bold uppercase transition flex items-center justify-center gap-1.5 shadow">
+                            <i class="fa-solid fa-check-double"></i> HOÀN TẤT
+                        </button>
+                    `;
+                }
+
+                card.className = `glass-card border rounded-2xl p-4 flex flex-col justify-between space-y-3 ${borderStyle}`;
+                card.innerHTML = `
+                    <div>
+                        <!-- Header -->
+                        <div class="flex items-start justify-between pb-2 border-b border-gray-800">
+                            <div>
+                                <div class="font-oswald text-xl font-bold text-white tracking-wide flex items-center gap-2">
+                                    <span class="text-[#d4af37]">${destination}</span>
+                                </div>
+                                <div class="text-[10px] text-gray-400 font-mono">${order.id} • ${timeAgo(order.created_at)}</div>
+                            </div>
+                            ${statusBadge}
+                        </div>
+
+                        <!-- Customer Info -->
+                        <div class="text-xs text-gray-300 py-1.5 flex items-center justify-between">
+                            <span class="truncate font-semibold"><i class="fa-solid fa-user text-gray-500 mr-1"></i>${order.player_name || 'Khách Vãng Lai'}</span>
+                            ${paymentBadge}
+                        </div>
+
+                        <!-- Items List -->
+                        <div class="py-1">
+                            ${itemsHtml}
+                        </div>
+
+                        ${noteHtml}
+                    </div>
+
+                    <!-- Footer: Total & Actions -->
+                    <div class="pt-2 border-t border-gray-800 space-y-2">
+                        <div class="flex justify-between items-baseline">
+                            <span class="text-[10px] uppercase font-bold text-gray-400">TỔNG CỘNG:</span>
+                            <span class="font-teko text-2xl text-emerald-400 font-bold leading-none">${formatMoney(order.total_amount)} ₫</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${actionBtns}
+                            <button onclick="printFnbOrder('${order.id}')" class="px-2.5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-xs transition" title="In phiếu bếp 80mm">
+                                <i class="fa-solid fa-print"></i>
+                            </button>
+                            ${!isCompleted ? `
+                                <button onclick="cancelFnbOrder('${order.id}')" class="px-2.5 py-2 bg-red-950/60 hover:bg-red-900 border border-red-800/50 text-red-400 rounded-lg text-xs transition" title="Hủy đơn">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function updateOrderStatus(orderId, status) {
+            socket.emit('update_fnb_order_status', { order_id: orderId, status }, (res) => {
+                if (res && res.success) {
+                    // Locally update
+                    const ord = fnbOrders.find(o => o.id === orderId);
+                    if (ord) ord.status = status;
+                    updateKpiStats();
+                    renderOrders();
+                } else {
+                    alert((res && res.message) || 'Lỗi cập nhật trạng thái đơn!');
+                }
+            });
+        }
+
+        function cancelFnbOrder(orderId) {
+            if (!confirm(`Bạn có chắc chắn muốn hủy đơn hàng ${orderId}?`)) return;
+            updateOrderStatus(orderId, 'cancelled');
+        }
+
+        // --- TAB 2: QUICK POS ORDER LOGIC ---
+        function setMenuCategoryFilter(cat) {
+            currentMenuCatFilter = cat;
+            ['all', 'drinks', 'food', 'extras'].forEach(c => {
+                const btn = document.getElementById('cat-btn-' + c);
+                if (c === cat) {
+                    btn.className = 'px-3 py-1 rounded text-xs font-bold bg-[#d4af37] text-black';
+                } else {
+                    btn.className = 'px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300 hover:text-white';
+                }
+            });
+            renderPosMenu();
+        }
+
+        function renderPosMenu() {
+            const container = document.getElementById('pos-menu-grid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            let list = fnbMenu;
+            if (currentMenuCatFilter !== 'all') {
+                list = list.filter(m => m.category === currentMenuCatFilter);
+            }
+
+            list.forEach(item => {
+                const isAvail = item.available !== false;
+                const card = document.createElement('div');
+                card.className = `p-3.5 rounded-xl border transition flex flex-col justify-between ${
+                    isAvail
+                        ? 'bg-[#111827] border-gray-800 hover:border-[#d4af37] cursor-pointer hover:scale-[1.02]'
+                        : 'bg-gray-900 border-gray-900 opacity-40 cursor-not-allowed'
+                }`;
+                card.onclick = () => { if (isAvail) addToCart(item); };
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="w-10 h-10 rounded-lg bg-[#0c1424] border border-[#d4af37]/30 text-[#d4af37] flex items-center justify-center text-lg">
+                            <i class="fa-solid ${item.icon || 'fa-mug-hot'}"></i>
+                        </div>
+                        ${!isAvail ? '<span class="text-[10px] text-red-500 font-bold uppercase">HẾT</span>' : ''}
+                    </div>
+                    <div class="mt-2">
+                        <div class="font-bold text-xs text-white truncate">${item.name}</div>
+                        <div class="font-teko text-xl text-emerald-400 font-bold leading-tight mt-0.5">${formatMoney(item.price)} ₫</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function addToCart(item) {
+            if (!posCart[item.id]) {
+                posCart[item.id] = { item, qty: 1 };
+            } else {
+                posCart[item.id].qty += 1;
+            }
+            renderCart();
+        }
+
+        function changeCartQty(itemId, delta) {
+            if (!posCart[itemId]) return;
+            posCart[itemId].qty += delta;
+            if (posCart[itemId].qty <= 0) {
+                delete posCart[itemId];
+            }
+            renderCart();
+        }
+
+        function clearPosCart() {
+            posCart = {};
+            renderCart();
+        }
+
+        function renderCart() {
+            const list = document.getElementById('pos-cart-list');
+            const totalEl = document.getElementById('pos-cart-total');
+            list.innerHTML = '';
+
+            const keys = Object.keys(posCart);
+            if (keys.length === 0) {
+                list.innerHTML = '<div class="text-center py-6 text-gray-500 text-xs italic">Chưa chọn món nào</div>';
+                totalEl.innerText = '0 ₫';
+                return;
+            }
+
+            let grandTotal = 0;
+            keys.forEach(id => {
+                const { item, qty } = posCart[id];
+                const subtotal = qty * item.price;
+                grandTotal += subtotal;
+
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between text-xs py-1.5 px-2 bg-[#0c1424] rounded-lg border border-gray-800';
+                row.innerHTML = `
+                    <div class="flex-1 truncate mr-2">
+                        <div class="font-bold text-white truncate">${item.name}</div>
+                        <div class="text-[10px] text-gray-400 font-mono">${formatMoney(item.price)} ₫</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center bg-[#111827] border border-gray-700 rounded">
+                            <button onclick="changeCartQty('${id}', -1)" class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white font-bold">-</button>
+                            <span class="w-6 text-center font-bold text-amber-400 font-mono">${qty}</span>
+                            <button onclick="changeCartQty('${id}', 1)" class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white font-bold">+</button>
+                        </div>
+                        <span class="font-teko text-base text-emerald-400 font-bold w-16 text-right">${formatMoney(subtotal)} ₫</span>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+
+            totalEl.innerText = formatMoney(grandTotal) + ' ₫';
+        }
+
+        function onPosTableChange() {
+            const tbl = document.getElementById('pos-select-table').value;
+            const seatSelect = document.getElementById('pos-select-seat');
+            if (tbl === 'Bar') {
+                seatSelect.value = '';
+                seatSelect.disabled = true;
+            } else {
+                seatSelect.disabled = false;
+            }
+        }
+
+        function onPosSeatChange() {
+            // Có thể tự động lookup tên khách nếu bàn đó có player
+        }
+
+        function submitPosOrder() {
+            const keys = Object.keys(posCart);
+            if (keys.length === 0) {
+                return alert('Vui lòng chọn ít nhất 1 món vào giỏ hàng!');
+            }
+
+            const tableId = document.getElementById('pos-select-table').value;
+            const seat = document.getElementById('pos-select-seat').value || null;
+            const name = document.getElementById('pos-input-name').value.trim() || (tableId === 'Bar' ? 'Khách Quầy Bar' : `Khách Bàn ${tableId}`);
+            const phone = document.getElementById('pos-input-phone').value.trim();
+            const note = document.getElementById('pos-input-note').value.trim();
+            const payment_status = document.getElementById('pos-select-payment').value;
+
+            const items = keys.map(id => ({
+                id,
+                name: posCart[id].item.name,
+                category: posCart[id].item.category,
+                price: posCart[id].item.price,
+                qty: posCart[id].qty
+            }));
+
+            socket.emit('create_fnb_order', {
+                table_id: tableId,
+                seat,
+                player_name: name,
+                player_phone: phone,
+                items,
+                note,
+                payment_status
+            }, (res) => {
+                if (res && res.success) {
+                    alert(`ĐÃ TẠO ĐƠN THÀNH CÔNG (${res.order.id})! Bếp & Bar đã nhận đơn.`);
+                    clearPosCart();
+                    document.getElementById('pos-input-note').value = '';
+                    switchTab('orders');
+                } else {
+                    alert((res && res.message) || 'Lỗi gửi đơn F&B!');
+                }
+            });
+        }
+
+        // --- TAB 3: MENU MANAGEMENT ---
+        function renderMenuTable() {
+            const tbody = document.getElementById('menu-table-rows');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            fnbMenu.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-800 hover:bg-[#111827] transition';
+                const isAvail = item.available !== false;
+
+                tr.innerHTML = `
+                    <td class="p-4 text-center">
+                        <div class="w-8 h-8 rounded-lg bg-[#0a0f1d] border border-gray-700 text-[#d4af37] flex items-center justify-center mx-auto">
+                            <i class="fa-solid ${item.icon || 'fa-mug-hot'}"></i>
+                        </div>
+                    </td>
+                    <td class="p-4 font-bold text-white text-sm">${item.name}</td>
+                    <td class="p-4 uppercase text-gray-400 font-mono text-xs">${item.category || 'drinks'}</td>
+                    <td class="p-4 text-right font-teko text-xl font-bold text-emerald-400">${formatMoney(item.price)} ₫</td>
+                    <td class="p-4 text-center">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${isAvail ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' : 'bg-red-950 text-red-400 border border-red-500/40'}">
+                            ${isAvail ? 'Còn Hàng' : 'Tạm Hết'}
+                        </span>
+                    </td>
+                    <td class="p-4 text-center whitespace-nowrap">
+                        <button onclick="editMenuItem('${item.id}')" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs font-bold mr-1">Sửa</button>
+                        <button onclick="toggleItemAvailability('${item.id}')" class="px-2.5 py-1 ${isAvail ? 'bg-amber-950/70 border border-amber-600/40 text-amber-400' : 'bg-emerald-950/70 border border-emerald-600/40 text-emerald-400'} rounded text-xs font-bold mr-1">
+                            ${isAvail ? 'Hết Hàng' : 'Bật Lại'}
+                        </button>
+                        <button onclick="deleteMenuItem('${item.id}')" class="px-2 py-1 bg-red-950 border border-red-800 text-red-400 rounded text-xs font-bold">Xóa</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openAddMenuItemModal() {
+            document.getElementById('menu-modal-title').innerText = 'THÊM MÓN MỚI';
+            document.getElementById('item-input-id').value = '';
+            document.getElementById('item-input-name').value = '';
+            document.getElementById('item-input-price').value = '';
+            document.getElementById('item-input-icon').value = 'fa-mug-hot';
+            document.getElementById('item-check-available').checked = true;
+            document.getElementById('modal-menu-item').classList.replace('hidden', 'flex');
+        }
+
+        function editMenuItem(itemId) {
+            const item = fnbMenu.find(m => m.id === itemId);
+            if (!item) return;
+
+            document.getElementById('menu-modal-title').innerText = 'CẬP NHẬT MÓN';
+            document.getElementById('item-input-id').value = item.id;
+            document.getElementById('item-input-name').value = item.name;
+            document.getElementById('item-select-category').value = item.category || 'drinks';
+            document.getElementById('item-input-price').value = item.price;
+            document.getElementById('item-input-icon').value = item.icon || 'fa-mug-hot';
+            document.getElementById('item-check-available').checked = item.available !== false;
+            document.getElementById('modal-menu-item').classList.replace('hidden', 'flex');
+        }
+
+        function closeMenuItemModal() {
+            document.getElementById('modal-menu-item').classList.replace('flex', 'hidden');
+        }
+
+        function saveMenuItem() {
+            const id = document.getElementById('item-input-id').value;
+            const name = document.getElementById('item-input-name').value.trim();
+            const category = document.getElementById('item-select-category').value;
+            const price = Number(document.getElementById('item-input-price').value) || 0;
+            const icon = document.getElementById('item-input-icon').value.trim() || 'fa-mug-hot';
+            const available = document.getElementById('item-check-available').checked;
+
+            if (!name || price <= 0) return alert('Vui lòng nhập tên món và giá hợp lệ!');
+
+            socket.emit('save_fnb_menu_item', { id, name, category, price, icon, available }, (res) => {
+                if (res && res.success) {
+                    closeMenuItemModal();
+                } else {
+                    alert('Lỗi lưu món!');
+                }
+            });
+        }
+
+        function toggleItemAvailability(itemId) {
+            const item = fnbMenu.find(m => m.id === itemId);
+            if (!item) return;
+            const newStatus = !(item.available !== false);
+            socket.emit('save_fnb_menu_item', { ...item, available: newStatus });
+        }
+
+        function deleteMenuItem(itemId) {
+            if (!confirm('Bạn có chắc chắn muốn xóa món này khỏi thực đơn?')) return;
+            socket.emit('delete_fnb_menu_item', itemId);
+        }
+
+        // --- 80MM ESC-POS RECEIPT PRINTING ---
+        function printFnbOrder(orderId) {
+            const order = fnbOrders.find(o => o.id === orderId);
+            if (!order) return alert('Không tìm thấy đơn hàng!');
+
+            document.getElementById('print-order-id').innerText = order.id;
+            document.getElementById('print-time').innerText = order.time_formatted || new Date().toLocaleString('vi-VN');
+            document.getElementById('print-customer').innerText = `${order.player_name || 'Khách'} ${order.player_phone ? `(${order.player_phone})` : ''}`;
+
+            const destination = order.table_id === 'Bar' ? 'QUẦY BAR' : `BÀN ${order.table_id} ${order.seat ? `• GHẾ ${order.seat}` : ''}`;
+            document.getElementById('print-destination').innerText = destination;
+
+            const itemsContainer = document.getElementById('print-items-list');
+            itemsContainer.innerHTML = '';
+            (order.items || []).forEach(it => {
+                const row = document.createElement('div');
+                row.style.display = 'flex';
+                row.style.justifyContent = 'space-between';
+                row.innerHTML = `
+                    <span><b>[x${it.qty}]</b> ${it.name}</span>
+                    <span>${formatMoney(it.total)} ₫</span>
+                `;
+                itemsContainer.appendChild(row);
+            });
+
+            const noteBox = document.getElementById('print-note-box');
+            if (order.note) {
+                noteBox.style.display = 'block';
+                document.getElementById('print-note').innerText = order.note;
+            } else {
+                noteBox.style.display = 'none';
+            }
+
+            document.getElementById('print-total').innerText = formatMoney(order.total_amount) + ' VNĐ';
+
+            let paymentText = 'Ghi nợ bàn';
+            if (order.payment_status === 'paid') paymentText = 'ĐÃ THANH TOÁN';
+            else if (order.payment_status === 'comp') paymentText = 'CLB MIỄN PHÍ (COMP)';
+            document.getElementById('print-payment').innerText = paymentText;
+
+            window.print();
+        }
+    </script>
+</body>
+</html>

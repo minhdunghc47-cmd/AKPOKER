@@ -1,4 +1,4 @@
-// ACE POKER SERVER - v2.4.0 (Champion Celebration & Smart Payouts)
+// ACE POKER SERVER - v2.5.0 (Full F&B Kitchen & Table Ordering System)
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const http = require('http');
@@ -62,6 +62,24 @@ const defaultBlinds = [
 ];
 
 
+const defaultFnbMenu = [
+  // Đồ uống (Drinks)
+  { id: 'fnb_1', name: 'Cà Phê Đen / Sữa Đá', category: 'drinks', price: 35000, icon: 'fa-mug-hot', available: true },
+  { id: 'fnb_2', name: 'Bò Húc (Red Bull Thái)', category: 'drinks', price: 30000, icon: 'fa-bolt', available: true },
+  { id: 'fnb_3', name: 'Nước Suối Aquafina/Lavie', category: 'drinks', price: 15000, icon: 'fa-bottle-water', available: true },
+  { id: 'fnb_4', name: 'Trà Đào Cam Sả', category: 'drinks', price: 45000, icon: 'fa-glass-water', available: true },
+  { id: 'fnb_5', name: 'Nước Ngọt Lon (Coke/Sprite)', category: 'drinks', price: 25000, icon: 'fa-wine-bottle', available: true },
+  { id: 'fnb_6', name: 'Bia Heineken / Corona', category: 'drinks', price: 45000, icon: 'fa-beer-mug-empty', available: true },
+  // Đồ ăn (Food)
+  { id: 'fnb_7', name: 'Mì Tôm Trứng Bò Cay', category: 'food', price: 55000, icon: 'fa-bowl-food', available: true },
+  { id: 'fnb_8', name: 'Cơm Bò Xào / Cơm Gà Xối Mỡ', category: 'food', price: 65000, icon: 'fa-plate-wheat', available: true },
+  { id: 'fnb_9', name: 'Bánh Mì Kẹp Jambon / Xúc Xích', category: 'food', price: 40000, icon: 'fa-bread-slice', available: true },
+  { id: 'fnb_10', name: 'Khô Bò Vắt Chanh / Hạt Điều', category: 'food', price: 60000, icon: 'fa-fire-flame-curved', available: true },
+  // Tiện ích / Khác (Extras)
+  { id: 'fnb_11', name: 'Thuốc Lá (Marlboro / 555 / Craven A)', category: 'extras', price: 45000, icon: 'fa-smoking', available: true },
+  { id: 'fnb_12', name: 'Bật Lửa / Kẹo Cao Su Cool Air', category: 'extras', price: 10000, icon: 'fa-candy-cane', available: true }
+];
+
 const PREFERRED_SEAT_ORDER = [1, 3, 5, 7, 9, 2, 4, 6, 8];
 let db = {
   tournaments: [],
@@ -72,7 +90,9 @@ let db = {
   time_logs: [],
   members: [],
   financial: { net_cash: 0, total_debt: 0, total_rake: 0 },
-  payroll_history: []
+  payroll_history: [],
+  fnb_menu: [...defaultFnbMenu],
+  fnb_orders: []
 };
 
 if (fdb) {
@@ -98,6 +118,16 @@ if (fdb) {
         if (data.time_logs) db.time_logs = data.time_logs;
         if (data.staff) db.staff = data.staff;
         if (data.payroll_history) db.payroll_history = data.payroll_history;
+        if (data.fnb_menu && Array.isArray(data.fnb_menu) && data.fnb_menu.length > 0) {
+          db.fnb_menu = data.fnb_menu;
+        } else {
+          db.fnb_menu = [...defaultFnbMenu];
+        }
+        if (data.fnb_orders && Array.isArray(data.fnb_orders)) {
+          db.fnb_orders = data.fnb_orders;
+        } else {
+          db.fnb_orders = [];
+        }
         if (data.tables) {
           db.tables = data.tables;
         } else {
@@ -150,6 +180,11 @@ function sendTargetedState(sock, activeTours) {
     sock.emit('update_staff_list', staffList);
     sock.emit('staff_data_updated', staffList);
 
+    if (['god', 'td', 'floor', 'cashier', 'fnb'].includes(role)) {
+      sock.emit('update_fnb_menu', db.fnb_menu || defaultFnbMenu);
+      sock.emit('update_fnb_orders', db.fnb_orders || []);
+    }
+
     if (role === 'god') {
       sock.emit('update_payroll_history', db.payroll_history || []);
       sock.emit('update_god_mode', {
@@ -177,6 +212,8 @@ function broadcastState(skipSave = false) {
     saveToFirebase('payroll_history', db.payroll_history);
     saveToFirebase('time_logs', db.time_logs);
     saveToFirebase('tables', db.tables);
+    saveToFirebase('fnb_menu', db.fnb_menu);
+    saveToFirebase('fnb_orders', db.fnb_orders);
   }
 }
 
@@ -1384,6 +1421,114 @@ io.on('connection', (socket) => {
       db.tables.forEach(table => { if (table.tour_id === tourId) { table.is_locked = false; table.tour_id = null; } });
       broadcastState();
     }
+  }));
+
+  // ==========================
+  // F&B (FOOD & BEVERAGE) APIS
+  // ==========================
+  socket.on('create_fnb_order', requireRole(socket, ['god', 'td', 'floor', 'cashier', 'fnb'], (payload, callback) => {
+    try {
+      const { table_id, seat, player_name, player_phone, items, note, payment_status } = payload;
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return callback && callback({ success: false, message: 'Vui lòng chọn ít nhất 1 món!' });
+      }
+
+      db.fnb_orders = db.fnb_orders || [];
+      const order_id = 'FB-' + Date.now().toString().slice(-6);
+      const now = Date.now();
+      const dateFormatted = new Date(now).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+      let total_amount = 0;
+      const cleanItems = items.map(it => {
+        const qty = Number(it.qty) || 1;
+        const price = Number(it.price) || 0;
+        const total = qty * price;
+        total_amount += total;
+        return {
+          id: it.id,
+          name: it.name,
+          category: it.category || 'drinks',
+          price,
+          qty,
+          total
+        };
+      });
+
+      const newOrder = {
+        id: order_id,
+        table_id: table_id || 'Bar',
+        seat: seat || null,
+        player_name: player_name || 'Khách vãng lai',
+        player_phone: player_phone || '',
+        items: cleanItems,
+        total_amount,
+        note: note || '',
+        payment_status: payment_status || 'unpaid',
+        status: 'pending',
+        created_at: now,
+        time_formatted: dateFormatted,
+        created_by: socket.user.role
+      };
+
+      db.fnb_orders.unshift(newOrder);
+      if (db.fnb_orders.length > 300) db.fnb_orders = db.fnb_orders.slice(0, 300);
+
+      broadcastState();
+      io.emit('new_fnb_order_alert', newOrder);
+
+      if (callback) callback({ success: true, order: newOrder, message: `Đã gửi đơn ${order_id} thành công!` });
+    } catch (err) {
+      console.error('[F&B] Lỗi tạo đơn:', err);
+      if (callback) callback({ success: false, message: 'Lỗi server khi tạo đơn F&B!' });
+    }
+  }));
+
+  socket.on('update_fnb_order_status', requireRole(socket, ['god', 'td', 'floor', 'cashier', 'fnb'], (payload, callback) => {
+    const { order_id, status } = payload;
+    db.fnb_orders = db.fnb_orders || [];
+    const order = db.fnb_orders.find(o => o.id === order_id);
+    if (!order) return callback && callback({ success: false, message: 'Không tìm thấy đơn hàng!' });
+
+    order.status = status;
+    order.updated_at = Date.now();
+    broadcastState();
+    if (callback) callback({ success: true, order, message: `Đã cập nhật trạng thái đơn ${order_id}!` });
+  }));
+
+  socket.on('update_fnb_payment_status', requireRole(socket, ['god', 'td', 'floor', 'cashier', 'fnb'], (payload, callback) => {
+    const { order_id, payment_status } = payload;
+    db.fnb_orders = db.fnb_orders || [];
+    const order = db.fnb_orders.find(o => o.id === order_id);
+    if (!order) return callback && callback({ success: false, message: 'Không tìm thấy đơn hàng!' });
+
+    order.payment_status = payment_status;
+    order.payment_updated_at = Date.now();
+    broadcastState();
+    if (callback) callback({ success: true, order, message: `Đã cập nhật trạng thái thanh toán đơn ${order_id}!` });
+  }));
+
+  socket.on('save_fnb_menu_item', requireRole(socket, ['god', 'td', 'fnb'], (item, callback) => {
+    db.fnb_menu = db.fnb_menu || [...defaultFnbMenu];
+    if (item.id) {
+      const idx = db.fnb_menu.findIndex(m => m.id === item.id);
+      if (idx !== -1) {
+        db.fnb_menu[idx] = { ...db.fnb_menu[idx], ...item };
+      } else {
+        db.fnb_menu.push(item);
+      }
+    } else {
+      item.id = 'fnb_' + Date.now();
+      db.fnb_menu.push(item);
+    }
+    broadcastState();
+    if (callback) callback({ success: true, message: 'Đã lưu món vào thực đơn!' });
+  }));
+
+  socket.on('delete_fnb_menu_item', requireRole(socket, ['god', 'td', 'fnb'], (itemId, callback) => {
+    db.fnb_menu = db.fnb_menu || [...defaultFnbMenu];
+    db.fnb_menu = db.fnb_menu.filter(m => m.id !== itemId);
+    broadcastState();
+    if (callback) callback({ success: true, message: 'Đã xóa món khỏi thực đơn!' });
   }));
 });
 

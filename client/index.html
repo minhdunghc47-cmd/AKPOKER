@@ -92,7 +92,7 @@
             <p class="text-gray-400 text-sm md:text-base uppercase tracking-[0.4em] font-bold">Sảnh Điều Hướng Trung Tâm</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full max-w-7xl">
 
             <div onclick="openPinModal('./cashier.html', 'cashier')" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
                 <i class="fa-solid fa-money-bill-wave text-5xl text-[#d4af37] mb-4 group-hover:scale-110 transition-transform"></i>
@@ -110,6 +110,12 @@
                 <i class="fa-solid fa-tablet-screen-button text-5xl text-[#d4af37] mb-4 group-hover:scale-110 transition-transform"></i>
                 <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-[#d4af37] transition-colors">Floor iPad</h2>
                 <p class="text-gray-500 text-xs uppercase tracking-wider">Sơ đồ bàn & Nhân sự</p>
+            </div>
+
+            <div onclick="window.location.href='./fnb.html'" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer border-amber-900/40 hover:border-amber-400">
+                <i class="fa-solid fa-mug-hot text-5xl text-amber-400 mb-4 group-hover:scale-110 transition-transform"></i>
+                <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-amber-400 transition-colors">Bếp & Bar F&B</h2>
+                <p class="text-gray-500 text-xs uppercase tracking-wider">Gọi nước, món & Bưng bàn</p>
             </div>
 
             <div onclick="window.location.href='./hr_kiosk.html'" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer border-blue-900/40 hover:border-blue-500">
@@ -270,6 +276,7 @@
             if (targetRole === 'cashier' && pin === '6666') { isValid = true; assignedRole = 'cashier'; }
             else if (targetRole === 'td' && pin === '8888') { isValid = true; assignedRole = 'td'; }
             else if (targetRole === 'floor' && pin === '1111') { isValid = true; assignedRole = 'floor'; }
+            else if (targetRole === 'fnb' && (pin === '7777' || pin === '9999')) { isValid = true; assignedRole = 'fnb'; }
             else if (targetRole === 'god' && pin === '9999') { isValid = true; assignedRole = 'god'; }
             else if (pin === '9999') { isValid = true; assignedRole = targetRole || 'god'; }
 

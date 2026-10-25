@@ -180,6 +180,10 @@
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
+                <button class="bg-[#181818] border border-amber-500/50 hover:border-amber-400 text-amber-400 px-3 py-2 rounded-lg font-bold uppercase tracking-widest text-xs transition whitespace-nowrap flex items-center gap-1.5 shadow-sm" onclick="openFloorFnbOrdersModal()">
+                    <i class="fa-solid fa-mug-hot text-amber-400"></i> F&B BÀN CHƠI
+                    <span id="floor-fnb-pending-badge" class="bg-red-600 text-white px-1.5 py-0.2 rounded-full text-[10px] font-extrabold hidden">0</span>
+                </button>
                 <button class="bg-blue-900/40 border border-blue-500 text-blue-400 px-3 py-2 rounded-lg font-bold uppercase tracking-widest text-xs hover:bg-blue-900/60 transition whitespace-nowrap" onclick="openAddTableToTourModal()">
                     <i class="fa-solid fa-plus mr-1"></i>MỞ THÊM BÀN
                 </button>
@@ -259,6 +263,77 @@
             <div class="flex gap-3">
                 <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded-lg font-bold uppercase hover:bg-[#222] transition" onclick="closeMoveModal()">Hủy</button>
                 <button class="flex-1 btn-gold py-3 rounded-lg font-bold uppercase transition" onclick="confirmMoveTable()">Xác Nhận Chuyển</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GỌI F&B / NƯỚC UỐNG CHO BÀN -->
+    <div id="floor-fnb-order-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-[#141b2b] border border-[#d4af37] p-5 rounded-2xl w-[95%] max-w-[520px] shadow-[0_0_40px_rgba(212,175,55,0.4)] flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-3">
+                <div>
+                    <h3 class="text-base font-mafia text-gold uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-mug-hot text-amber-400"></i> Gọi F&B Cho Hội Viên
+                    </h3>
+                    <div id="floor-fnb-target-info" class="text-xs text-emerald-400 font-bold mt-0.5">BÀN 1 - GHẾ 1</div>
+                </div>
+                <button onclick="closeFloorFnbModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+
+            <!-- Category Pills -->
+            <div class="flex gap-1.5 mb-3">
+                <button onclick="setFloorFnbCategory('all')" id="floor-cat-all" class="px-3 py-1 rounded text-xs font-bold bg-[#d4af37] text-black">Tất Cả</button>
+                <button onclick="setFloorFnbCategory('drinks')" id="floor-cat-drinks" class="px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300">☕ Nước</button>
+                <button onclick="setFloorFnbCategory('food')" id="floor-cat-food" class="px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300">🍜 Đồ Ăn</button>
+                <button onclick="setFloorFnbCategory('extras')" id="floor-cat-extras" class="px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300">🚬 Khác</button>
+            </div>
+
+            <!-- Menu Grid -->
+            <div id="floor-fnb-menu-grid" class="grid grid-cols-2 gap-2 overflow-y-auto max-h-[220px] pr-1 mb-3">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Selected Cart in Modal -->
+            <div class="bg-[#0b101c] p-2.5 rounded-xl border border-gray-800 mb-3">
+                <div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">MÓN ĐÃ CHỌN:</div>
+                <div id="floor-fnb-cart-list" class="space-y-1.5 max-h-[110px] overflow-y-auto pr-1">
+                    <!-- Injected via JS -->
+                </div>
+                <div class="flex justify-between items-baseline pt-2 mt-2 border-t border-gray-800">
+                    <span class="text-xs uppercase text-gray-400 font-bold">TỔNG TIỀN:</span>
+                    <span id="floor-fnb-cart-total" class="font-teko text-2xl text-emerald-400 font-bold leading-none">0 ₫</span>
+                </div>
+            </div>
+
+            <!-- Note Input -->
+            <div class="mb-3">
+                <input type="text" id="floor-fnb-input-note" placeholder="Ghi chú (Ví dụ: Ít đá, không đường, ăn liền...)" class="w-full bg-[#0b101c] border border-gray-700 text-amber-300 text-xs p-2.5 rounded-lg outline-none focus:border-[#d4af37]">
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3">
+                <button onclick="closeFloorFnbModal()" class="flex-1 bg-gray-800 text-gray-300 py-3 rounded-xl font-bold uppercase text-xs">Hủy</button>
+                <button onclick="submitFloorFnbOrder()" class="flex-2 btn-gold py-3 px-4 rounded-xl font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> GỬI XUỐNG BẾP & BAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL XEM DANH SÁCH ĐƠN F&B BÀN CHƠI -->
+    <div id="floor-fnb-orders-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-[#141b2b] border border-[#d4af37] p-5 rounded-2xl w-[95%] max-w-[650px] shadow-[0_0_40px_rgba(212,175,55,0.4)] flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-3">
+                <h3 class="text-lg font-mafia text-gold uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-receipt text-amber-400"></i> Theo Dõi Đơn F&B Bàn Chơi
+                </h3>
+                <button onclick="closeFloorFnbOrdersModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+            <div id="floor-orders-list-container" class="flex-1 overflow-y-auto space-y-3 pr-1">
+                <!-- Injected via JS -->
+            </div>
+            <div class="pt-3 border-t border-gray-800 flex justify-end">
+                <button onclick="closeFloorFnbOrdersModal()" class="px-5 py-2.5 bg-gray-800 text-gray-300 rounded-lg text-xs font-bold uppercase">ĐÓNG</button>
             </div>
         </div>
     </div>
@@ -374,8 +449,46 @@
             if (document.getElementById('dealer-modal') && !document.getElementById('dealer-modal').classList.contains('hidden')) return true;
             if (document.getElementById('move-modal') && !document.getElementById('move-modal').classList.contains('hidden')) return true;
             if (document.getElementById('add-table-modal') && !document.getElementById('add-table-modal').classList.contains('hidden')) return true;
+            if (document.getElementById('floor-fnb-order-modal') && !document.getElementById('floor-fnb-order-modal').classList.contains('hidden')) return true;
+            if (document.getElementById('floor-fnb-orders-modal') && !document.getElementById('floor-fnb-orders-modal').classList.contains('hidden')) return true;
             return false;
         }
+
+        // F&B Variables & Listeners
+        let floorFnbMenu = [];
+        let floorFnbOrders = [];
+        let floorActiveFnbTable = null;
+        let floorActiveFnbSeat = null;
+        let floorActiveFnbName = '';
+        let floorActiveFnbPhone = '';
+        let floorFnbCart = {};
+        let floorFnbCategory = 'all';
+
+        socket.on('update_fnb_menu', (menu) => {
+            floorFnbMenu = menu || [];
+            const modal = document.getElementById('floor-fnb-order-modal');
+            if (modal && !modal.classList.contains('hidden')) {
+                renderFloorFnbMenu();
+            }
+        });
+
+        socket.on('update_fnb_orders', (orders) => {
+            floorFnbOrders = orders || [];
+            const pendingCount = floorFnbOrders.filter(o => o.status === 'pending').length;
+            const badge = document.getElementById('floor-fnb-pending-badge');
+            if (badge) {
+                if (pendingCount > 0) {
+                    badge.innerText = pendingCount;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+            const listModal = document.getElementById('floor-fnb-orders-modal');
+            if (listModal && !listModal.classList.contains('hidden')) {
+                renderFloorFnbOrdersList();
+            }
+        });
 
         socket.on('update_staff_list', (staff) => { currentStaff = staff || []; });
 
@@ -635,7 +748,10 @@
                             <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-[#222] border border-[#d4af37] text-[#d4af37] px-2 py-0.5 rounded-full text-xs font-bold shadow-md z-20 whitespace-nowrap pointer-events-none">
                                 🎟️ Lượt: ${buyinCount}
                             </div>
-                            <div id="menu-${uid}" class="action-menu bg-[#1a1a1a] border border-[#d4af37]/50 rounded-xl p-2 shadow-2xl flex flex-col gap-1 w-36">
+                            <div id="menu-${uid}" class="action-menu bg-[#1a1a1a] border border-[#d4af37]/50 rounded-xl p-2 shadow-2xl flex flex-col gap-1 w-44">
+                                <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-amber-400 hover:bg-[#333] rounded-lg flex items-center gap-1.5" onclick="openFnbModalForSeat(${tbl.id}, ${pos.id}, '${player.phone || ''}', '${(player.name||'').replace(/'/g,"\\'")}')">
+                                    <i class="fa-solid fa-mug-hot text-amber-400"></i>Gọi F&B / Nước
+                                </button>
                                 <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-emerald-400 hover:bg-[#333] rounded-lg" onclick="openMoveModal('${player.phone || ''}','${(player.name||'').replace(/'/g,"\\'")}',${tbl.id})">
                                     <i class="fa-solid fa-rotate mr-2"></i>Chuyển Bàn / Ghế
                                 </button>
@@ -989,6 +1105,235 @@
             if(confirm(`Xác nhận BUST OUT khách ${name || phone || ''}?`)) {
                 socket.emit('bust_out', { tour_id: selectedTourId, player_phone: phone, player_name: name });
             }
+        }
+
+        // =====================
+        // F&B ORDERING FOR FLOOR IPAD
+        // =====================
+        function openFnbModalForSeat(tableId, seatId, phone, name) {
+            closeAllMenus(true);
+            floorActiveFnbTable = tableId;
+            floorActiveFnbSeat = seatId;
+            floorActiveFnbName = name || `Khách Ghế ${seatId}`;
+            floorActiveFnbPhone = phone || '';
+            floorFnbCart = {};
+
+            document.getElementById('floor-fnb-target-info').innerHTML = `
+                <span class="text-white font-bold">BÀN ${tableId} • GHẾ ${seatId}</span>
+                <span class="text-gray-400 font-normal ml-2">(${floorActiveFnbName})</span>
+            `;
+            document.getElementById('floor-fnb-input-note').value = '';
+
+            setFloorFnbCategory('all');
+            renderFloorFnbCart();
+            document.getElementById('floor-fnb-order-modal').classList.replace('hidden', 'flex');
+        }
+
+        function closeFloorFnbModal() {
+            document.getElementById('floor-fnb-order-modal').classList.replace('flex', 'hidden');
+            floorActiveFnbTable = null;
+            floorActiveFnbSeat = null;
+            floorFnbCart = {};
+        }
+
+        function setFloorFnbCategory(cat) {
+            floorFnbCategory = cat;
+            ['all', 'drinks', 'food', 'extras'].forEach(c => {
+                const btn = document.getElementById('floor-cat-' + c);
+                if (btn) {
+                    if (c === cat) {
+                        btn.className = 'px-3 py-1 rounded text-xs font-bold bg-[#d4af37] text-black';
+                    } else {
+                        btn.className = 'px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300';
+                    }
+                }
+            });
+            renderFloorFnbMenu();
+        }
+
+        function renderFloorFnbMenu() {
+            const container = document.getElementById('floor-fnb-menu-grid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            let list = floorFnbMenu;
+            if (floorFnbCategory !== 'all') {
+                list = list.filter(m => m.category === floorFnbCategory);
+            }
+
+            if (list.length === 0) {
+                container.innerHTML = '<div class="col-span-2 text-center text-gray-500 text-xs py-4">Chưa có món trong danh mục này</div>';
+                return;
+            }
+
+            list.forEach(item => {
+                const isAvail = item.available !== false;
+                const card = document.createElement('div');
+                card.className = `p-2.5 rounded-xl border flex items-center justify-between transition ${
+                    isAvail
+                        ? 'bg-[#0b101c] border-gray-800 hover:border-amber-400 cursor-pointer active:scale-95'
+                        : 'bg-gray-900 border-gray-900 opacity-40 cursor-not-allowed'
+                }`;
+                card.onclick = () => { if (isAvail) addFloorFnbItem(item); };
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2 truncate mr-2">
+                        <div class="w-8 h-8 rounded-lg bg-[#141b2b] text-[#d4af37] flex items-center justify-center shrink-0 text-sm">
+                            <i class="fa-solid ${item.icon || 'fa-mug-hot'}"></i>
+                        </div>
+                        <div class="truncate">
+                            <div class="text-xs font-bold text-white truncate">${item.name}</div>
+                            <div class="text-[11px] font-teko text-emerald-400 font-bold leading-none mt-0.5">${new Intl.NumberFormat('vi-VN').format(item.price)} ₫</div>
+                        </div>
+                    </div>
+                    ${isAvail ? '<span class="text-xs text-amber-400 font-bold px-2 py-1 bg-amber-500/10 rounded-lg shrink-0">+</span>' : '<span class="text-[10px] text-red-500 uppercase">Hết</span>'}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function addFloorFnbItem(item) {
+            if (!floorFnbCart[item.id]) {
+                floorFnbCart[item.id] = { item, qty: 1 };
+            } else {
+                floorFnbCart[item.id].qty += 1;
+            }
+            renderFloorFnbCart();
+        }
+
+        function changeFloorFnbItemQty(itemId, delta) {
+            if (!floorFnbCart[itemId]) return;
+            floorFnbCart[itemId].qty += delta;
+            if (floorFnbCart[itemId].qty <= 0) {
+                delete floorFnbCart[itemId];
+            }
+            renderFloorFnbCart();
+        }
+
+        function renderFloorFnbCart() {
+            const list = document.getElementById('floor-fnb-cart-list');
+            const totalEl = document.getElementById('floor-fnb-cart-total');
+            list.innerHTML = '';
+
+            const keys = Object.keys(floorFnbCart);
+            if (keys.length === 0) {
+                list.innerHTML = '<div class="text-gray-500 text-[11px] italic text-center py-2">Chưa chọn món nào</div>';
+                totalEl.innerText = '0 ₫';
+                return;
+            }
+
+            let grandTotal = 0;
+            keys.forEach(id => {
+                const { item, qty } = floorFnbCart[id];
+                const subtotal = qty * item.price;
+                grandTotal += subtotal;
+
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between text-xs py-1 border-b border-gray-800/60';
+                row.innerHTML = `
+                    <span class="truncate font-semibold text-gray-200 mr-2">${item.name}</span>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center bg-gray-900 border border-gray-700 rounded">
+                            <button onclick="changeFloorFnbItemQty('${id}', -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 font-bold">-</button>
+                            <span class="w-5 text-center font-bold text-amber-400 text-xs font-mono">${qty}</span>
+                            <button onclick="changeFloorFnbItemQty('${id}', 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 font-bold">+</button>
+                        </div>
+                        <span class="text-emerald-400 font-bold text-xs font-mono w-16 text-right">${new Intl.NumberFormat('vi-VN').format(subtotal)} ₫</span>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+
+            totalEl.innerText = new Intl.NumberFormat('vi-VN').format(grandTotal) + ' ₫';
+        }
+
+        function submitFloorFnbOrder() {
+            const keys = Object.keys(floorFnbCart);
+            if (keys.length === 0) {
+                return alert('Vui lòng chọn ít nhất 1 món!');
+            }
+
+            const note = document.getElementById('floor-fnb-input-note').value.trim();
+            const items = keys.map(id => ({
+                id,
+                name: floorFnbCart[id].item.name,
+                category: floorFnbCart[id].item.category,
+                price: floorFnbCart[id].item.price,
+                qty: floorFnbCart[id].qty
+            }));
+
+            socket.emit('create_fnb_order', {
+                table_id: floorActiveFnbTable,
+                seat: floorActiveFnbSeat,
+                player_name: floorActiveFnbName,
+                player_phone: floorActiveFnbPhone,
+                items,
+                note,
+                payment_status: 'unpaid'
+            }, (res) => {
+                if (res && res.success) {
+                    alert(`ĐÃ GỬI ĐƠN F&B (${res.order.id}) XUỐNG QUẦY BAR & BẾP THÀNH CÔNG!`);
+                    closeFloorFnbModal();
+                } else {
+                    alert((res && res.message) || 'Lỗi gửi đơn F&B!');
+                }
+            });
+        }
+
+        // Modal Theo Dõi Đơn F&B Bàn Chơi
+        function openFloorFnbOrdersModal() {
+            renderFloorFnbOrdersList();
+            document.getElementById('floor-fnb-orders-modal').classList.replace('hidden', 'flex');
+        }
+
+        function closeFloorFnbOrdersModal() {
+            document.getElementById('floor-fnb-orders-modal').classList.replace('flex', 'hidden');
+        }
+
+        function renderFloorFnbOrdersList() {
+            const container = document.getElementById('floor-orders-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const list = floorFnbOrders.slice(0, 50);
+            if (list.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 py-10 text-xs uppercase font-bold tracking-wider">Chưa có đơn hàng nào hôm nay</div>';
+                return;
+            }
+
+            list.forEach(ord => {
+                const itemDiv = document.createElement('div');
+                const isPending = ord.status === 'pending';
+                const isDelivering = ord.status === 'delivering';
+                const isCompleted = ord.status === 'completed';
+
+                let statusBadge = '';
+                if (isPending) statusBadge = '<span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded text-[10px] font-bold">🕒 Chờ Pha Chế</span>';
+                else if (isDelivering) statusBadge = '<span class="bg-blue-500/20 text-blue-400 border border-blue-500/40 px-2 py-0.5 rounded text-[10px] font-bold">🏃 Đang Bưng Ra</span>';
+                else if (isCompleted) statusBadge = '<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded text-[10px] font-bold">✅ Đã Xong</span>';
+                else statusBadge = '<span class="bg-gray-800 text-gray-400 px-2 py-0.5 rounded text-[10px]">❌ Đã Hủy</span>';
+
+                const dest = ord.table_id === 'Bar' ? 'QUẦY BAR' : `BÀN ${ord.table_id} ${ord.seat ? `• GHẾ ${ord.seat}` : ''}`;
+                const itemsStr = (ord.items || []).map(it => `[x${it.qty}] ${it.name}`).join(', ');
+
+                itemDiv.className = 'p-3 bg-[#0b101c] rounded-xl border border-gray-800 flex items-center justify-between text-xs';
+                itemDiv.innerHTML = `
+                    <div class="flex-1 truncate mr-3">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-bold text-amber-400">${dest}</span>
+                            <span class="text-[10px] text-gray-500 font-mono">${ord.id}</span>
+                            ${statusBadge}
+                        </div>
+                        <div class="text-gray-300 font-semibold truncate">${itemsStr}</div>
+                        ${ord.note ? `<div class="text-[11px] text-amber-300 mt-0.5 italic">📝 ${ord.note}</div>` : ''}
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="font-teko text-xl font-bold text-emerald-400">${new Intl.NumberFormat('vi-VN').format(ord.total_amount)} ₫</div>
+                        <div class="text-[10px] text-gray-500">${ord.time_formatted || ''}</div>
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
         }
     </script>
 </body>
