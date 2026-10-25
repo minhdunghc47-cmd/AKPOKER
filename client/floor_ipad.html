@@ -9,7 +9,7 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ACEPOKER - Floor Manager</title>
+    <title>ACE POKER - Floor Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -82,6 +82,17 @@
         }
         .tour-card.running { animation: breathe 2s infinite; }
 
+        @keyframes searchPulse {
+            0%, 100% { box-shadow: 0 0 25px 8px #d4af37, inset 0 0 15px #d4af37; transform: translate(-50%, -50%) scale(1.18); border-color: #fff; z-index: 60; }
+            50% { box-shadow: 0 0 45px 18px #f59e0b, inset 0 0 25px #f59e0b; transform: translate(-50%, -50%) scale(1.28); border-color: #ffd700; z-index: 60; }
+        }
+        .seat-highlighted {
+            animation: searchPulse 1s infinite ease-in-out !important;
+            border-width: 3px !important;
+            border-color: #d4af37 !important;
+            z-index: 60 !important;
+        }
+
         /* Tối ưu hóa UI/UX cho màn hình cảm ứng & di động */
         button, select, input {
             min-height: 48px !important;
@@ -132,7 +143,7 @@
                 <i class="fa-solid fa-arrow-left mr-1"></i> TOURS
             </button>
             <h1 class="font-mafia text-gold text-xl tracking-widest" id="header-title">
-                <i class="fa-solid fa-tablet-screen-button mr-2"></i> FLOOR MANAGER
+                <i class="fa-solid fa-tablet-screen-button mr-2 text-gold"></i> ACE POKER - FLOOR MANAGER
             </h1>
         </div>
         <div class="flex items-center gap-3">
@@ -151,18 +162,36 @@
 
     <!-- TABLE VIEW: Per tour -->
     <main id="view-tables" class="hidden flex-1 overflow-y-auto">
-        <!-- Tour info bar -->
-        <div class="bg-[#111] border-b border-[#222] px-5 py-3 flex gap-6 items-center justify-between shrink-0">
-            <div class="flex gap-6 items-center text-xs font-bold uppercase tracking-widest flex-wrap">
+        <!-- Tour info & Player Locator bar -->
+        <div class="bg-[#111] border-b border-[#222] px-5 py-3 flex flex-wrap gap-4 items-center justify-between shrink-0">
+            <div class="flex gap-5 items-center text-xs font-bold uppercase tracking-widest flex-wrap">
                 <div class="text-gray-500">LEVEL: <span class="text-[#d4af37]" id="tbl-level">—</span></div>
-            <button class="bg-blue-900/40 border border-blue-500 text-blue-400 px-3 py-1.5 rounded font-bold uppercase tracking-widest text-xs hover:bg-blue-900/60 transition whitespace-nowrap" onclick="openAddTableToTourModal()">
-                <i class="fa-solid fa-plus mr-1"></i>MỞ THÊM BÀN
-            </button>
+                <div class="text-gray-500">CLOCK: <span class="text-white font-digital" id="tbl-clock">—</span></div>
+                <div class="text-gray-500">PLAYERS: <span class="text-emerald-400" id="tbl-players">—</span></div>
+                <div class="text-gray-500">BLINDS: <span class="text-emerald-400" id="tbl-blinds">—</span></div>
+            </div>
+
+            <!-- Quick Player Locator Search & Add Table -->
+            <div class="flex items-center gap-3 flex-wrap">
+                <div class="relative flex items-center">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 text-[#d4af37] text-xs pointer-events-none"></i>
+                    <input type="text" id="player-search-input" oninput="searchAndLocatePlayer(this.value)" placeholder="🔍 Tìm vị trí khách (Tên / 4 số SĐT)..." class="bg-[#181818] border border-[#333] focus:border-[#d4af37] text-white text-xs pl-8 pr-8 py-2 rounded-lg w-56 md:w-72 focus:outline-none transition shadow-inner">
+                    <button id="clear-search-btn" class="hidden absolute right-2.5 text-gray-400 hover:text-white text-xs" onclick="clearPlayerSearch()">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <button class="bg-blue-900/40 border border-blue-500 text-blue-400 px-3 py-2 rounded-lg font-bold uppercase tracking-widest text-xs hover:bg-blue-900/60 transition whitespace-nowrap" onclick="openAddTableToTourModal()">
+                    <i class="fa-solid fa-plus mr-1"></i>MỞ THÊM BÀN
+                </button>
+            </div>
         </div>
-            <div class="text-gray-500">CLOCK: <span class="text-white font-digital" id="tbl-clock">—</span></div>
-            <div class="text-gray-500">PLAYERS: <span class="text-emerald-400" id="tbl-players">—</span></div>
-            <div class="text-gray-500">BLINDS: <span class="text-emerald-400" id="tbl-blinds">—</span></div>
+
+        <!-- Search result feedback alert banner -->
+        <div id="search-feedback-banner" class="hidden bg-[#d4af37]/20 border-b border-[#d4af37]/40 px-5 py-2 text-xs font-bold text-[#d4af37] flex items-center justify-between">
+            <span id="search-feedback-text"></span>
+            <button onclick="clearPlayerSearch()" class="text-gray-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
         </div>
+
         <!-- Tables grid -->
         <div id="tables-container" class="grid grid-cols-1 xl:grid-cols-2 gap-4 px-1 py-4 pb-24 justify-items-center w-full"></div>
     </main>
@@ -188,34 +217,48 @@
 
     <!-- MODAL GÁN DEALER -->
     <div id="dealer-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-[360px] shadow-[0_0_30px_rgba(212,175,55,0.3)]">
-            <h3 class="text-lg font-mafia text-gold mb-4 uppercase text-center border-b border-[#333] pb-3">Gán Dealer Vào Bàn</h3>
-            <label class="block text-[10px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Dealer đang chờ:</label>
+        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-[90%] max-w-[390px] shadow-[0_0_35px_rgba(212,175,55,0.35)]">
+            <h3 class="text-lg font-mafia text-gold mb-3 uppercase text-center border-b border-[#333] pb-3">Quản Lý Ca Dealer</h3>
+            
+            <!-- Quick Auto-Push Button -->
+            <button class="w-full bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 hover:brightness-110 text-black font-bold py-3 rounded-xl text-xs uppercase tracking-wider mb-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition" onclick="confirmPushDealer()">
+                <i class="fa-solid fa-arrows-rotate text-sm"></i> Xoay Tua Tự Động (Auto Push Dealer)
+            </button>
+            <div class="text-[10px] text-gray-500 mb-3 text-center uppercase tracking-widest">— hoặc chỉ định thủ công —</div>
+
+            <label class="block text-[10px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Dealer đang chờ (Waiting):</label>
             <select id="dealer-select" class="w-full bg-[#111] border border-[#333] p-3 rounded-lg text-white mb-3 focus:border-[#d4af37] focus:outline-none text-sm font-bold">
                 <option value="">— Chọn Dealer —</option>
             </select>
             <div class="text-[10px] text-gray-500 mb-2 text-center">— hoặc nhập tay —</div>
             <input type="text" id="dealer-name" class="w-full bg-[#111] border border-[#333] p-3 rounded-lg text-white mb-4 focus:border-[#d4af37] focus:outline-none text-sm" placeholder="Tên Dealer...">
             <div class="flex gap-2 mb-3">
-                <button class="flex-1 bg-red-900/40 text-red-400 border border-red-900 py-2 rounded-lg font-bold uppercase text-xs hover:bg-red-800" onclick="confirmUnassignDealer()">Rút Dealer (Unassign)</button>
+                <button class="flex-1 bg-red-900/40 text-red-400 border border-red-900 py-2.5 rounded-lg font-bold uppercase text-xs hover:bg-red-800 transition" onclick="confirmUnassignDealer()">Rút Dealer (Unassign)</button>
             </div>
             <div class="flex gap-3">
-                <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded-lg font-bold uppercase hover:bg-[#222]" onclick="closeDealerModal()">Hủy</button>
-                <button class="flex-1 btn-gold py-3 rounded-lg font-bold uppercase" onclick="confirmAssignDealer()">Xác Nhận</button>
+                <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded-lg font-bold uppercase hover:bg-[#222] transition" onclick="closeDealerModal()">Hủy</button>
+                <button class="flex-1 btn-gold py-3 rounded-lg font-bold uppercase transition" onclick="confirmAssignDealer()">Chỉ Định</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL CHUYỂN BÀN -->
+    <!-- MODAL CHUYỂN BÀN & CHỌN GHẾ -->
     <div id="move-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-[360px] shadow-[0_0_30px_rgba(212,175,55,0.3)]">
-            <h3 class="text-lg font-mafia text-gold mb-4 uppercase text-center border-b border-[#333] pb-3">Chuyển Bàn</h3>
-            <div class="text-white text-center mb-4 font-bold text-sm" id="move-player-name"></div>
-            <label class="block text-[10px] text-gray-400 font-bold uppercase mb-2">Chọn Bàn Đích:</label>
-            <select id="move-table-select" class="w-full bg-[#111] border border-[#333] p-3 rounded-lg text-white mb-5 focus:border-[#d4af37] focus:outline-none"></select>
+        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-[95%] max-w-[420px] shadow-[0_0_35px_rgba(212,175,55,0.35)]">
+            <h3 class="text-lg font-mafia text-gold mb-3 uppercase text-center border-b border-[#333] pb-3">Chuyển Bàn & Chọn Ghế</h3>
+            <div class="text-white text-center mb-3 font-bold text-sm bg-black/50 py-2.5 px-3 rounded-lg border border-[#333]" id="move-player-name"></div>
+            
+            <label class="block text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">1. Chọn Bàn Đích:</label>
+            <select id="move-table-select" class="w-full bg-[#111] border border-[#333] p-3 rounded-lg text-white mb-4 focus:border-[#d4af37] focus:outline-none font-bold text-sm" onchange="renderMoveSeatSelector()"></select>
+
+            <label class="block text-[10px] text-[#d4af37] font-bold uppercase tracking-wider mb-2">2. Chọn Vị Trí Ghế Trống (Seat-to-Seat):</label>
+            <div id="move-seat-grid" class="grid grid-cols-5 gap-2 mb-5">
+                <!-- Dynamic Seat Selector Buttons -->
+            </div>
+
             <div class="flex gap-3">
-                <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded-lg font-bold uppercase hover:bg-[#222]" onclick="closeMoveModal()">Hủy</button>
-                <button class="flex-1 btn-gold py-3 rounded-lg font-bold uppercase" onclick="confirmMoveTable()">Chuyển</button>
+                <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded-lg font-bold uppercase hover:bg-[#222] transition" onclick="closeMoveModal()">Hủy</button>
+                <button class="flex-1 btn-gold py-3 rounded-lg font-bold uppercase transition" onclick="confirmMoveTable()">Xác Nhận Chuyển</button>
             </div>
         </div>
     </div>
@@ -260,6 +303,8 @@
             { id: 7, x: 18, y: 82 }, { id: 8, x: 5, y: 50 },  { id: 9, x: 18, y: 18 }
         ];
 
+        const DEALER_SHIFT_MS = 30 * 60 * 1000;
+
         function formatTime(sec) {
             if(sec < 0) sec = 0;
             const m = Math.floor(sec/60).toString().padStart(2,'0');
@@ -268,7 +313,7 @@
         }
         function formatMoney(n) { return new Intl.NumberFormat('vi-VN').format(n||0); }
 
-        // Real time clock
+        // Real time clock & 30-min Dealer rotation countdown
         setInterval(() => {
             const now = new Date();
             const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
@@ -278,26 +323,23 @@
             document.querySelectorAll('.dealer-timer').forEach(el => {
                 const startTime = parseInt(el.getAttribute('data-time'));
                 if (!startTime || isNaN(startTime)) {
-                    el.innerText = '0m';
+                    el.innerText = '30:00';
                     return;
                 }
-                const diffMs = nowMs - startTime;
-                const diffMins = Math.floor(diffMs / 60000);
+                const elapsedMs = nowMs - startTime;
+                const remainingSec = Math.max(0, Math.floor((DEALER_SHIFT_MS - elapsedMs) / 1000));
+                const m = Math.floor(remainingSec / 60).toString().padStart(2, '0');
+                const s = (remainingSec % 60).toString().padStart(2, '0');
 
-                let text = '';
-                if (diffMins < 60) {
-                    text = diffMins + 'm';
+                if (remainingSec === 0) {
+                    el.innerText = '⚠️ 00:00 HẾT CA (PUSH)';
+                    el.className = 'dealer-timer text-[10px] mt-1 bg-red-950 text-red-300 font-bold px-2.5 py-0.5 rounded-full border border-red-500 animate-pulse tracking-widest cursor-pointer shadow-[0_0_10px_rgba(239,68,68,0.7)]';
+                } else if (remainingSec <= 300) {
+                    el.innerText = `⏳ ${m}:${s}`;
+                    el.className = 'dealer-timer text-[9px] mt-1 bg-yellow-950/80 text-yellow-300 font-bold px-2.5 py-0.5 rounded-full border border-yellow-500 animate-pulse tracking-widest cursor-pointer';
                 } else {
-                    const h = Math.floor(diffMins / 60);
-                    const m = diffMins % 60;
-                    text = h + 'h' + m.toString().padStart(2, '0') + 'm';
-                }
-                el.innerText = text;
-
-                if (diffMins >= 60) {
-                    el.className = 'dealer-timer text-[10px] mt-1 bg-red-900/80 text-red-300 font-bold px-3 py-0.5 rounded-full border border-red-500 animate-pulse tracking-widest';
-                } else {
-                    el.className = 'dealer-timer text-[9px] mt-1 bg-black/60 text-gray-400 px-2 py-0.5 rounded-full border border-[#333] tracking-widest';
+                    el.innerText = `${m}:${s}`;
+                    el.className = 'dealer-timer text-[9px] mt-1 bg-black/60 text-emerald-400 font-digital px-2.5 py-0.5 rounded-full border border-emerald-500/30 tracking-widest cursor-pointer';
                 }
             });
 
@@ -325,6 +367,7 @@
 
         function isAnyPopupOpen() {
             if (activeMenuSeatId !== null) return true;
+            if (document.activeElement && document.activeElement.id === 'player-search-input') return true;
             if (document.getElementById('dealer-modal') && !document.getElementById('dealer-modal').classList.contains('hidden')) return true;
             if (document.getElementById('move-modal') && !document.getElementById('move-modal').classList.contains('hidden')) return true;
             if (document.getElementById('add-table-modal') && !document.getElementById('add-table-modal').classList.contains('hidden')) return true;
@@ -412,11 +455,12 @@
         }
 
         function showLobby() {
+            clearPlayerSearch();
             selectedTourId = null;
             document.getElementById('view-tables').classList.add('hidden');
             document.getElementById('view-lobby').classList.remove('hidden');
             document.getElementById('btn-back').classList.add('hidden');
-            document.getElementById('header-title').innerHTML = '<i class="fa-solid fa-tablet-screen-button mr-2"></i> FLOOR MANAGER';
+            document.getElementById('header-title').innerHTML = '<i class="fa-solid fa-tablet-screen-button mr-2 text-gold"></i> ACE POKER - FLOOR MANAGER';
         }
 
         // =====================
@@ -484,32 +528,50 @@
                 const tablePlayers = (t.players||[]).filter(p => p.table_id === tbl.id && p.status === 'alive');
 
                 const tableWrapper = document.createElement('div');
+                tableWrapper.id = `table-card-${tbl.id}`;
                 tableWrapper.className = 'w-full xl:w-[46vw] h-[400px] md:h-[480px] xl:h-[500px] mx-auto relative my-8 flex-1';
 
-
-                let initialDealerTimer = '0m';
-                let dealerTimerClass = 'dealer-timer text-[9px] mt-1 bg-black/60 text-gray-400 px-2 py-0.5 rounded-full border border-[#333] tracking-widest';
+                let initialDealerTimer = '30:00';
+                let dealerTimerClass = 'dealer-timer text-[9px] mt-1 bg-black/60 text-emerald-400 font-digital px-2.5 py-0.5 rounded-full border border-emerald-500/30 tracking-widest cursor-pointer';
                 if (tbl.dealer_time) {
-                    const diffMins = Math.floor((Date.now() - tbl.dealer_time) / 60000);
-                    if (diffMins < 60) {
-                        initialDealerTimer = diffMins + 'm';
+                    const elapsedMs = Date.now() - tbl.dealer_time;
+                    const remainingSec = Math.max(0, Math.floor((DEALER_SHIFT_MS - elapsedMs) / 1000));
+                    const m = Math.floor(remainingSec / 60).toString().padStart(2, '0');
+                    const s = (remainingSec % 60).toString().padStart(2, '0');
+
+                    if (remainingSec === 0) {
+                        initialDealerTimer = '⚠️ 00:00 HẾT CA (PUSH)';
+                        dealerTimerClass = 'dealer-timer text-[10px] mt-1 bg-red-950 text-red-300 font-bold px-2.5 py-0.5 rounded-full border border-red-500 animate-pulse tracking-widest cursor-pointer shadow-[0_0_10px_rgba(239,68,68,0.7)]';
+                    } else if (remainingSec <= 300) {
+                        initialDealerTimer = `⏳ ${m}:${s}`;
+                        dealerTimerClass = 'dealer-timer text-[9px] mt-1 bg-yellow-950/80 text-yellow-300 font-bold px-2.5 py-0.5 rounded-full border border-yellow-500 animate-pulse tracking-widest cursor-pointer';
                     } else {
-                        const h = Math.floor(diffMins / 60);
-                        const m = diffMins % 60;
-                        initialDealerTimer = h + 'h' + m.toString().padStart(2, '0') + 'm';
-                        dealerTimerClass = 'dealer-timer text-[10px] mt-1 bg-red-900/80 text-red-300 font-bold px-3 py-0.5 rounded-full border border-red-500 animate-pulse tracking-widest';
+                        initialDealerTimer = `${m}:${s}`;
+                        dealerTimerClass = 'dealer-timer text-[9px] mt-1 bg-black/60 text-emerald-400 font-digital px-2.5 py-0.5 rounded-full border border-emerald-500/30 tracking-widest cursor-pointer';
                     }
                 }
 
                 const dealerHtml = tbl.dealer_name
-                    ? `<div class="text-[#d4af37] text-sm font-mafia tracking-widest bg-black/60 px-3 py-1 rounded-full border border-[#d4af37]/30 cursor-pointer hover:bg-black/80 transition shadow-[0_0_10px_rgba(212,175,55,0.2)]" onclick="openDealerModal(${tbl.id})">
-                           <i class="fa-solid fa-hands-holding-circle mr-1"></i>${tbl.dealer_name}
-                       </div>
-                       <div class="${dealerTimerClass}" data-time="${tbl.dealer_time}">${initialDealerTimer}</div>`
-
-                    : `<button class="text-red-500 font-bold animate-pulse text-[11px] bg-black/60 px-3 py-1 rounded-full border border-red-500/50 cursor-pointer hover:bg-black/80 tracking-widest uppercase" onclick="openDealerModal(${tbl.id})">
-                           ⚠️ THIẾU DEALER
-                       </button>`;
+                    ? `<div class="flex flex-col items-center">
+                           <div class="text-[#d4af37] text-sm font-mafia tracking-widest bg-black/80 px-3 py-1 rounded-full border border-[#d4af37]/40 cursor-pointer hover:bg-black transition shadow-[0_0_10px_rgba(212,175,55,0.2)] flex items-center gap-1.5" onclick="openDealerModal(${tbl.id})">
+                               <i class="fa-solid fa-hands-holding-circle text-[#d4af37]"></i>
+                               <span>${tbl.dealer_name}</span>
+                           </div>
+                           <div class="flex items-center gap-1.5 mt-1">
+                               <div class="${dealerTimerClass}" data-time="${tbl.dealer_time}" onclick="openDealerModal(${tbl.id})">${initialDealerTimer}</div>
+                               <button class="text-[9px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 hover:bg-amber-500/40 border border-amber-500/50 px-2 py-0.5 rounded-full transition flex items-center gap-1 shadow-sm active:scale-95" title="Đổi Ca / Auto Push Dealer" onclick="event.stopPropagation(); quickPushDealer(${tbl.id})">
+                                   <i class="fa-solid fa-arrows-rotate text-[8px]"></i> PUSH
+                               </button>
+                           </div>
+                       </div>`
+                    : `<div class="flex flex-col items-center gap-1">
+                           <button class="text-red-500 font-bold animate-pulse text-[11px] bg-black/80 px-3 py-1 rounded-full border border-red-500/50 cursor-pointer hover:bg-black tracking-widest uppercase shadow-[0_0_8px_rgba(239,68,68,0.4)]" onclick="openDealerModal(${tbl.id})">
+                               ⚠️ THIẾU DEALER
+                           </button>
+                           <button class="text-[9px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 hover:bg-amber-500/40 border border-amber-500/50 px-2.5 py-1 rounded-full transition flex items-center gap-1 shadow-sm active:scale-95" onclick="event.stopPropagation(); quickPushDealer(${tbl.id})">
+                               <i class="fa-solid fa-bolt text-[8px]"></i> AUTO GÁN
+                           </button>
+                       </div>`;
 
                 tableWrapper.innerHTML = `
                     ${overlayHtml}
@@ -518,8 +580,8 @@
                             <div class="text-gray-500 font-bold tracking-widest text-xs opacity-50">BÀN ${tbl.id}</div>
                         </div>
 
-                        <div class="absolute top-7">${dealerHtml}</div>
-                        <div class="text-white/10 font-mafia text-5xl tracking-widest uppercase mt-2 pointer-events-none">ACE</div>
+                        <div class="absolute top-6">${dealerHtml}</div>
+                        <div class="text-white/10 font-mafia text-4xl md:text-5xl tracking-widest uppercase mt-4 pointer-events-none">ACE POKER</div>
                         <button class="mt-3 bg-red-900/40 border border-red-500 text-red-400 px-4 py-1.5 rounded-full font-bold uppercase tracking-widest text-[10px] hover:bg-red-900/80 transition shadow-[0_0_10px_rgba(220,38,38,0.3)] z-10 relative" onclick="closeTableFromTour(${tbl.id})">
                             <i class="fa-solid fa-minus mr-1"></i>ĐÓNG BÀN
                         </button>
@@ -529,6 +591,7 @@
                 seatPositions.forEach((pos, index) => {
                     const player = tablePlayers.find(p => p.seat === pos.id);
                     const seatDiv = document.createElement('div');
+                    seatDiv.id = `seat-cell-${tbl.id}-${pos.id}`;
                     seatDiv.className = `seat ${player ? 'occupied' : 'empty'}`;
                     seatDiv.style.cssText = `left:${pos.x}%;top:${pos.y}%;`;
 
@@ -645,7 +708,7 @@
         }
 
         // =====================
-        // DEALER MODAL
+        // DEALER ACTIONS & ROTATION
         // =====================
         function openDealerModal(tableId) {
             pendingDealerTableId = tableId;
@@ -671,7 +734,30 @@
         }
         function closeDealerModal() {
             document.getElementById('dealer-modal').classList.replace('flex','hidden');
-         renderTableView(); }
+            renderTableView();
+        }
+
+        function quickPushDealer(tableId) {
+            if (confirm(`Xác nhận XOAY TUA / PUSH Dealer cho Bàn ${tableId}?\n(Hệ thống sẽ kết thúc ca hiện tại và tự động chỉ định Dealer kế tiếp trong hàng chờ)`)) {
+                socket.emit('push_dealer', { tour_id: selectedTourId, table_id: tableId }, (res) => {
+                    if (res && !res.success) {
+                        alert(res.message || 'Không thể đổi Dealer!');
+                    }
+                });
+            }
+        }
+
+        function confirmPushDealer() {
+            if (pendingDealerTableId && selectedTourId) {
+                socket.emit('push_dealer', { tour_id: selectedTourId, table_id: pendingDealerTableId }, (res) => {
+                    if (res && !res.success) {
+                        alert(res.message || 'Không thể đổi Dealer!');
+                    } else {
+                        closeDealerModal();
+                    }
+                });
+            }
+        }
 
         function confirmUnassignDealer() {
             if (pendingDealerTableId && selectedTourId) {
@@ -691,11 +777,14 @@
         }
 
         // =====================
-        // MOVE TABLE MODAL
+        // MOVE TABLE & SEAT-TO-SEAT MODAL
         // =====================
+        let selectedTargetSeat = null;
+
         function openMoveModal(phone, name, currentTableId) {
             closeAllMenus();
             pendingMovePhone = phone;
+            selectedTargetSeat = null;
             document.getElementById('move-player-name').innerText = `${name} (${phone})`;
             const select = document.getElementById('move-table-select');
             select.innerHTML = '';
@@ -709,17 +798,156 @@
                     }
                 });
             }
+            renderMoveSeatSelector();
             document.getElementById('move-modal').classList.remove('hidden');
             document.getElementById('move-modal').classList.add('flex');
         }
+
+        function renderMoveSeatSelector() {
+            const grid = document.getElementById('move-seat-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            selectedTargetSeat = null;
+
+            const targetTableId = parseInt(document.getElementById('move-table-select').value);
+            const t = currentTours.find(x => x.id === selectedTourId);
+            if (!t || isNaN(targetTableId)) return;
+
+            const alivePlayersOnTarget = (t.players || []).filter(p => p.table_id === targetTableId && p.status === 'alive' && p.phone !== pendingMovePhone);
+            const occupiedSeats = alivePlayersOnTarget.map(p => p.seat);
+
+            // Auto Option
+            const autoBtn = document.createElement('button');
+            autoBtn.type = 'button';
+            autoBtn.id = 'move-seat-btn-auto';
+            autoBtn.className = 'col-span-5 py-2 px-3 rounded-lg border border-[#d4af37] bg-[#d4af37] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95';
+            autoBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Tự Động Gán Ghế Ưu Tiên (Mặc định)';
+            autoBtn.onclick = () => {
+                selectedTargetSeat = null;
+                highlightSeatOption(null);
+            };
+            grid.appendChild(autoBtn);
+
+            // Seats 1 to 9
+            for (let s = 1; s <= 9; s++) {
+                const isOccupied = occupiedSeats.includes(s);
+                const seatBtn = document.createElement('button');
+                seatBtn.type = 'button';
+                seatBtn.id = `move-seat-btn-${s}`;
+                if (isOccupied) {
+                    seatBtn.disabled = true;
+                    seatBtn.className = 'py-2.5 rounded-lg bg-[#111] border border-[#222] text-gray-600 text-xs font-bold line-through cursor-not-allowed opacity-50';
+                    seatBtn.innerText = `G${s}`;
+                    seatBtn.title = `Ghế ${s}: Đã có người`;
+                } else {
+                    seatBtn.className = 'move-seat-btn py-2.5 rounded-lg bg-[#1a1a1a] border border-[#444] text-white hover:border-[#d4af37] text-xs font-bold cursor-pointer transition active:scale-95';
+                    seatBtn.innerText = `G${s}`;
+                    seatBtn.title = `Ghế ${s}: Trống`;
+                    seatBtn.onclick = () => {
+                        selectedTargetSeat = s;
+                        highlightSeatOption(s);
+                    };
+                }
+                grid.appendChild(seatBtn);
+            }
+        }
+
+        function highlightSeatOption(seat) {
+            document.querySelectorAll('.move-seat-btn').forEach(btn => {
+                btn.classList.remove('bg-[#d4af37]', 'text-black', 'border-[#d4af37]');
+                btn.classList.add('bg-[#1a1a1a]', 'text-white', 'border-[#444]');
+            });
+            const autoBtn = document.getElementById('move-seat-btn-auto');
+            if (seat === null) {
+                if (autoBtn) {
+                    autoBtn.className = 'col-span-5 py-2 px-3 rounded-lg border border-[#d4af37] bg-[#d4af37] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition';
+                }
+            } else {
+                if (autoBtn) {
+                    autoBtn.className = 'col-span-5 py-2 px-3 rounded-lg border border-[#333] bg-[#111] text-gray-400 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition';
+                }
+                const activeBtn = document.getElementById(`move-seat-btn-${seat}`);
+                if (activeBtn) {
+                    activeBtn.classList.remove('bg-[#1a1a1a]', 'text-white', 'border-[#444]');
+                    activeBtn.classList.add('bg-[#d4af37]', 'text-black', 'border-[#d4af37]');
+                }
+            }
+        }
+
         function closeMoveModal() {
             document.getElementById('move-modal').classList.replace('flex','hidden');
-         renderTableView(); }
+            renderTableView();
+        }
+
         function confirmMoveTable() {
             const newId = document.getElementById('move-table-select').value;
             if(pendingMovePhone && selectedTourId && newId) {
-                socket.emit('move_player_table', { tour_id: selectedTourId, player_phone: pendingMovePhone, new_table_id: newId });
+                socket.emit('move_player_table', { 
+                    tour_id: selectedTourId, 
+                    player_phone: pendingMovePhone, 
+                    new_table_id: parseInt(newId),
+                    target_seat: selectedTargetSeat
+                });
                 closeMoveModal();
+            }
+        }
+
+        // =====================
+        // QUICK PLAYER SEARCH / LOCATOR
+        // =====================
+        function clearPlayerSearch() {
+            const input = document.getElementById('player-search-input');
+            if (input) input.value = '';
+            document.getElementById('clear-search-btn')?.classList.add('hidden');
+            document.getElementById('search-feedback-banner')?.classList.add('hidden');
+            document.querySelectorAll('.seat-highlighted').forEach(el => el.classList.remove('seat-highlighted'));
+        }
+
+        function searchAndLocatePlayer(keyword) {
+            keyword = (keyword || '').trim().toLowerCase();
+            const clearBtn = document.getElementById('clear-search-btn');
+            const feedbackBanner = document.getElementById('search-feedback-banner');
+            const feedbackText = document.getElementById('search-feedback-text');
+
+            if (clearBtn) {
+                if (keyword.length > 0) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+
+            document.querySelectorAll('.seat-highlighted').forEach(el => el.classList.remove('seat-highlighted'));
+
+            if (!keyword || keyword.length < 2 || !selectedTourId) {
+                if (feedbackBanner) feedbackBanner.classList.add('hidden');
+                return;
+            }
+
+            const t = currentTours.find(x => x.id === selectedTourId);
+            if (!t || !t.players) return;
+
+            const matched = t.players.find(p => 
+                p.status === 'alive' && (
+                    (p.name && p.name.toLowerCase().includes(keyword)) ||
+                    (p.phone && p.phone.toLowerCase().endsWith(keyword)) ||
+                    (p.phone && p.phone.toLowerCase().includes(keyword))
+                )
+            );
+
+            if (matched) {
+                const seatId = `seat-cell-${matched.table_id}-${matched.seat}`;
+                const seatDiv = document.getElementById(seatId);
+                if (seatDiv) {
+                    seatDiv.classList.add('seat-highlighted');
+                    seatDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                if (feedbackBanner && feedbackText) {
+                    feedbackText.innerHTML = `<i class="fa-solid fa-location-crosshairs mr-2"></i>Đã tìm thấy: <span class="text-white">${matched.name || 'Khách'}</span> (${matched.phone}) &nbsp;➔&nbsp; <span class="text-emerald-400 font-bold font-digital">BÀN ${matched.table_id} - GHẾ ${matched.seat}</span>`;
+                    feedbackBanner.classList.remove('hidden');
+                }
+            } else {
+                if (feedbackBanner && feedbackText) {
+                    feedbackText.innerHTML = `<i class="fa-solid fa-circle-xmark mr-2 text-red-400"></i>Không tìm thấy người chơi nào khớp với "${keyword}" trên các bàn đang mở`;
+                    feedbackBanner.classList.remove('hidden');
+                }
             }
         }
 

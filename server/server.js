@@ -899,6 +899,62 @@ io.on('connection', (socket) => {
     }
   }));
 
+  socket.on('push_dealer', requireRole(socket, ['god', 'td', 'floor'], (payload, callback) => {
+    const tableId = parseInt(payload.table_id);
+    const table = db.tables.find(tbl => tbl.id === tableId);
+    if (!table) {
+      if (typeof callback === 'function') callback({ success: false, message: 'Bàn không tồn tại!' });
+      return;
+    }
+
+    // Free old dealer if assigned
+    const oldDealerName = table.dealer_name;
+    if (oldDealerName) {
+      const oldStaff = db.staff.find(s => s.name === oldDealerName);
+      if (oldStaff) {
+        oldStaff.status = 'waiting';
+        if (oldStaff.session_start) {
+          oldStaff.total_dealing_ms = (oldStaff.total_dealing_ms || 0) + (Date.now() - oldStaff.session_start);
+          oldStaff.session_start = null;
+        }
+      }
+    }
+
+    // Find next available dealer in waiting status (prioritize someone other than current dealer if possible)
+    let nextDealer = db.staff.find(s => 
+      (s.role?.toLowerCase() === 'dealer' || !s.role) && 
+      s.status === 'waiting' && 
+      s.name !== oldDealerName &&
+      (s.work_status === 'ACTIVE' || !s.work_status)
+    );
+
+    if (!nextDealer) {
+      // If none other found, check if current dealer is the only waiting dealer
+      nextDealer = db.staff.find(s => 
+        (s.role?.toLowerCase() === 'dealer' || !s.role) && 
+        s.status === 'waiting' &&
+        (s.work_status === 'ACTIVE' || !s.work_status)
+      );
+    }
+
+    if (!nextDealer) {
+      if (typeof callback === 'function') callback({ success: false, message: 'Không có Dealer nào trong hàng đợi (waiting) để đổi ca!' });
+      return;
+    }
+
+    // Assign new dealer
+    table.dealer_name = nextDealer.name;
+    table.dealer_time = Date.now();
+    nextDealer.status = 'busy';
+    nextDealer.session_start = Date.now();
+
+    const t = db.tournaments.find(t => t.id === payload.tour_id);
+    if (t) t.dealer_assigned = true;
+
+    broadcastState();
+    if (typeof callback === 'function') callback({ success: true, message: `Đã đổi Dealer thành công: ${nextDealer.name}`, dealer_name: nextDealer.name });
+  }));
+
   socket.on('assign_dealer', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
     const table = db.tables.find(tbl => tbl.id === payload.table_id);
     if (table) {
@@ -932,22 +988,33 @@ io.on('connection', (socket) => {
   }));
 
   socket.on('move_player_table', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
-    const { tour_id, player_phone, new_table_id } = payload;
+    const { tour_id, player_phone, new_table_id, target_seat } = payload;
     const t = db.tournaments.find(t => t.id === tour_id);
     if (t) {
       const p = t.players.find(p => p.phone === player_phone && p.status === 'alive');
       if (p) {
         p.table_id = parseInt(new_table_id);
 
-        // Find empty seat at new table
-        let new_seat = 1;
         const playersAtNewTable = t.players.filter(x => x.table_id === p.table_id && x.status === 'alive' && x.phone !== p.phone);
         const occupiedSeats = playersAtNewTable.map(x => x.seat);
-        for (let i of PREFERRED_SEAT_ORDER) {
-            if(!occupiedSeats.includes(i)) { new_seat = i; break; }
-        }
-        p.seat = new_seat;
 
+        let new_seat = null;
+        if (target_seat !== undefined && target_seat !== null && target_seat !== '') {
+          const reqSeat = parseInt(target_seat);
+          if (!occupiedSeats.includes(reqSeat) && reqSeat >= 1 && reqSeat <= 10) {
+            new_seat = reqSeat;
+          }
+        }
+
+        if (new_seat === null) {
+          // Find empty seat at new table by preferred order
+          for (let i of PREFERRED_SEAT_ORDER) {
+            if (!occupiedSeats.includes(i)) { new_seat = i; break; }
+          }
+          if (new_seat === null) new_seat = 1;
+        }
+
+        p.seat = new_seat;
         broadcastState();
       }
     }
