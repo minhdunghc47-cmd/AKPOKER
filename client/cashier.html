@@ -105,22 +105,39 @@
         <div class="mt-12 flex flex-col items-center">
             <h2 class="text-lg font-mafia text-[#d4af37] mb-6 tracking-widest uppercase border-b border-gray-800 pb-2 w-full text-center"><i class="fa-solid fa-receipt mr-2"></i> XEM TRƯỚC HÓA ĐƠN</h2>
 
-            <div id="receipt-preview" class="bg-white text-black p-4 shadow-[0_0_20px_rgba(212,175,55,0.2)] border-2 border-dashed border-gray-300" style="width: 80mm; font-family: 'Courier New', Courier, monospace;">
-                <div style="text-align: center; margin-bottom: 10px;">
-                    <h2 style="margin: 0; font-size: 18px; font-weight: bold;">ACEPOKER</h2>
-                    <div style="font-size: 12px; margin-top: 5px;">VÉ THAM DỰ GIẢI ĐẤU</div>
+            <div id="receipt-preview" class="bg-white text-black p-4 shadow-[0_0_20px_rgba(212,175,55,0.2)] border-2 border-dashed border-gray-300 rounded" style="width: 80mm; font-family: 'Courier New', Courier, monospace;">
+                <div style="text-align: center; margin-bottom: 8px;">
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px;">♠️ AK POKER CLUB ♠️</h2>
+                    <div id="rp-tour" style="font-size: 13px; font-weight: bold; margin-top: 4px; text-transform: uppercase;">TOURNAMENT CHAMPIONSHIP</div>
+                    <div id="rp-ticket-type" style="display: inline-block; background: #000; color: #fff; padding: 2px 10px; font-size: 11px; font-weight: bold; margin-top: 5px; border-radius: 3px;">BUY-IN</div>
                 </div>
-                <div style="border-top: 1px dashed black; margin: 10px 0;"></div>
+                <div style="border-top: 2px dashed black; margin: 8px 0;"></div>
+                
+                <!-- SEAT DRAW BOX -->
+                <div style="display: flex; justify-content: space-around; align-items: center; border: 2px solid black; padding: 8px; margin: 8px 0; background: #f9f9f9;">
+                    <div style="text-align: center;">
+                        <span style="font-size: 11px; font-weight: bold; display: block;">BÀN / TABLE</span>
+                        <span id="rp-table" style="font-size: 26px; font-weight: 900; color: #000;">...</span>
+                    </div>
+                    <div style="font-size: 20px; font-weight: bold;">|</div>
+                    <div style="text-align: center;">
+                        <span style="font-size: 11px; font-weight: bold; display: block;">GHẾ / SEAT</span>
+                        <span id="rp-seat" style="font-size: 26px; font-weight: 900; color: #000;">...</span>
+                    </div>
+                </div>
+
+                <div style="border-top: 1px dashed black; margin: 8px 0;"></div>
                 <div style="font-size: 12px; line-height: 1.6;">
-                    <div><strong>Khách:</strong> <span id="rp-name">...</span></div>
-                    <div><strong>Giải:</strong> <span id="rp-tour">...</span></div>
-                    <div><strong>Buy-in:</strong> <span id="rp-buyin">...</span></div>
+                    <div><strong>VĐV:</strong> <span id="rp-name" style="font-weight: bold;">...</span></div>
+                    <div><strong>SĐT/Mã:</strong> <span id="rp-phone">...</span></div>
+                    <div><strong>Mức phí:</strong> <span id="rp-buyin" style="font-weight: bold;">...</span></div>
+                    <div><strong>Mã vé:</strong> <span id="rp-ticket-id">AK-TICKET</span></div>
                     <div><strong>Thời gian:</strong> <span id="rp-time">...</span></div>
-                    <div style="margin-top: 10px;"><strong>Bàn:</strong> <span id="rp-table">...</span> &nbsp;&nbsp; <strong>Ghế:</strong> <span id="rp-seat">...</span></div>
                 </div>
-                <div style="border-top: 1px dashed black; margin: 10px 0;"></div>
-                <div style="text-align: center; font-size: 12px; font-style: italic;">
-                    Chúc quý khách may mắn!
+                <div style="border-top: 1px dashed black; margin: 8px 0;"></div>
+                <div style="text-align: center; margin-top: 6px;">
+                    <div style="letter-spacing: 3px; font-weight: bold; font-size: 13px;">||| |||| | ||||| || |||| | |||</div>
+                    <div style="font-size: 11px; font-style: italic; margin-top: 4px;">Vui lòng xuất trình vé cho Dealer tại bàn</div>
                 </div>
             </div>
 
@@ -141,7 +158,16 @@
 
         <div id="alert-box" class="hidden p-4 mb-6 rounded border font-bold text-sm text-center uppercase tracking-wider"></div>
 
-        <div class="space-y-6">
+        <div class="space-y-5">
+            <div>
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Loại Vé Giao Dịch:</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" id="btn-type-buyin" class="py-2.5 px-2 rounded text-xs font-bold border border-[#d4af37] bg-[#d4af37] text-black transition shadow-md" onclick="selectTicketType('buy_in')">🎟 BUY-IN (F8)</button>
+                    <button type="button" id="btn-type-rebuy" class="py-2.5 px-2 rounded text-xs font-bold border border-[#333] bg-[#1a1a1a] text-gray-300 hover:border-[#d4af37] transition shadow-md" onclick="selectTicketType('re_buy')">🔄 RE-BUY (F9)</button>
+                    <button type="button" id="btn-type-addon" class="py-2.5 px-2 rounded text-xs font-bold border border-[#333] bg-[#1a1a1a] text-gray-300 hover:border-[#d4af37] transition shadow-md" onclick="selectTicketType('add_on')">➕ ADD-ON (F10)</button>
+                </div>
+            </div>
+
             <div>
                 <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Chọn Giải Đấu:</label>
                 <select id="tour-select" class="input-mafia text-sm" onchange="filterMembers()"><option value="">-- Vui lòng chọn giải --</option></select>
@@ -163,13 +189,19 @@
                 <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Mức Phí / Buy-in (VNĐ):</label>
                 <input type="number" id="buy-in" class="input-mafia text-sm font-bold text-gray-500 bg-[#111] cursor-not-allowed" placeholder="VD: 5000000" value="" oninput="updateReceiptPreview()" readonly>
             </div>
-            <div class="flex items-center space-x-3 p-4 bg-[#800020]/20 border border-[#800020]/50 rounded cursor-pointer" onclick="document.getElementById('unpaid-checkbox').click()">
-                <input type="checkbox" id="unpaid-checkbox" class="w-5 h-5 accent-[#800020] cursor-pointer">
-                <label class="text-[#e74c3c] font-bold text-[11px] cursor-pointer uppercase tracking-widest">Khách Ghi Nợ (Chưa thu tiền)</label>
+            <div class="flex items-center justify-between p-3 bg-[#111] border border-[#333] rounded">
+                <div class="flex items-center space-x-2 cursor-pointer" onclick="document.getElementById('unpaid-checkbox').click()">
+                    <input type="checkbox" id="unpaid-checkbox" class="w-4 h-4 accent-[#800020] cursor-pointer">
+                    <label class="text-[#e74c3c] font-bold text-[11px] cursor-pointer uppercase tracking-widest">Khách Ghi Nợ</label>
+                </div>
+                <div class="flex items-center space-x-2 cursor-pointer" onclick="document.getElementById('auto-print-chk').click()">
+                    <input type="checkbox" id="auto-print-chk" class="w-4 h-4 accent-[#d4af37] cursor-pointer" checked>
+                    <label class="text-[#d4af37] font-bold text-[11px] cursor-pointer uppercase tracking-widest">Auto Print</label>
+                </div>
             </div>
         </div>
 
-        <button class="btn-gold py-5 w-full uppercase tracking-widest text-lg mt-10 shadow-lg" id="btn-sell" onclick="sellTicket()">
+        <button class="btn-gold py-5 w-full uppercase tracking-widest text-lg mt-8 shadow-lg" id="btn-sell" onclick="sellTicket()">
             <i class="fa-solid fa-ticket mr-2"></i> IN VÉ & GHI NHẬN
         </button>
     </div>
@@ -476,6 +508,35 @@
         }
 
 
+        let currentTicketType = 'buy_in';
+        function selectTicketType(type) {
+            currentTicketType = type;
+            const btnBuyin = document.getElementById('btn-type-buyin');
+            const btnRebuy = document.getElementById('btn-type-rebuy');
+            const btnAddon = document.getElementById('btn-type-addon');
+            
+            [btnBuyin, btnRebuy, btnAddon].forEach(b => {
+                if (b) {
+                    b.classList.remove('bg-[#d4af37]', 'text-black', 'border-[#d4af37]');
+                    b.classList.add('bg-[#1a1a1a]', 'text-gray-300', 'border-[#333]');
+                }
+            });
+            
+            let activeBtn = btnBuyin;
+            if (type === 're_buy') activeBtn = btnRebuy;
+            else if (type === 'add_on') activeBtn = btnAddon;
+            
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-[#1a1a1a]', 'text-gray-300', 'border-[#333]');
+                activeBtn.classList.add('bg-[#d4af37]', 'text-black', 'border-[#d4af37]');
+            }
+            
+            const label = type === 'add_on' ? 'ADD-ON' : (type === 're_buy' ? 'RE-BUY' : 'BUY-IN');
+            const el = document.getElementById('rp-ticket-type');
+            if (el) el.innerText = label;
+            updateReceiptPreview();
+        }
+
         function updateReceiptPreview() {
             const select = document.getElementById('tour-select');
             const phone = document.getElementById('player-search').value.trim();
@@ -486,12 +547,14 @@
             const tour = currentTours.find(t => t.id === tourId);
 
             const name = member ? member.name : (phone || '...');
-            const tourName = tour ? tour.name : '...';
+            const tourName = tour ? tour.name : 'TOURNAMENT CHAMPIONSHIP';
 
             const now = new Date();
             const timeStr = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
 
             document.getElementById('rp-name').innerText = name;
+            const rpPhone = document.getElementById('rp-phone');
+            if (rpPhone) rpPhone.innerText = phone || (member ? member.phone : '...');
             document.getElementById('rp-tour').innerText = tourName;
             document.getElementById('rp-buyin').innerText = (buyIn !== '' && buyIn !== null && buyIn !== undefined) ? new Intl.NumberFormat('vi-VN').format(buyIn) + ' VNĐ' : '...';
             document.getElementById('rp-time').innerText = timeStr;
@@ -778,15 +841,43 @@
             }
         }
 
-        function printReceipt(phone, tourId, amount, assigned_table, assigned_seat) {
+        function printReceipt(phone, tourId, amount, assigned_table, assigned_seat, ticket_type, ticket_id) {
             updateReceiptPreview();
-            // Cập nhật bàn và ghế từ server
-            document.getElementById('rp-table').innerText = assigned_table ? `Bàn ${assigned_table}` : '---';
-            document.getElementById('rp-seat').innerText = assigned_seat ? `Ghế ${assigned_seat}` : '---';
-            setTimeout(() => {
-                window.print();
-            }, 300);
+            document.getElementById('rp-table').innerText = (assigned_table !== null && assigned_table !== undefined) ? assigned_table : '---';
+            document.getElementById('rp-seat').innerText = (assigned_seat !== null && assigned_seat !== undefined) ? assigned_seat : '---';
+            if (ticket_type) {
+                const el = document.getElementById('rp-ticket-type');
+                if (el) el.innerText = ticket_type.toUpperCase().replace('_', '-');
+            }
+            if (ticket_id) {
+                const el = document.getElementById('rp-ticket-id');
+                if (el) el.innerText = ticket_id;
+            }
+            
+            const autoPrint = document.getElementById('auto-print-chk')?.checked;
+            if (autoPrint) {
+                setTimeout(() => {
+                    window.print();
+                }, 300);
+            }
         }
+
+        // Global shortcuts for cashier (F8: Buy-in, F9: Re-buy, F10: Add-on)
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'F8') {
+                e.preventDefault();
+                selectTicketType('buy_in');
+                sellTicket();
+            } else if (e.key === 'F9') {
+                e.preventDefault();
+                selectTicketType('re_buy');
+                sellTicket();
+            } else if (e.key === 'F10') {
+                e.preventDefault();
+                selectTicketType('add_on');
+                sellTicket();
+            }
+        });
 
         // TICKET SELLING & REGISTER LOGIC
         function sellTicket() {
@@ -800,7 +891,8 @@
                 tour_id: tId,
                 member_phone: phoneVal,
                 buy_in_amount: Number(document.getElementById('buy-in').value),
-                is_paid: !document.getElementById('unpaid-checkbox').checked
+                is_paid: !document.getElementById('unpaid-checkbox').checked,
+                ticket_type: currentTicketType
             };
 
             const btn = document.getElementById('btn-sell');
@@ -808,7 +900,7 @@
             socket.emit('sell_ticket', payload, (res) => {
                 btn.disabled = false;
                 if(res.success) {
-                    printReceipt(payload.member_phone, payload.tour_id, payload.buy_in_amount, res.assigned_table, res.assigned_seat);
+                    printReceipt(payload.member_phone, payload.tour_id, payload.buy_in_amount, res.assigned_table, res.assigned_seat, res.ticket_type, res.ticket_id);
                     showAlert(res.message, false);
                     document.getElementById('player-search').value='';
                     document.getElementById('unpaid-checkbox').checked=false;
