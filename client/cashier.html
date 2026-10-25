@@ -169,7 +169,7 @@
 
             <div>
                 <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Chọn Giải Đấu:</label>
-                <select id="tour-select" class="input-mafia text-sm" onchange="filterMembers()"><option value="">-- Vui lòng chọn giải --</option></select>
+                <select id="tour-select" class="input-mafia text-sm font-bold text-gold" onchange="onTourSelectChange()"><option value="">-- Vui lòng chọn giải --</option></select>
             </div>
 
             <div class="relative">
@@ -195,8 +195,22 @@
             </div>
 
             <div>
-                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Mức Phí / Buy-in (VNĐ):</label>
-                <input type="number" id="buy-in" class="input-mafia text-sm font-bold text-gray-500 bg-[#111] cursor-not-allowed" placeholder="VD: 5000000" value="" oninput="updateReceiptPreview()" readonly>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-[11px] font-bold text-[#d4af37] uppercase tracking-widest">
+                        <i class="fa-solid fa-money-bill-wave mr-1 text-emerald-400"></i> Mức Phí Buy-in Cố Định (TD Đã Setup):
+                    </label>
+                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-900/30 px-2 py-0.5 rounded border border-emerald-500/40">
+                        <i class="fa-solid fa-lock mr-1 text-[9px]"></i>MẶC ĐỊNH
+                    </span>
+                </div>
+                <div class="relative">
+                    <input type="hidden" id="buy-in" value="">
+                    <div id="buy-in-display" class="w-full bg-[#111] border border-[#d4af37]/40 text-emerald-400 font-mono text-base font-bold p-3 rounded-lg shadow-inner flex items-center justify-between">
+                        <span id="buy-in-text" class="text-gray-400 text-sm font-sans italic">Chọn giải đấu để tải mức phí...</span>
+                        <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+                    </div>
+                </div>
+                <p class="text-[10px] text-gray-500 mt-1 italic">* Thu ngân không cần nhập tay, hệ thống tự động khóa mức phí theo cấu hình giải đấu của TD.</p>
             </div>
             <div class="flex items-center justify-between p-3 bg-[#111] border border-[#333] rounded">
                 <div class="flex items-center space-x-2">
@@ -529,11 +543,14 @@
         function updateReceiptPreview() {
             const select = document.getElementById('tour-select');
             const phone = document.getElementById('player-search').value.trim();
-            const buyIn = document.getElementById('buy-in').value;
-
-            const member = currentMembers.find(m => m.phone === phone);
             const tourId = select.value;
             const tour = currentTours.find(t => t.id === tourId);
+
+            const buyIn = (tour && tour.buyin_fee !== undefined && tour.buyin_fee !== null) 
+                ? tour.buyin_fee 
+                : document.getElementById('buy-in').value;
+
+            const member = currentMembers.find(m => m.phone === phone || (m.name && m.name.toLowerCase() === phone.toLowerCase()));
 
             const name = member ? member.name : (phone || '...');
             const tourName = tour ? tour.name : 'TOURNAMENT CHAMPIONSHIP';
@@ -545,7 +562,7 @@
             const rpPhone = document.getElementById('rp-phone');
             if (rpPhone) rpPhone.innerText = phone || (member ? member.phone : '...');
             document.getElementById('rp-tour').innerText = tourName;
-            document.getElementById('rp-buyin').innerText = (buyIn !== '' && buyIn !== null && buyIn !== undefined) ? new Intl.NumberFormat('vi-VN').format(buyIn) + ' VNĐ' : '...';
+            document.getElementById('rp-buyin').innerText = (buyIn !== '' && buyIn !== null && buyIn !== undefined && Number(buyIn) > 0) ? formatMoney(buyIn) : (buyIn === 0 ? '0 VNĐ' : '...');
             document.getElementById('rp-time').innerText = timeStr;
         }
 
@@ -855,28 +872,51 @@
 
 
 
-        function selectTour(tId) {
+        function onTourSelectChange() {
             const select = document.getElementById('tour-select');
-            select.value = tId;
-
-            // Tự động điền mức phí
+            const tId = select.value;
             const tour = currentTours.find(t => t.id === tId);
+
+            const buyInInput = document.getElementById('buy-in');
+            const buyInText = document.getElementById('buy-in-text');
+
             if (tour) {
-                document.getElementById('buy-in').value = (tour.buyin_fee !== undefined) ? tour.buyin_fee : '';
+                const fee = (tour.buyin_fee !== undefined && tour.buyin_fee !== null) ? Number(tour.buyin_fee) : 0;
+                buyInInput.value = fee;
+                if (fee > 0) {
+                    buyInText.className = 'text-emerald-400 font-mono text-lg font-bold';
+                    buyInText.innerText = formatMoney(fee);
+                } else {
+                    buyInText.className = 'text-gray-400 text-sm font-sans italic';
+                    buyInText.innerText = 'Giải miễn phí (Freeroll) hoặc 0 VNĐ';
+                }
+            } else {
+                buyInInput.value = '';
+                buyInText.className = 'text-gray-400 text-sm font-sans italic';
+                buyInText.innerText = 'Chọn giải đấu để tải mức phí...';
             }
 
-            select.dispatchEvent(new Event('change'));
+            filterMembers();
             updateReceiptPreview();
 
+            // Highlight card on left panel
             document.querySelectorAll('.tour-card-item').forEach(el => {
                 el.classList.remove('border-[#d4af37]', 'shadow-[0_0_15px_rgba(212,175,55,0.4)]');
                 el.classList.add('border-[#333]');
             });
-            const activeCard = document.getElementById('tour-card-' + tId);
-            if (activeCard) {
-                activeCard.classList.remove('border-[#333]');
-                activeCard.classList.add('border-[#d4af37]', 'shadow-[0_0_15px_rgba(212,175,55,0.4)]');
+            if (tId) {
+                const activeCard = document.getElementById('tour-card-' + tId);
+                if (activeCard) {
+                    activeCard.classList.remove('border-[#333]');
+                    activeCard.classList.add('border-[#d4af37]', 'shadow-[0_0_15px_rgba(212,175,55,0.4)]');
+                }
             }
+        }
+
+        function selectTour(tId) {
+            const select = document.getElementById('tour-select');
+            select.value = tId;
+            onTourSelectChange();
         }
 
         function printReceipt(phone, tourId, amount, assigned_table, assigned_seat, ticket_type, ticket_id) {
@@ -910,16 +950,22 @@
 
         // TICKET SELLING & REGISTER LOGIC
         function sellTicket() {
-            const tId = document.getElementById('tour-select').value;
+            const select = document.getElementById('tour-select');
+            const tId = select.value;
             const phoneVal = document.getElementById('player-search').value.trim();
 
-            if(!tId) return showAlert('Chọn giải đấu!', true);
-            if(!phoneVal) return showAlert('Nhập SĐT hội viên!', true);
+            if(!tId) return showAlert('Vui lòng chọn giải đấu!', true);
+            if(!phoneVal) return showAlert('Vui lòng nhập SĐT hoặc Tên hội viên!', true);
+
+            const tour = currentTours.find(t => t.id === tId);
+            const fee = (tour && tour.buyin_fee !== undefined && tour.buyin_fee !== null) 
+                ? Number(tour.buyin_fee) 
+                : (Number(document.getElementById('buy-in').value) || 0);
 
             const payload = {
                 tour_id: tId,
                 member_phone: phoneVal,
-                buy_in_amount: Number(document.getElementById('buy-in').value),
+                buy_in_amount: fee,
                 is_paid: true,
                 ticket_type: 'buy_in'
             };
@@ -929,9 +975,9 @@
             socket.emit('sell_ticket', payload, (res) => {
                 btn.disabled = false;
                 if(res.success) {
-                    printReceipt(payload.member_phone, payload.tour_id, payload.buy_in_amount, res.assigned_table, res.assigned_seat, res.ticket_type, res.ticket_id);
+                    printReceipt(payload.member_phone, payload.tour_id, res.amount !== undefined ? res.amount : payload.buy_in_amount, res.assigned_table, res.assigned_seat, res.ticket_type, res.ticket_id);
                     showAlert(res.message, false);
-                    document.getElementById('player-search').value='';
+                    document.getElementById('player-search').value = '';
                     const qInfo = document.getElementById('member-quick-info');
                     if (qInfo) qInfo.classList.add('hidden');
                 } else {
@@ -1027,9 +1073,13 @@
             select.innerHTML = '<option value="">-- Vui lòng chọn giải --</option>';
             grid.innerHTML = '';
 
-            currentTours.forEach(tour => {
+            const activeTours = currentTours.filter(t => t.status !== 'archived');
+
+            activeTours.forEach(tour => {
+                const feeText = (tour.buyin_fee !== undefined && tour.buyin_fee !== null) ? formatMoney(tour.buyin_fee) : '0 VNĐ';
                 const opt = document.createElement('option');
-                opt.value = tour.id; opt.innerText = `${tour.name} [${tour.status.toUpperCase()}]`;
+                opt.value = tour.id; 
+                opt.innerText = `${tour.name} - Phí: ${feeText} [${tour.status.toUpperCase()}]`;
                 if(tour.id === selVal) opt.selected = true;
                 select.appendChild(opt);
 
@@ -1040,16 +1090,27 @@
                 card.onclick = () => selectTour(tour.id);
                 card.innerHTML = `
                     <div class="font-mafia text-[#d4af37] text-xl mb-1 truncate">${tour.name}</div>
-                    <div class="text-[10px] text-gray-500 mb-4 font-bold uppercase tracking-widest border-b border-[#333] pb-2">Entries: <span class="text-white">${tour.entries}</span></div>
-                    <div class="bg-[#111] p-4 rounded border border-[#222] flex flex-col gap-2 text-xs font-bold uppercase tracking-widest">
-                        <div class="flex justify-between text-emerald-500"><span class="text-gray-400">Quỹ Két:</span> <span>${formatMoney(tour.fund.net_fund)}</span></div>
-                        <div class="flex justify-between text-red-500"><span class="text-gray-400">Nợ:</span> <span>${formatMoney(tour.fund.debt)}</span></div>
+                    <div class="text-[10px] text-gray-500 mb-3 font-bold uppercase tracking-widest border-b border-[#333] pb-2">
+                        Entries: <span class="text-white">${tour.entries}</span> | Phí: <span class="text-emerald-400 font-bold">${feeText}</span>
+                    </div>
+                    <div class="bg-[#111] p-3 rounded-lg border border-[#222] flex flex-col gap-1.5 text-xs font-bold uppercase tracking-widest">
+                        <div class="flex justify-between text-emerald-400"><span class="text-gray-400">Thực Thu Quỹ:</span> <span>${formatMoney(tour.fund.total_paid || 0)}</span></div>
+                        <div class="flex justify-between text-gray-400 text-[10px]"><span>Bàn Hoạt Động:</span> <span class="text-white">${(tour.tables || []).join(', ') || '---'}</span></div>
                     </div>
                 `;
                 grid.appendChild(card);
             });
 
-            filterMembers();
+            // Tự động duy trì giải đang chọn hoặc tự chọn giải nếu chỉ có 1 giải đang chạy
+            if (selVal && activeTours.some(t => t.id === selVal)) {
+                select.value = selVal;
+                onTourSelectChange();
+            } else if (activeTours.length === 1) {
+                select.value = activeTours[0].id;
+                onTourSelectChange();
+            } else {
+                onTourSelectChange();
+            }
         });
     </script>
 </body>

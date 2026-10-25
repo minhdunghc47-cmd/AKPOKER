@@ -789,7 +789,10 @@ io.on('connection', (socket) => {
     });
     t.entries += 1;
 
-    const amount = Number(buy_in_amount) || 0;
+    // MỨC PHÍ BUY-IN: Ưu tiên mức phí đã thiết lập sẵn của giải đấu (TD Setup)
+    const amount = (buy_in_amount !== undefined && Number(buy_in_amount) > 0) 
+      ? Number(buy_in_amount) 
+      : (Number(t.buyin_fee) || 0);
     const now = Date.now();
     const dateFormatted = new Date(now).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
 
