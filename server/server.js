@@ -265,7 +265,13 @@ function getToursForRole(tours, role) {
             copy.fund = { payout_pool: t.fund.payout_pool || (t.fund.total_paid * 0.85) };
             const aliveCount = t.alive_override !== undefined ? t.alive_override : t.players.filter(p => p.status === 'alive').length;
             copy.alive_override = aliveCount;
-            copy.players = t.players.filter(p => !p.phone || !p.phone.startsWith('DUMMY_')).map(p => ({ status: p.status, rank: p.rank }));
+            copy.players = t.players.filter(p => !p.phone || !p.phone.startsWith('DUMMY_')).map(p => ({ 
+                status: p.status, 
+                rank: p.rank,
+                name: p.name,
+                table_id: p.table_id,
+                seat: p.seat 
+            }));
             delete copy.settings;
         } else if (role === 'floor') {
             copy.fund = {};
@@ -806,7 +812,7 @@ io.on('connection', (socket) => {
     t.fund.net_fund = t.fund.total_paid - t.fund.expenses;
 
     broadcastState();
-    const ticket_id = 'AK-' + Date.now().toString().slice(-6);
+    const ticket_id = 'ACE-' + Date.now().toString().slice(-6);
     if(callback) callback({ 
       success: true, 
       assigned_table, 
