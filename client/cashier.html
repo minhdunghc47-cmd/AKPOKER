@@ -393,7 +393,10 @@
         }
 
         
-        const socket = io('https://akpoker.onrender.com');
+        const SERVER_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname) ? window.location.origin : 'https://akpoker.onrender.com';
+        const socket = io(SERVER_URL, {
+            auth: { token: sessionStorage.getItem('acepoker_session_token') || role, role: role }
+        });
 
         
         

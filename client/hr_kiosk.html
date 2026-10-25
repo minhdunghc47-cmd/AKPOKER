@@ -101,8 +101,13 @@
                 </button>
             </div>
 
-            <div class="mt-6 text-center">
-                 <a href="./index.html" class="text-xs text-gray-500 hover:text-white uppercase tracking-widest underline"><i class="fa-solid fa-arrow-left"></i> Về Sảnh</a>
+            <div class="mt-4 pt-4 border-t border-[#333] flex justify-between items-center text-xs">
+                <a href="./index.html" class="text-gray-500 hover:text-white uppercase tracking-widest underline flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-left"></i> Về Sảnh
+                </a>
+                <button type="button" onclick="openSelfChangePinModal()" class="text-[#d4af37] hover:underline font-bold uppercase tracking-wider flex items-center gap-1">
+                    <i class="fa-solid fa-key"></i> Đổi Mã PIN
+                </button>
             </div>
         </div>
     </div>
@@ -119,7 +124,8 @@
             appId: "1:1043270358527:web:b273250d09c371ee5fc3ca"
         };
         
-        const socket = io('https://akpoker.onrender.com', { auth: { token: 'kiosk' } });
+        const SERVER_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname) ? window.location.origin : 'https://akpoker.onrender.com';
+        const socket = io(SERVER_URL, { auth: { token: 'kiosk', role: 'kiosk' } });
 
         
         
@@ -204,6 +210,99 @@
                 }
             }
         }
+
+        // ==================== TỰ ĐỔI MÃ PIN NHÂN SỰ ====================
+        function openSelfChangePinModal() {
+            const currentStaffId = document.getElementById('kiosk-staff').value;
+            const select = document.getElementById('modal-change-staff');
+            select.innerHTML = '<option value="">-- Chọn Nhân Viên --</option>';
+
+            const activeStaff = currentStaffList.filter(s => s.work_status !== 'RESIGNED');
+            activeStaff.forEach(s => {
+                select.innerHTML += `<option value="${s.id}">${s.id} - ${s.name}</option>`;
+            });
+
+            if (currentStaffId) select.value = currentStaffId;
+            document.getElementById('modal-old-pin').value = '';
+            document.getElementById('modal-new-pin-1').value = '';
+            document.getElementById('modal-new-pin-2').value = '';
+            document.getElementById('modal-change-pin').classList.remove('hidden');
+        }
+
+        function closeSelfChangePinModal() {
+            document.getElementById('modal-change-pin').classList.add('hidden');
+        }
+
+        function submitSelfChangePin() {
+            const staffId = document.getElementById('modal-change-staff').value;
+            const oldPin = document.getElementById('modal-old-pin').value.trim();
+            const newPin1 = document.getElementById('modal-new-pin-1').value.trim();
+            const newPin2 = document.getElementById('modal-new-pin-2').value.trim();
+
+            if (!staffId) return alert("Vui lòng chọn nhân viên!");
+            if (!oldPin) return alert("Vui lòng nhập mã PIN hiện tại!");
+            if (!newPin1 || newPin1.length !== 4 || isNaN(newPin1)) {
+                return alert("Mã PIN mới phải gồm đúng 4 chữ số!");
+            }
+            if (newPin1 !== newPin2) {
+                return alert("Mã PIN mới nhập lại không khớp!");
+            }
+            if (oldPin === newPin1) {
+                return alert("Mã PIN mới không được trùng với mã PIN cũ!");
+            }
+
+            socket.emit('change_staff_pin', {
+                staff_id: staffId,
+                old_pin: oldPin,
+                new_pin: newPin1
+            }, (res) => {
+                alert(res.message);
+                if (res.success) {
+                    closeSelfChangePinModal();
+                    document.getElementById('kiosk-pin').value = '';
+                }
+            });
+        }
     </script>
+
+    <!-- MODAL ĐỔI PIN TỰ PHỤC VỤ TRÊN KIOSK -->
+    <div id="modal-change-pin" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-[#181818] border border-[#d4af37] w-full max-w-sm rounded-xl p-6 shadow-2xl relative">
+            <h3 class="text-xl font-mafia text-[#d4af37] uppercase tracking-wider mb-4 pb-2 border-b border-[#333] flex items-center gap-2">
+                <i class="fa-solid fa-key"></i> ĐỔI MÃ PIN CÁ NHÂN
+            </h3>
+
+            <div class="mb-3">
+                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-1">Nhân Viên</label>
+                <select id="modal-change-staff" class="w-full bg-[#111] border border-[#444] p-2.5 rounded text-white text-sm focus:border-[#d4af37] outline-none">
+                    <!-- Options -->
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-1">Mã PIN Hiện Tại</label>
+                <input type="password" id="modal-old-pin" maxlength="4" class="w-full bg-[#111] border border-[#444] p-2.5 rounded text-center text-white text-lg tracking-[0.4em] focus:border-[#d4af37] outline-none" placeholder="****">
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-1">Mã PIN Mới (4 Số)</label>
+                <input type="password" id="modal-new-pin-1" maxlength="4" class="w-full bg-[#111] border border-[#444] p-2.5 rounded text-center text-white text-lg tracking-[0.4em] focus:border-[#d4af37] outline-none" placeholder="****">
+            </div>
+
+            <div class="mb-5">
+                <label class="block text-xs uppercase tracking-widest text-gray-400 mb-1">Nhập Lại PIN Mới</label>
+                <input type="password" id="modal-new-pin-2" maxlength="4" class="w-full bg-[#111] border border-[#444] p-2.5 rounded text-center text-white text-lg tracking-[0.4em] focus:border-[#d4af37] outline-none" placeholder="****">
+            </div>
+
+            <div class="flex gap-2">
+                <button type="button" onclick="closeSelfChangePinModal()" class="flex-1 py-3 bg-[#333] hover:bg-[#444] text-gray-300 font-bold text-xs uppercase rounded transition-colors">
+                    HỦY
+                </button>
+                <button type="button" onclick="submitSelfChangePin()" class="flex-1 py-3 bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold text-xs uppercase rounded transition-colors shadow-lg">
+                    LƯU MÃ PIN
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

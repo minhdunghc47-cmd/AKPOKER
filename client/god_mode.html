@@ -175,7 +175,10 @@
         }
 
         
-        const socket = io('https://akpoker.onrender.com');
+        const SERVER_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname) ? window.location.origin : 'https://akpoker.onrender.com';
+        const socket = io(SERVER_URL, {
+            auth: { token: sessionStorage.getItem('acepoker_session_token') || role, role: role }
+        });
 
         
         
@@ -240,7 +243,7 @@
                 } else if (s.status === 'waiting') {
                     statusBadge = '<span class="px-2 py-1 bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30 text-[9px] font-bold rounded uppercase">STANDBY</span>';
                     iconColor = 'text-[#d4af37]';
-                } else if (s.status === 'working') {
+                } else if (s.status === 'busy' || s.status === 'working') {
                     statusBadge = '<span class="px-2 py-1 bg-[#800020]/30 text-red-400 border border-[#800020] text-[9px] font-bold rounded uppercase">ON DUTY</span>';
                     iconColor = 'text-red-500';
                     bgClass = 'bg-[#1a0a0a] border-[#800020]/50';
@@ -273,9 +276,9 @@
                 if (t.status === 'running') {
                     statusStyle = 'bg-[#800020]/30 text-red-400 border-[#800020] animate-pulse';
                     iconStr = '<i class="fa-solid fa-satellite-dish mr-1"></i>LIVE';
-                } else if (t.status === 'paused') {
+                } else if (t.status === 'paused' || t.status === 'pending') {
                     statusStyle = 'bg-[#d4af37]/20 text-[#d4af37] border-[#d4af37]/50';
-                    iconStr = '<i class="fa-solid fa-pause mr-1"></i>PAUSED';
+                    iconStr = t.status === 'pending' ? '<i class="fa-solid fa-clock mr-1"></i>PENDING' : '<i class="fa-solid fa-pause mr-1"></i>PAUSED';
                 } else if (t.status === 'finished') {
                     statusStyle = 'bg-gray-800 text-gray-300 border-gray-600';
                     iconStr = '<i class="fa-solid fa-flag-checkered mr-1"></i>FINISHED';

@@ -239,7 +239,10 @@
         }
 
         
-        const socket = io('https://akpoker.onrender.com');
+        const SERVER_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname) ? window.location.origin : 'https://akpoker.onrender.com';
+        const socket = io(SERVER_URL, {
+            auth: { token: sessionStorage.getItem('acepoker_session_token') || role, role: role }
+        });
 
         
         
@@ -346,11 +349,13 @@
             }
             list.innerHTML = '';
             active.forEach(t => {
-                const alive = (t.players || []).filter(p => p.status === 'alive').length;
+                const alive = (t.alive_override !== undefined && t.alive_override !== null)
+                    ? t.alive_override
+                    : (t.players || []).filter(p => p.status === 'alive').length;
                 const blind = t.blinds_structure?.[t.current_level_idx];
                 const isBreak = blind?.is_break;
                 const statusClass = t.status === 'running' ? 'badge-running' : t.status === 'finished' ? 'badge-finished' : 'badge-paused';
-                const statusText = { running: '▶ ĐANG CHẠY', paused: '⏸ TẠM DỪNG', finished: '✓ KẾT THÚC' }[t.status] || t.status;
+                const statusText = { running: '▶ ĐANG CHẠY', paused: '⏸ TẠM DỪNG', pending: '⏳ CHỜ GIỜ', finished: '✓ KẾT THÚC' }[t.status] || t.status;
 
                 const card = document.createElement('div');
                 card.className = `tour-card p-5 ${t.status === 'running' ? 'running' : ''}`;
@@ -427,7 +432,9 @@
             const isBreak = blind?.is_break;
             document.getElementById('tbl-level').innerText = isBreak ? 'BREAK' : `${blind?.level || '—'}`;
             document.getElementById('tbl-clock').innerText = formatTime(t.time_remaining);
-            const alive = (t.players||[]).filter(p => p.status === 'alive').length;
+            const alive = (t.alive_override !== undefined && t.alive_override !== null)
+                ? t.alive_override
+                : (t.players||[]).filter(p => p.status === 'alive').length;
             document.getElementById('tbl-players').innerText = `${alive}/${t.entries}`;
             document.getElementById('tbl-blinds').innerText = isBreak ? 'BREAK' : (blind ? `${formatMoney(blind.sb)}/${formatMoney(blind.bb)} BBA:${formatMoney(blind.ante)}` : '—');
 
@@ -457,7 +464,9 @@
             
             // Check UI Lock
             let overlayHtml = '';
-            const aliveTotal = (t.players||[]).filter(p => p.status === 'alive').length;
+            const aliveTotal = (t.alive_override !== undefined && t.alive_override !== null)
+                ? t.alive_override
+                : (t.players||[]).filter(p => p.status === 'alive').length;
             const minPlayers = (t.settings && t.settings.min_players) ? t.settings.min_players : 6;
             if (t.status === 'running' && aliveTotal < minPlayers) {
                 overlayHtml = `

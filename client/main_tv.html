@@ -212,7 +212,8 @@
 <script>
 
         
-        const socket = io('https://akpoker.onrender.com', { auth: { token: 'tv' } });
+        const SERVER_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname) ? window.location.origin : 'https://akpoker.onrender.com';
+        const socket = io(SERVER_URL, { auth: { token: 'tv', role: 'tv' } });
 
         
         
@@ -337,7 +338,9 @@
         const lateRegLvlNum = tour.settings?.late_reg_level || 8;
         document.getElementById('tv-late-reg').innerText = `Lvl ${lateRegLvlNum}`;
 
-        const alive = (tour.players || []).filter(p => p.status === 'alive').length;
+        const alive = (tour.alive_override !== undefined && tour.alive_override !== null)
+            ? tour.alive_override
+            : (tour.players || []).filter(p => p.status === 'alive').length;
         document.getElementById('tv-alive').innerText = alive;
         document.getElementById('tv-entries').innerText = tour.entries;
         document.getElementById('tv-start-stack').innerText = formatMoney(tour.starting_stack);

@@ -198,7 +198,10 @@
     <script>
 
         
-        const socket = io('https://akpoker.onrender.com');
+        const SERVER_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname) ? window.location.origin : 'https://akpoker.onrender.com';
+        const socket = io(SERVER_URL, {
+            auth: { token: sessionStorage.getItem('acepoker_session_token') || role, role: role }
+        });
 
         
         
@@ -465,9 +468,10 @@
                 const card = document.createElement('div');
                 card.className = `card-mafia flex flex-col p-6 tv-card ${tour.status === 'running' ? 'running' : ''}`;
 
-                const entriesOk = tour.entries >= 6;
+                const minPlayers = (tour.settings && tour.settings.min_players) ? Number(tour.settings.min_players) : 6;
+                const entriesOk = tour.entries >= minPlayers;
                 const dealerOk = tour.dealer_assigned;
-                const canPlay = entriesOk && dealerOk && tour.status === 'paused';
+                const canPlay = entriesOk && dealerOk && (tour.status === 'paused' || tour.status === 'pending');
                 const isRunning = tour.status === 'running';
                 const isFinished = tour.status === 'finished';
 
@@ -489,7 +493,9 @@
                     const isBreak = blind.is_break;
                     const blindText = isBreak ? `<span class="text-[#ff4c4c] animate-pulse"><i class="fa-solid fa-mug-hot"></i> BREAK TIME</span>` : `Level ${blind.level}: ${formatMoney(blind.sb).replace('₫','')} / ${formatMoney(blind.bb).replace('₫','')} BBA ${formatMoney(blind.ante).replace('₫','')}`;
 
-                    const alivePlayers = tour.players.filter(p => p.status === 'alive').length;
+                    const alivePlayers = (tour.alive_override !== undefined && tour.alive_override !== null)
+                        ? tour.alive_override
+                        : tour.players.filter(p => p.status === 'alive').length;
                     const totalChips = tour.entries * tour.starting_stack;
                     const avgStack = alivePlayers > 0 ? Math.floor(totalChips / alivePlayers) : 0;
 
@@ -513,7 +519,7 @@
                     } else {
                         controlButtons = `
                             <button class="mt-4 w-full py-3 bg-[#222] text-gray-600 border border-[#333] rounded uppercase font-bold text-sm tracking-widest cursor-not-allowed" disabled>
-                                ĐANG KHÓA (CHỜ ${tour.entries<6 ? 'KHÁCH' : 'DEALER'})
+                                ĐANG KHÓA (CHỜ ${tour.entries < minPlayers ? 'KHÁCH' : 'DEALER'})
                             </button>
                         `;
                     }

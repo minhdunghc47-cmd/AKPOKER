@@ -93,8 +93,19 @@
                 <input type="text" id="hr-name" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none" placeholder="Nguyễn Văn A">
             </div>
             <div>
-                <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Mã PIN CÁ NHÂN (Mật khẩu)</label>
-                <input type="password" id="hr-pin" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none text-xl tracking-[0.5em]" placeholder="****">
+                <div class="flex justify-between items-center mb-1">
+                    <label class="block text-xs uppercase tracking-widest text-gray-500">Mã PIN CÁ NHÂN (Mật khẩu)</label>
+                    <button type="button" onclick="generateRandomPin()" class="text-[11px] text-[#d4af37] hover:underline flex items-center gap-1 font-bold">
+                        <i class="fa-solid fa-dice"></i> Tạo Ngẫu Nhiên
+                    </button>
+                </div>
+                <div class="relative">
+                    <input type="text" id="hr-pin" maxlength="4" class="w-full bg-[#1a1a1a] border border-[#333] p-2 rounded text-white focus:border-[#d4af37] outline-none text-xl tracking-[0.4em] font-mono" placeholder="4 số (VD: 8291)">
+                    <button type="button" onclick="togglePinVisibility()" class="absolute right-3 top-2.5 text-gray-500 hover:text-white text-sm">
+                        <i id="pin-eye-icon" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <p id="pin-hint-edit" class="text-[10px] text-gray-500 mt-1 hidden">💡 Khi sửa: Để trống nếu muốn giữ nguyên mã PIN cũ.</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -184,6 +195,7 @@
                         <th class="p-3">Giờ Chia Bài</th>
                         <th class="p-3 text-right">Tiền Thưởng</th>
                         <th class="p-3 text-right">Tổng Lương</th>
+                        <th class="p-3 text-center">Mật Khẩu</th>
                     </tr>
                 </thead>
                 <tbody id="staff-table" class="text-sm">
@@ -212,7 +224,10 @@
         }
 
         
-        const socket = io('https://akpoker.onrender.com');
+        const SERVER_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname) ? window.location.origin : 'https://akpoker.onrender.com';
+        const socket = io(SERVER_URL, {
+            auth: { token: sessionStorage.getItem('acepoker_session_token') || role, role: role }
+        });
 
         
         
@@ -284,6 +299,11 @@
                             <td class="p-3 text-yellow-500">${timeDealingStr}</td>
                             <td class="p-3 text-right text-yellow-500 font-bold">${bonusStr}</td>
                             <td class="p-3 text-right text-green-400 font-bold text-lg">${new Intl.NumberFormat('vi-VN', {style:'currency', currency:'VND'}).format(totalSalary)}</td>
+                            <td class="p-3 text-center" onclick="event.stopPropagation()">
+                                <button type="button" onclick="openResetPinModal('${s.id}', '${s.name.replace(/'/g, "\\'")}')" class="px-2 py-1 bg-[#1a1a1a] hover:bg-[#d4af37] text-gray-400 hover:text-black border border-[#444] rounded text-xs font-bold transition-all" title="Cấp lại / Đổi PIN">
+                                    <i class="fa-solid fa-key mr-1"></i> Đổi PIN
+                                </button>
+                            </td>
                         </tr>
                     `;
                 });
@@ -344,7 +364,10 @@
             document.getElementById('hr-id').classList.add('opacity-50', 'cursor-not-allowed');
 
             document.getElementById('hr-name').value = s.name;
-            document.getElementById('hr-pin').value = s.pin || '';
+            document.getElementById('hr-pin').value = '';
+            document.getElementById('hr-pin').placeholder = '•••• (Để trống nếu không đổi)';
+            const hintEdit = document.getElementById('pin-hint-edit');
+            if (hintEdit) hintEdit.classList.remove('hidden');
             document.getElementById('hr-role').value = s.role;
             document.getElementById('hr-salary').value = s.base_salary;
             document.getElementById('hr-dealer-bonus').value = s.dealer_bonus || '30000';
@@ -392,6 +415,9 @@
 
             document.getElementById('hr-name').value = '';
             document.getElementById('hr-pin').value = '';
+            document.getElementById('hr-pin').placeholder = '4 số (VD: 8291)';
+            const hintEdit = document.getElementById('pin-hint-edit');
+            if (hintEdit) hintEdit.classList.add('hidden');
             document.getElementById('hr-role').value = 'Dealer';
             document.getElementById('hr-salary').value = '50000';
             document.getElementById('hr-dealer-bonus').value = '30000';
@@ -463,7 +489,94 @@
                 });
             }
         }
+
+        // ==================== CẤP PHÁT & QUẢN LÝ MÃ PIN ====================
+        function generateRandomPin(targetInputId = 'hr-pin') {
+            const randomPin = Math.floor(1000 + Math.random() * 9000).toString();
+            const input = document.getElementById(targetInputId);
+            if (input) {
+                input.value = randomPin;
+                input.focus();
+            }
+        }
+
+        function togglePinVisibility() {
+            const pinInput = document.getElementById('hr-pin');
+            const icon = document.getElementById('pin-eye-icon');
+            if (pinInput.type === 'password') {
+                pinInput.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                pinInput.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+        let currentResetStaffId = null;
+        let currentResetStaffName = '';
+
+        function openResetPinModal(staffId, staffName) {
+            currentResetStaffId = staffId;
+            currentResetStaffName = staffName;
+            document.getElementById('modal-reset-staff-info').innerText = `${staffId} - ${staffName}`;
+            document.getElementById('modal-new-pin').value = '';
+            document.getElementById('modal-reset-pin').classList.remove('hidden');
+            setTimeout(() => document.getElementById('modal-new-pin').focus(), 100);
+        }
+
+        function closeResetPinModal() {
+            document.getElementById('modal-reset-pin').classList.add('hidden');
+            currentResetStaffId = null;
+            currentResetStaffName = '';
+        }
+
+        function confirmResetPin() {
+            const newPin = document.getElementById('modal-new-pin').value.trim();
+            if (!newPin || newPin.length !== 4 || isNaN(newPin)) {
+                return alert("Vui lòng nhập mã PIN mới đúng 4 chữ số!");
+            }
+
+            if (!confirm(`Xác nhận đổi mã PIN cho nhân viên [${currentResetStaffId}] ${currentResetStaffName} thành: ${newPin}?`)) {
+                return;
+            }
+
+            socket.emit('reset_staff_pin', { staff_id: currentResetStaffId, new_pin: newPin }, (res) => {
+                alert(res.message);
+                if (res.success) {
+                    closeResetPinModal();
+                }
+            });
+        }
     </script>
+
+    <!-- MODAL CẤP LẠI MÃ PIN NHANH -->
+    <div id="modal-reset-pin" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-[#181818] border border-[#d4af37] w-full max-w-sm rounded-xl p-6 shadow-2xl relative">
+            <h3 class="text-lg font-mafia text-[#d4af37] uppercase tracking-wider mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-key"></i> Cấp Lại Mã PIN
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">Nhân sự: <span id="modal-reset-staff-info" class="text-white font-bold"></span></p>
+
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-1">
+                    <label class="block text-xs uppercase tracking-widest text-gray-400">Mã PIN Mới (4 Số)</label>
+                    <button type="button" onclick="generateRandomPin('modal-new-pin')" class="text-xs text-[#d4af37] hover:underline font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-dice"></i> Tạo Ngẫu Nhiên
+                    </button>
+                </div>
+                <input type="text" id="modal-new-pin" maxlength="4" class="w-full bg-[#111] border border-[#444] p-3 rounded text-center text-white text-2xl font-mono tracking-[0.5em] focus:border-[#d4af37] outline-none" placeholder="****">
+            </div>
+
+            <div class="flex gap-2">
+                <button type="button" onclick="closeResetPinModal()" class="flex-1 py-2.5 bg-[#333] hover:bg-[#444] text-gray-300 font-bold text-xs uppercase rounded transition-colors">
+                    HỦY
+                </button>
+                <button type="button" onclick="confirmResetPin()" class="flex-1 py-2.5 bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold text-xs uppercase rounded transition-colors shadow-lg">
+                    XÁC NHẬN
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 

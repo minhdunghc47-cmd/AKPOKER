@@ -180,11 +180,12 @@
     
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
-        // No Firebase Auth Needed
+        const SERVER_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname) ? window.location.origin : 'https://akpoker.onrender.com';
         let socket = null;
 
         function connectSocket(token) {
-            socket = io('https://akpoker.onrender.com');
+            const sessionToken = sessionStorage.getItem('acepoker_session_token') || token;
+            socket = io(SERVER_URL, { auth: { token: sessionToken, role: token } });
 
             socket.on('connect', () => {
                 const statusBox = document.getElementById('status-box');
@@ -235,8 +236,34 @@
             if(modal) modal.classList.add('hidden');
         }
 
-        function verifyPin() {
+        async function verifyPin() {
             const pin = input.value;
+            try {
+                const res = await fetch(`${SERVER_URL}/api/verify-pin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: targetRole, pin })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success) {
+                        sessionStorage.setItem('acepoker_token', data.role);
+                        sessionStorage.setItem('acepoker_session_token', data.token);
+                        window.location.href = targetLink;
+                        return;
+                    }
+                } else if (res.status === 401 || res.status === 400) {
+                    if (errorMsg) {
+                        errorMsg.innerText = "Mã PIN không hợp lệ!";
+                        errorMsg.classList.remove('hidden');
+                    }
+                    if (input) input.value = '';
+                    return;
+                }
+            } catch (err) {
+                // Fallback khi chạy static hoặc server chưa cập nhật endpoint /api/verify-pin
+            }
+
             let isValid = false;
             let assignedRole = '';
 
@@ -247,7 +274,8 @@
             else if (pin === '9999') { isValid = true; assignedRole = targetRole || 'god'; }
 
             if (isValid) {
-                sessionStorage.setItem('acepoker_token', assignedRole); // send role directly
+                sessionStorage.setItem('acepoker_token', assignedRole);
+                sessionStorage.setItem('acepoker_session_token', assignedRole);
                 window.location.href = targetLink;
             } else {
                 if (errorMsg) {

@@ -367,6 +367,62 @@ io.on('connection', (socket) => {
     if (callback) callback({ success: true, message: 'Cập nhật nhân sự thành công!' });
   }));
 
+  socket.on('reset_staff_pin', requireRole(socket, ['god'], (payload, callback) => {
+    const { staff_id, new_pin } = payload || {};
+    if (!staff_id || !new_pin || String(new_pin).length !== 4) {
+      if (callback) callback({ success: false, message: 'Mã PIN mới phải đúng 4 chữ số!' });
+      return;
+    }
+    const staff = db.staff.find(s => s.id === staff_id);
+    if (!staff) {
+      if (callback) callback({ success: false, message: 'Không tìm thấy nhân viên!' });
+      return;
+    }
+    staff.pin = bcrypt.hashSync(String(new_pin), 10);
+    broadcastState();
+    if (callback) callback({ success: true, message: 'Đổi mã PIN cho nhân sự ' + staff.name + ' (' + staff.id + ') thành công!' });
+  }));
+
+  socket.on('change_staff_pin', requireRole(socket, ['god', 'kiosk'], (payload, callback) => {
+    const { staff_id, old_pin, new_pin } = payload || {};
+    if (!staff_id || !old_pin || !new_pin) {
+      if (callback) callback({ success: false, message: 'Vui lòng nhập đầy đủ thông tin!' });
+      return;
+    }
+    if (String(new_pin).length !== 4) {
+      if (callback) callback({ success: false, message: 'Mã PIN mới phải gồm đúng 4 chữ số!' });
+      return;
+    }
+
+    const staff = db.staff.find(s => s.id === staff_id);
+    if (!staff) {
+      if (callback) callback({ success: false, message: 'Không tìm thấy nhân viên!' });
+      return;
+    }
+    if (staff.work_status === 'RESIGNED') {
+      if (callback) callback({ success: false, message: 'Tài khoản nhân viên này đã bị khóa do thôi việc!' });
+      return;
+    }
+
+    let isOldPinValid = false;
+    if (staff.pin) {
+      if (staff.pin.startsWith('$2a$') || staff.pin.startsWith('$2b$')) {
+        isOldPinValid = bcrypt.compareSync(String(old_pin), staff.pin);
+      } else {
+        isOldPinValid = (staff.pin === String(old_pin));
+      }
+    }
+
+    if (!isOldPinValid) {
+      if (callback) callback({ success: false, message: 'Mã PIN hiện tại không chính xác!' });
+      return;
+    }
+
+    staff.pin = bcrypt.hashSync(String(new_pin), 10);
+    broadcastState();
+    if (callback) callback({ success: true, message: 'Đổi mã PIN cá nhân thành công! Hãy ghi nhớ mã PIN mới.' });
+  }));
+
   socket.on('resign_staff', requireRole(socket, ['god'], (staffId, callback) => {
     const s = db.staff.find(s => s.id === staffId);
     if (!s) {
