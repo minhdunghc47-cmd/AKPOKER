@@ -249,9 +249,11 @@ function getMembersForRole(membersList, role) {
             delete copy.bank_name;
             delete copy.dob;
             delete copy.address;
-            delete copy.avatar_base64;
             delete copy.play_history;
-            delete copy.phone;
+            if (role !== 'floor') {
+                delete copy.avatar_base64;
+                delete copy.phone;
+            }
         }
         return copy;
     });
@@ -275,7 +277,14 @@ function getToursForRole(tours, role) {
             delete copy.settings;
         } else if (role === 'floor') {
             copy.fund = {};
-            copy.players = t.players.map(p => ({ status: p.status, table_id: p.table_id, seat: p.seat, name: p.name }));
+            copy.players = t.players.map(p => ({ 
+                status: p.status, 
+                table_id: p.table_id, 
+                seat: p.seat, 
+                name: p.name,
+                phone: p.phone,
+                rank: p.rank
+            }));
         } else if (role === 'cashier') {
             copy.players = t.players.map(p => ({ status: p.status, phone: p.phone, name: p.name }));
         }
@@ -907,6 +916,11 @@ io.on('connection', (socket) => {
       return;
     }
 
+    let t = db.tournaments.find(t => t.id === payload.tour_id);
+    if (!t) {
+      t = db.tournaments.find(t => t.tables && t.tables.includes(tableId));
+    }
+
     // Free old dealer if assigned
     const oldDealerName = table.dealer_name;
     if (oldDealerName) {
@@ -920,25 +934,84 @@ io.on('connection', (socket) => {
       }
     }
 
-    // Find next available dealer in waiting status (prioritize someone other than current dealer if possible)
-    let nextDealer = db.staff.find(s => 
-      (s.role?.toLowerCase() === 'dealer' || !s.role) && 
-      s.status === 'waiting' && 
-      s.name !== oldDealerName &&
-      (s.work_status === 'ACTIVE' || !s.work_status)
-    );
+    let nextDealer = null;
 
+    // 1. Explicit dealer name passed
+    if (payload.dealer_name && payload.dealer_name.trim()) {
+      const targetName = payload.dealer_name.trim();
+      nextDealer = db.staff.find(s => s.name === targetName);
+      if (!nextDealer) {
+        table.dealer_name = targetName;
+        table.dealer_time = Date.now();
+        if (t) t.dealer_assigned = true;
+        broadcastState();
+        if (typeof callback === 'function') callback({ success: true, message: `Đã gán Dealer: ${targetName}`, dealer_name: targetName });
+        return;
+      }
+    }
+
+    const busyNames = db.tables.filter(tbl => tbl.id !== tableId && tbl.dealer_name).map(tbl => tbl.dealer_name);
+
+    // 2. Waiting dealer not busy elsewhere, different from current
     if (!nextDealer) {
-      // If none other found, check if current dealer is the only waiting dealer
       nextDealer = db.staff.find(s => 
         (s.role?.toLowerCase() === 'dealer' || !s.role) && 
-        s.status === 'waiting' &&
-        (s.work_status === 'ACTIVE' || !s.work_status)
+        s.status === 'waiting' && 
+        s.name !== oldDealerName &&
+        !busyNames.includes(s.name) &&
+        s.work_status !== 'INACTIVE'
       );
     }
 
+    // 3. Online dealer not busy elsewhere, different from current
     if (!nextDealer) {
-      if (typeof callback === 'function') callback({ success: false, message: 'Không có Dealer nào trong hàng đợi (waiting) để đổi ca!' });
+      nextDealer = db.staff.find(s => 
+        (s.role?.toLowerCase() === 'dealer' || !s.role) && 
+        s.status === 'online' && 
+        s.name !== oldDealerName &&
+        !busyNames.includes(s.name) &&
+        s.work_status !== 'INACTIVE'
+      );
+    }
+
+    // 4. Any registered dealer not busy elsewhere, different from current
+    if (!nextDealer) {
+      nextDealer = db.staff.find(s => 
+        (s.role?.toLowerCase() === 'dealer' || !s.role) && 
+        s.name !== oldDealerName &&
+        !busyNames.includes(s.name) &&
+        s.work_status !== 'INACTIVE'
+      );
+    }
+
+    // 5. If only 1 dealer in staff or no other dealer, renew shift for current dealer
+    if (!nextDealer && oldDealerName) {
+      nextDealer = db.staff.find(s => s.name === oldDealerName);
+      if (!nextDealer) {
+        table.dealer_time = Date.now();
+        if (t) t.dealer_assigned = true;
+        broadcastState();
+        if (typeof callback === 'function') callback({ success: true, message: `Đã làm mới ca 30 phút cho ${oldDealerName}`, dealer_name: oldDealerName });
+        return;
+      }
+    }
+
+    // 6. Any dealer in staff at all
+    if (!nextDealer) {
+      nextDealer = db.staff.find(s => (s.role?.toLowerCase() === 'dealer' || !s.role) && s.work_status !== 'INACTIVE');
+    }
+
+    // If still none, but oldDealerName exists
+    if (!nextDealer && oldDealerName) {
+      table.dealer_time = Date.now();
+      if (t) t.dealer_assigned = true;
+      broadcastState();
+      if (typeof callback === 'function') callback({ success: true, message: `Đã làm mới ca 30 phút cho ${oldDealerName}`, dealer_name: oldDealerName });
+      return;
+    }
+
+    if (!nextDealer) {
+      if (typeof callback === 'function') callback({ success: false, message: 'Chưa có nhân sự Dealer trong hệ thống. Vui lòng chọn hoặc nhập tên Dealer!' });
       return;
     }
 
@@ -948,11 +1021,10 @@ io.on('connection', (socket) => {
     nextDealer.status = 'busy';
     nextDealer.session_start = Date.now();
 
-    const t = db.tournaments.find(t => t.id === payload.tour_id);
     if (t) t.dealer_assigned = true;
 
     broadcastState();
-    if (typeof callback === 'function') callback({ success: true, message: `Đã đổi Dealer thành công: ${nextDealer.name}`, dealer_name: nextDealer.name });
+    if (typeof callback === 'function') callback({ success: true, message: `Đã đổi ca Dealer thành công: ${nextDealer.name}`, dealer_name: nextDealer.name });
   }));
 
   socket.on('assign_dealer', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
@@ -988,10 +1060,18 @@ io.on('connection', (socket) => {
   }));
 
   socket.on('move_player_table', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
-    const { tour_id, player_phone, new_table_id, target_seat } = payload;
-    const t = db.tournaments.find(t => t.id === tour_id);
+    const { tour_id, player_phone, player_name, new_table_id, target_seat } = payload;
+    let t = db.tournaments.find(t => t.id === tour_id);
+    if (!t && new_table_id) {
+      t = db.tournaments.find(t => t.tables && t.tables.includes(parseInt(new_table_id)));
+    }
     if (t) {
-      const p = t.players.find(p => p.phone === player_phone && p.status === 'alive');
+      const p = t.players.find(p => 
+        p.status === 'alive' && (
+          (player_phone && p.phone === player_phone) ||
+          (player_name && p.name === player_name)
+        )
+      );
       if (p) {
         p.table_id = parseInt(new_table_id);
 

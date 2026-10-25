@@ -626,10 +626,10 @@
                                 🎟️ Lượt: ${buyinCount}
                             </div>
                             <div id="menu-${uid}" class="action-menu bg-[#1a1a1a] border border-[#d4af37]/50 rounded-xl p-2 shadow-2xl flex flex-col gap-1 w-36">
-                                <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-emerald-400 hover:bg-[#333] rounded-lg" onclick="openMoveModal('${player.phone}','${(player.name||'').replace(/'/g,"\\'")}',${tbl.id})">
-                                    <i class="fa-solid fa-rotate mr-2"></i>Chuyển Bàn
+                                <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-emerald-400 hover:bg-[#333] rounded-lg" onclick="openMoveModal('${player.phone || ''}','${(player.name||'').replace(/'/g,"\\'")}',${tbl.id})">
+                                    <i class="fa-solid fa-rotate mr-2"></i>Chuyển Bàn / Ghế
                                 </button>
-                                <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-[#333] rounded-lg" onclick="bustOut('${player.phone}')">
+                                <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-[#333] rounded-lg" onclick="bustOut('${player.phone || ''}','${(player.name||'').replace(/'/g,"\\'")}')">
                                     <i class="fa-solid fa-skull mr-2"></i>Bust Out
                                 </button>
                             </div>
@@ -714,18 +714,20 @@
             pendingDealerTableId = tableId;
             document.getElementById('dealer-name').value = '';
             const select = document.getElementById('dealer-select');
-            select.innerHTML = '<option value="">— Chọn Dealer —</option>';
+            select.innerHTML = '<option value="">— Chọn Dealer trong danh sách —</option>';
+            
             const dealers = currentStaff.filter(s =>
-                (s.role === 'Dealer' || s.role === 'dealer') &&
-                (s.status === 'waiting' || s.status === 'online') &&
-                s.work_status === 'ACTIVE'
+                (s.role?.toLowerCase() === 'dealer' || !s.role) &&
+                s.work_status !== 'INACTIVE'
             );
             if(!dealers.length) {
-                select.innerHTML += '<option disabled>— Không có Dealer đang chờ —</option>';
+                select.innerHTML += '<option disabled>— Chưa có Dealer đăng ký trong hệ thống —</option>';
             } else {
                 dealers.forEach(d => {
                     const o = document.createElement('option');
-                    o.value = d.name; o.innerText = `${d.id} - ${d.name}`;
+                    o.value = d.name;
+                    const st = d.status === 'busy' ? '(Đang bận)' : d.status === 'waiting' ? '(Đang chờ)' : '(Sẵn sàng)';
+                    o.innerText = `${d.id ? d.id + ' - ' : ''}${d.name} ${st}`;
                     select.appendChild(o);
                 });
             }
@@ -738,18 +740,22 @@
         }
 
         function quickPushDealer(tableId) {
-            if (confirm(`Xác nhận XOAY TUA / PUSH Dealer cho Bàn ${tableId}?\n(Hệ thống sẽ kết thúc ca hiện tại và tự động chỉ định Dealer kế tiếp trong hàng chờ)`)) {
-                socket.emit('push_dealer', { tour_id: selectedTourId, table_id: tableId }, (res) => {
-                    if (res && !res.success) {
-                        alert(res.message || 'Không thể đổi Dealer!');
-                    }
-                });
-            }
+            if (!selectedTourId) return;
+            socket.emit('push_dealer', { tour_id: selectedTourId, table_id: tableId }, (res) => {
+                if (res && !res.success) {
+                    alert(res.message || 'Không thể đổi Dealer!');
+                }
+            });
         }
 
         function confirmPushDealer() {
             if (pendingDealerTableId && selectedTourId) {
-                socket.emit('push_dealer', { tour_id: selectedTourId, table_id: pendingDealerTableId }, (res) => {
+                const pickedName = document.getElementById('dealer-select').value || document.getElementById('dealer-name').value.trim();
+                socket.emit('push_dealer', { 
+                    tour_id: selectedTourId, 
+                    table_id: pendingDealerTableId,
+                    dealer_name: pickedName || undefined 
+                }, (res) => {
                     if (res && !res.success) {
                         alert(res.message || 'Không thể đổi Dealer!');
                     } else {
@@ -780,22 +786,30 @@
         // MOVE TABLE & SEAT-TO-SEAT MODAL
         // =====================
         let selectedTargetSeat = null;
+        let pendingMovePhone = null;
+        let pendingMoveName = null;
+        let pendingCurrentTableId = null;
 
         function openMoveModal(phone, name, currentTableId) {
             closeAllMenus();
             pendingMovePhone = phone;
+            pendingMoveName = name;
+            pendingCurrentTableId = currentTableId;
             selectedTargetSeat = null;
-            document.getElementById('move-player-name').innerText = `${name} (${phone})`;
+
+            document.getElementById('move-player-name').innerText = `${name} ${phone ? '(' + phone + ')' : ''}`;
             const select = document.getElementById('move-table-select');
             select.innerHTML = '';
             const t = currentTours.find(x => x.id === selectedTourId);
-            if(t) {
-                (t.tables||[]).forEach(id => {
-                    if(id !== currentTableId) {
-                        const o = document.createElement('option');
-                        o.value = id; o.innerText = `Bàn số ${id}`;
-                        select.appendChild(o);
+            if(t && t.tables) {
+                t.tables.forEach(id => {
+                    const o = document.createElement('option');
+                    o.value = id;
+                    o.innerText = id === currentTableId ? `Bàn số ${id} (Bàn hiện tại - Đổi ghế)` : `Bàn số ${id}`;
+                    if (id !== currentTableId && !select.value) {
+                        o.selected = true;
                     }
+                    select.appendChild(o);
                 });
             }
             renderMoveSeatSelector();
@@ -813,7 +827,12 @@
             const t = currentTours.find(x => x.id === selectedTourId);
             if (!t || isNaN(targetTableId)) return;
 
-            const alivePlayersOnTarget = (t.players || []).filter(p => p.table_id === targetTableId && p.status === 'alive' && p.phone !== pendingMovePhone);
+            // Occupied seats on target table (excluding current moving player)
+            const alivePlayersOnTarget = (t.players || []).filter(p => 
+                p.table_id === targetTableId && 
+                p.status === 'alive' && 
+                (pendingMovePhone ? p.phone !== pendingMovePhone : p.name !== pendingMoveName)
+            );
             const occupiedSeats = alivePlayersOnTarget.map(p => p.seat);
 
             // Auto Option
@@ -881,15 +900,22 @@
 
         function confirmMoveTable() {
             const newId = document.getElementById('move-table-select').value;
-            if(pendingMovePhone && selectedTourId && newId) {
-                socket.emit('move_player_table', { 
-                    tour_id: selectedTourId, 
-                    player_phone: pendingMovePhone, 
-                    new_table_id: parseInt(newId),
-                    target_seat: selectedTargetSeat
-                });
-                closeMoveModal();
+            if(!newId) {
+                alert('Vui lòng chọn bàn đích!');
+                return;
             }
+            if(!selectedTourId) {
+                alert('Chưa chọn giải đấu!');
+                return;
+            }
+            socket.emit('move_player_table', { 
+                tour_id: selectedTourId, 
+                player_phone: pendingMovePhone, 
+                player_name: pendingMoveName,
+                new_table_id: parseInt(newId),
+                target_seat: selectedTargetSeat
+            });
+            closeMoveModal();
         }
 
         // =====================
@@ -940,7 +966,7 @@
                     seatDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
                 if (feedbackBanner && feedbackText) {
-                    feedbackText.innerHTML = `<i class="fa-solid fa-location-crosshairs mr-2"></i>Đã tìm thấy: <span class="text-white">${matched.name || 'Khách'}</span> (${matched.phone}) &nbsp;➔&nbsp; <span class="text-emerald-400 font-bold font-digital">BÀN ${matched.table_id} - GHẾ ${matched.seat}</span>`;
+                    feedbackText.innerHTML = `<i class="fa-solid fa-location-crosshairs mr-2"></i>Đã tìm thấy: <span class="text-white">${matched.name || 'Khách'}</span> (${matched.phone || ''}) &nbsp;➔&nbsp; <span class="text-emerald-400 font-bold font-digital">BÀN ${matched.table_id} - GHẾ ${matched.seat}</span>`;
                     feedbackBanner.classList.remove('hidden');
                 }
             } else {
@@ -954,9 +980,9 @@
         // =====================
         // BUST OUT
         // =====================
-        function bustOut(phone) {
-            if(confirm('Xác nhận BUST OUT khách này?')) {
-                socket.emit('bust_out', { tour_id: selectedTourId, player_phone: phone });
+        function bustOut(phone, name) {
+            if(confirm(`Xác nhận BUST OUT khách ${name || phone || ''}?`)) {
+                socket.emit('bust_out', { tour_id: selectedTourId, player_phone: phone, player_name: name });
             }
         }
     </script>
