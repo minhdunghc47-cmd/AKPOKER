@@ -52,6 +52,9 @@
 
     </style>
 
+    <!-- SheetJS Thư viện xuất Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <!-- FIREBASE AUTH SETUP -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -67,9 +70,18 @@
             <h1 class="text-3xl font-mafia text-[#d4af37] tracking-widest"><i class="fa-solid fa-users mr-3"></i>HR MANAGEMENT</h1>
             <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">Phân hệ Quản Trị Nhân Sự (God Mode)</p>
         </div>
-        <div class="flex gap-4">
-            <a href="./index.html" class="px-6 py-2 bg-[#222] hover:bg-[#333] text-gray-300 font-bold rounded uppercase text-sm tracking-widest transition-colors">
-                <i class="fa-solid fa-arrow-left mr-2"></i> Thoát
+        <div class="flex items-center gap-3">
+            <button onclick="exportCurrentPayrollToExcel()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded uppercase text-xs tracking-wider transition-colors shadow-lg flex items-center gap-2">
+                <i class="fa-solid fa-file-excel text-sm"></i> Xuất Excel
+            </button>
+            <button onclick="openClosePayrollModal()" class="px-4 py-2 bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold rounded uppercase text-xs tracking-wider transition-colors shadow-lg flex items-center gap-2">
+                <i class="fa-solid fa-lock text-sm"></i> Chốt Kỳ Lương
+            </button>
+            <button onclick="openPayrollHistoryModal()" class="px-4 py-2 bg-[#2a2a2a] hover:bg-[#383838] border border-[#555] text-gray-200 font-bold rounded uppercase text-xs tracking-wider transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-sm"></i> Lịch Sử Kỳ Lương
+            </button>
+            <a href="./index.html" class="px-5 py-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#444] text-gray-300 font-bold rounded uppercase text-xs tracking-widest transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Về Sảnh
             </a>
         </div>
     </header>
@@ -235,11 +247,20 @@
 
 
 
+        let currentStaffListData = [];
+        let payrollHistoryData = [];
+
         socket.on('connect', () => {
             socket.emit('request_initial_data');
         });
 
+        socket.on('update_payroll_history', (history) => {
+            payrollHistoryData = history || [];
+            renderPayrollHistoryTable();
+        });
+
         socket.on('update_staff_list', (staffList) => {
+            currentStaffListData = staffList || [];
             const tbody = document.getElementById('staff-table');
             tbody.innerHTML = '';
 
@@ -547,6 +568,164 @@
                 }
             });
         }
+
+        // ==================== XUẤT EXCEL BẢNG LƯƠNG HIỆN TẠI ====================
+        function exportCurrentPayrollToExcel() {
+            if (!currentStaffListData || currentStaffListData.length === 0) {
+                return alert("Chưa có dữ liệu nhân sự để xuất báo cáo!");
+            }
+
+            const rows = [];
+            currentStaffListData.forEach(s => {
+                const totalMinutes = s.total_minutes || 0;
+                const hours = Number((totalMinutes / 60).toFixed(2));
+                const baseSalary = Math.round((totalMinutes / 60) * (s.base_salary || 0));
+
+                let dealingHours = 0;
+                let dealingBonus = 0;
+                if (s.total_dealing_ms) {
+                    const totalMins = Math.floor(s.total_dealing_ms / 60000);
+                    dealingHours = Number((totalMins / 60).toFixed(2));
+                    dealingBonus = Math.round((totalMins / 60) * (s.dealer_bonus || 30000));
+                }
+
+                const totalEarnings = baseSalary + dealingBonus;
+
+                rows.push({
+                    "Mã NV": s.id,
+                    "Họ Và Tên": s.name,
+                    "Chức Danh": s.role,
+                    "Trạng Thái": s.work_status === 'RESIGNED' ? 'Đã Thôi Việc' : 'Đang Làm Việc',
+                    "Lương Cơ Bản (VNĐ/h)": s.base_salary || 50000,
+                    "Tổng Giờ Làm (h)": hours,
+                    "Tiền Lương Giờ (VNĐ)": baseSalary,
+                    "Đơn Giá Thưởng Dealer (VNĐ/h)": s.dealer_bonus || 30000,
+                    "Giờ Chia Bài (h)": dealingHours,
+                    "Tiền Thưởng Chia Bài (VNĐ)": dealingBonus,
+                    "TỔNG THỰC LĨNH (VNĐ)": totalEarnings
+                });
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            // Auto fit column widths
+            const colWidths = [
+                { wch: 10 }, { wch: 22 }, { wch: 14 }, { wch: 16 },
+                { wch: 20 }, { wch: 16 }, { wch: 20 }, { wch: 25 },
+                { wch: 16 }, { wch: 24 }, { wch: 24 }
+            ];
+            worksheet['!cols'] = colWidths;
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Bang_Luong");
+
+            const dateStr = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(workbook, `Bang_Luong_AcePoker_${dateStr}.xlsx`);
+        }
+
+        // ==================== CHỐT SỔ KỲ LƯƠNG (PAYROLL CLOSING) ====================
+        function openClosePayrollModal() {
+            const todayStr = new Date().toLocaleDateString('vi-VN');
+            document.getElementById('modal-close-period-name').value = `Kỳ Lương Ngày ${todayStr}`;
+            document.getElementById('modal-close-period-note').value = '';
+            document.getElementById('modal-close-payroll').classList.remove('hidden');
+        }
+
+        function closeClosePayrollModal() {
+            document.getElementById('modal-close-payroll').classList.add('hidden');
+        }
+
+        function confirmClosePayroll() {
+            const periodName = document.getElementById('modal-close-period-name').value.trim();
+            const note = document.getElementById('modal-close-period-note').value.trim();
+
+            if (!periodName) {
+                return alert("Vui lòng nhập tên kỳ lương!");
+            }
+
+            if (!confirm(`⚠️ CẢNH BÁO: Bạn có chắc chắn muốn CHỐT SỔ [${periodName}]?\n\nHệ thống sẽ lưu snapshot toàn bộ số tiền lương hiện tại vào Lịch Sử, sau đó RESET toàn bộ giờ làm việc về 0 cho kỳ mới.`)) {
+                return;
+            }
+
+            socket.emit('close_payroll_period', { period_name: periodName, note: note }, (res) => {
+                alert(res.message);
+                if (res.success) {
+                    closeClosePayrollModal();
+                }
+            });
+        }
+
+        // ==================== LỊCH SỬ KỲ LƯƠNG & XUẤT LẠI EXCEL KỲ CŨ ====================
+        function openPayrollHistoryModal() {
+            renderPayrollHistoryTable();
+            document.getElementById('modal-payroll-history').classList.remove('hidden');
+        }
+
+        function closePayrollHistoryModal() {
+            document.getElementById('modal-payroll-history').classList.add('hidden');
+        }
+
+        function renderPayrollHistoryTable() {
+            const tbody = document.getElementById('payroll-history-table');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!payrollHistoryData || payrollHistoryData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500">Chưa có kỳ lương nào được chốt sổ trong quá khứ.</td></tr>';
+                return;
+            }
+
+            payrollHistoryData.forEach((item, index) => {
+                const dateStr = new Date(item.closed_at).toLocaleString('vi-VN');
+                const totalMoneyStr = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.total_payout || 0);
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-[#2a2a2a] hover:bg-[#222] transition-colors">
+                        <td class="p-3 text-white font-bold">${item.name}</td>
+                        <td class="p-3 text-gray-400 text-xs">${dateStr}</td>
+                        <td class="p-3 text-center text-[#d4af37] font-bold">${item.staff_count} NV</td>
+                        <td class="p-3 text-right text-emerald-400 font-bold">${totalMoneyStr}</td>
+                        <td class="p-3 text-gray-400 text-xs italic">${item.note || '—'}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="exportHistoryPeriodToExcel(${index})" class="px-3 py-1 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded text-xs transition-colors flex items-center gap-1 mx-auto">
+                                <i class="fa-solid fa-file-excel"></i> Xuất File
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function exportHistoryPeriodToExcel(historyIndex) {
+            const period = payrollHistoryData[historyIndex];
+            if (!period || !period.records) return alert("Không tìm thấy dữ liệu kỳ lương này!");
+
+            const rows = period.records.map(r => ({
+                "Mã NV": r.id,
+                "Họ Và Tên": r.name,
+                "Chức Danh": r.role,
+                "Trạng Thái": r.work_status === 'RESIGNED' ? 'Đã Thôi Việc' : 'Đang Làm Việc',
+                "Lương Cơ Bản (VNĐ/h)": r.base_salary_rate,
+                "Tổng Giờ Làm (h)": r.work_hours,
+                "Tiền Lương Giờ (VNĐ)": r.base_salary_earned,
+                "Đơn Giá Thưởng Dealer (VNĐ/h)": r.dealer_bonus_rate,
+                "Giờ Chia Bài (h)": Number((r.dealing_minutes / 60).toFixed(2)),
+                "Tiền Thưởng Chia Bài (VNĐ)": r.dealing_bonus_earned,
+                "TỔNG THỰC LĨNH (VNĐ)": r.total_earnings
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            worksheet['!cols'] = [
+                { wch: 10 }, { wch: 22 }, { wch: 14 }, { wch: 16 },
+                { wch: 20 }, { wch: 16 }, { wch: 20 }, { wch: 25 },
+                { wch: 16 }, { wch: 24 }, { wch: 24 }
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Bang_Luong");
+
+            const safeName = (period.name || 'Ky_Luong').replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF]/g, '_');
+            XLSX.writeFile(workbook, `${safeName}.xlsx`);
+        }
     </script>
 
     <!-- MODAL CẤP LẠI MÃ PIN NHANH -->
@@ -573,6 +752,75 @@
                 </button>
                 <button type="button" onclick="confirmResetPin()" class="flex-1 py-2.5 bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold text-xs uppercase rounded transition-colors shadow-lg">
                     XÁC NHẬN
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CHỐT SỔ KỲ LƯƠNG -->
+    <div id="modal-close-payroll" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-[#181818] border border-[#d4af37] w-full max-w-md rounded-xl p-6 shadow-2xl relative">
+            <h3 class="text-xl font-mafia text-[#d4af37] uppercase tracking-wider mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-lock"></i> CHỐT SỔ KỲ LƯƠNG
+            </h3>
+            <p class="text-xs text-gray-400 mb-4 leading-relaxed">
+                Hệ thống sẽ lưu snapshot toàn bộ số giờ và tiền lương của tất cả nhân sự hiện tại vào Lịch Sử, sau đó <strong class="text-yellow-400">reset số giờ làm về 0</strong> cho chu kỳ tính lương tiếp theo.
+            </p>
+
+            <div class="mb-4">
+                <label class="block text-xs uppercase tracking-widest text-gray-300 mb-1">Tên Kỳ Lương</label>
+                <input type="text" id="modal-close-period-name" class="w-full bg-[#111] border border-[#444] p-2.5 rounded text-white text-sm focus:border-[#d4af37] outline-none" placeholder="VD: Kỳ Lương Tháng 10/2026">
+            </div>
+
+            <div class="mb-5">
+                <label class="block text-xs uppercase tracking-widest text-gray-300 mb-1">Ghi Chú (Tùy chọn)</label>
+                <textarea id="modal-close-period-note" rows="2" class="w-full bg-[#111] border border-[#444] p-2.5 rounded text-white text-sm focus:border-[#d4af37] outline-none resize-none" placeholder="VD: Đã chi trả qua chuyển khoản ngân hàng ngày 30..."></textarea>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="button" onclick="closeClosePayrollModal()" class="flex-1 py-2.5 bg-[#333] hover:bg-[#444] text-gray-300 font-bold text-xs uppercase rounded transition-colors">
+                    HỦY
+                </button>
+                <button type="button" onclick="confirmClosePayroll()" class="flex-1 py-2.5 bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold text-xs uppercase rounded transition-colors shadow-lg">
+                    XÁC NHẬN CHỐT SỔ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LỊCH SỬ KỲ LƯƠNG ĐÃ CHỐT -->
+    <div id="modal-payroll-history" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-[#181818] border border-[#444] w-full max-w-4xl rounded-xl p-6 shadow-2xl relative flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-[#333]">
+                <h3 class="text-xl font-mafia text-[#d4af37] uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left"></i> LỊCH SỬ CÁC KỲ LƯƠNG ĐÃ CHỐT
+                </h3>
+                <button type="button" onclick="closePayrollHistoryModal()" class="text-gray-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto flex-1">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-xs uppercase tracking-widest text-gray-400 border-b border-[#333] bg-[#111]">
+                            <th class="p-3">Tên Kỳ Lương</th>
+                            <th class="p-3">Thời Điểm Chốt</th>
+                            <th class="p-3 text-center">Số Lượng NV</th>
+                            <th class="p-3 text-right">Tổng Chi Lương</th>
+                            <th class="p-3">Ghi Chú</th>
+                            <th class="p-3 text-center">Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payroll-history-table" class="text-sm">
+                        <!-- History data here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-[#333] text-right">
+                <button type="button" onclick="closePayrollHistoryModal()" class="px-6 py-2 bg-[#333] hover:bg-[#444] text-white font-bold text-xs uppercase rounded transition-colors">
+                    ĐÓNG
                 </button>
             </div>
         </div>

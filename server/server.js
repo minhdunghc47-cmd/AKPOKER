@@ -70,7 +70,8 @@ let db = {
   staff: [],
   time_logs: [],
   members: [],
-  financial: { net_cash: 0, total_debt: 0, total_rake: 0 }
+  financial: { net_cash: 0, total_debt: 0, total_rake: 0 },
+  payroll_history: []
 };
 
 if (fdb) {
@@ -95,6 +96,7 @@ if (fdb) {
         if (data.members) db.members = data.members;
         if (data.time_logs) db.time_logs = data.time_logs;
         if (data.staff) db.staff = data.staff;
+        if (data.payroll_history) db.payroll_history = data.payroll_history;
         if (data.tables) {
           db.tables = data.tables;
         } else {
@@ -148,6 +150,7 @@ function sendTargetedState(sock, activeTours) {
     sock.emit('staff_data_updated', staffList);
 
     if (role === 'god') {
+      sock.emit('update_payroll_history', db.payroll_history || []);
       sock.emit('update_god_mode', {
           financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 },
           staff: staffList,
@@ -170,6 +173,7 @@ function broadcastState(skipSave = false) {
     saveToFirebase('tour_templates', db.tour_templates);
     saveToFirebase('members', db.members);
     saveToFirebase('staff', db.staff);
+    saveToFirebase('payroll_history', db.payroll_history);
     saveToFirebase('time_logs', db.time_logs);
     saveToFirebase('tables', db.tables);
   }
@@ -421,6 +425,83 @@ io.on('connection', (socket) => {
     staff.pin = bcrypt.hashSync(String(new_pin), 10);
     broadcastState();
     if (callback) callback({ success: true, message: 'Đổi mã PIN cá nhân thành công! Hãy ghi nhớ mã PIN mới.' });
+  }));
+
+  socket.on('close_payroll_period', requireRole(socket, ['god'], (payload, callback) => {
+    const { period_name, note } = payload || {};
+    const name = period_name && period_name.trim() ? period_name.trim() : ('Kỳ lương ' + new Date().toLocaleDateString('vi-VN'));
+
+    // Tính toán snapshot chi tiết lương từng nhân sự tại thời điểm chốt sổ
+    const staffRecords = (db.staff || []).map(s => {
+      const totalMinutes = s.total_minutes || 0;
+      const baseSalaryRate = s.base_salary || 50000;
+      const hours = Number((totalMinutes / 60).toFixed(2));
+      const baseSalary = Math.round((totalMinutes / 60) * baseSalaryRate);
+
+      let dealingMinutes = 0;
+      let dealingBonus = 0;
+      const dealerBonusRate = s.dealer_bonus || 30000;
+
+      if (s.total_dealing_ms) {
+        dealingMinutes = Math.floor(s.total_dealing_ms / 60000);
+        dealingBonus = Math.round((dealingMinutes / 60) * dealerBonusRate);
+      }
+
+      const totalEarnings = baseSalary + dealingBonus;
+
+      return {
+        id: s.id,
+        name: s.name,
+        role: s.role,
+        work_status: s.work_status || 'ACTIVE',
+        base_salary_rate: baseSalaryRate,
+        dealer_bonus_rate: dealerBonusRate,
+        total_minutes: totalMinutes,
+        work_hours: hours,
+        base_salary_earned: baseSalary,
+        total_dealing_ms: s.total_dealing_ms || 0,
+        dealing_minutes: dealingMinutes,
+        dealing_bonus_earned: dealingBonus,
+        total_earnings: totalEarnings
+      };
+    });
+
+    const totalPayout = staffRecords.reduce((sum, r) => sum + r.total_earnings, 0);
+
+    const snapshot = {
+      id: 'PAYROLL_' + Date.now(),
+      name: name,
+      note: note || '',
+      closed_at: Date.now(),
+      closed_by: 'god',
+      staff_count: staffRecords.length,
+      total_payout: totalPayout,
+      records: staffRecords
+    };
+
+    if (!db.payroll_history) db.payroll_history = [];
+    db.payroll_history.unshift(snapshot);
+
+    // Reset số giờ làm và số giờ chia bài về 0 cho tất cả nhân sự để bắt đầu kỳ mới
+    db.staff.forEach(s => {
+      s.total_minutes = 0;
+      s.total_dealing_ms = 0;
+      if (s.status === 'offline') {
+        s.last_in = null;
+        s.session_start = null;
+      } else {
+        // Nếu nhân viên đang trong ca làm việc, mốc tính lại tính từ thời điểm chốt sổ
+        const now = Date.now();
+        if (s.last_in) s.last_in = now;
+        if (s.session_start) s.session_start = now;
+      }
+    });
+
+    broadcastState();
+    if (callback) callback({
+      success: true,
+      message: `Đã chốt sổ [${name}] thành công! Tổng chi lương: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPayout)}. Số giờ làm đã được reset về 0.`
+    });
   }));
 
   socket.on('resign_staff', requireRole(socket, ['god'], (staffId, callback) => {
