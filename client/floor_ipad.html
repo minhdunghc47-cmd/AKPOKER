@@ -509,19 +509,26 @@
 
             const tourTables = globalTables.filter(tbl => (t.tables||[]).includes(tbl.id));
             
-            // Check UI Lock
+            // Check UI Lock: ONLY lock if tournament has just started AND total entries has not reached min_players AND late reg is still open!
+            // When players bust out naturally down to 4, 3, 2, 1 player (or after break/late reg closed), NEVER lock!
             let overlayHtml = '';
-            const aliveTotal = (t.alive_override !== undefined && t.alive_override !== null)
-                ? t.alive_override
-                : (t.players||[]).filter(p => p.status === 'alive').length;
-            const minPlayers = (t.settings && t.settings.min_players) ? t.settings.min_players : 6;
-            if (t.status === 'running' && aliveTotal < minPlayers) {
+            const minPlayers = (t.settings && t.settings.min_players) ? Number(t.settings.min_players) : 6;
+            const lateRegLvl = (t.settings && t.settings.late_reg_level) ? Number(t.settings.late_reg_level) : 8;
+            const currentBlindObj = t.blinds_structure?.[t.current_level_idx];
+            const currentLevelNum = currentBlindObj?.is_break
+                ? (t.blinds_structure?.[t.current_level_idx - 1]?.level || 0)
+                : (currentBlindObj?.level || 0);
+            const isLateRegClosed = Number(currentLevelNum) >= lateRegLvl;
+            const totalEntries = Number(t.entries || (t.players || []).length || 0);
+
+            // Only hold dealing if tournament is running, late reg is still open, and TOTAL entries bought is less than min_players
+            if (t.status === 'running' && !isLateRegClosed && totalEntries < minPlayers) {
                 overlayHtml = `
                     <div class="absolute inset-0 bg-red-900/80 z-50 flex flex-col justify-center items-center rounded-xl border-4 border-red-500 backdrop-blur-sm pointer-events-none">
                         <i class="fa-solid fa-lock text-5xl text-yellow-300 mb-2 drop-shadow-[0_0_15px_rgba(255,0,0,1)] animate-bounce"></i>
                         <div class="text-white font-bold text-2xl text-center leading-tight drop-shadow-md tracking-widest font-mafia uppercase">
-                            CHƯA ĐỦ ${minPlayers} PLAYER<br>
-                            <span class="text-yellow-300 text-lg">HOLD DEALING</span>
+                            CHƯA ĐỦ ${minPlayers} PLAYER ĐĂNG KÝ<br>
+                            <span class="text-yellow-300 text-lg">HOLD DEALING (${totalEntries}/${minPlayers})</span>
                         </div>
                     </div>
                 `;
