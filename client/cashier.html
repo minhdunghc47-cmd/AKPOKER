@@ -161,10 +161,9 @@
         <div class="space-y-5">
             <div>
                 <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Loại Vé Giao Dịch:</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button type="button" id="btn-type-buyin" class="py-2.5 px-2 rounded text-xs font-bold border border-[#d4af37] bg-[#d4af37] text-black transition shadow-md" onclick="selectTicketType('buy_in')">🎟 BUY-IN (F8)</button>
-                    <button type="button" id="btn-type-rebuy" class="py-2.5 px-2 rounded text-xs font-bold border border-[#333] bg-[#1a1a1a] text-gray-300 hover:border-[#d4af37] transition shadow-md" onclick="selectTicketType('re_buy')">🔄 RE-BUY (F9)</button>
-                    <button type="button" id="btn-type-addon" class="py-2.5 px-2 rounded text-xs font-bold border border-[#333] bg-[#1a1a1a] text-gray-300 hover:border-[#d4af37] transition shadow-md" onclick="selectTicketType('add_on')">➕ ADD-ON (F10)</button>
+                <div class="py-3 px-4 rounded text-xs font-bold border border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37] flex items-center justify-between shadow-md">
+                    <span class="flex items-center"><i class="fa-solid fa-ticket mr-2 text-[#d4af37]"></i> VÉ THAM DỰ GIẢI ĐẤU (BUY-IN)</span>
+                    <span class="bg-[#d4af37] text-black px-2 py-0.5 rounded font-mono text-[10px] font-extrabold">PHÍM F8</span>
                 </div>
             </div>
 
@@ -180,9 +179,19 @@
                         <i class="fa-solid fa-plus mr-1"></i> TẠO MỚI
                     </button>
                 </div>
-                <input type="text" id="player-search" class="input-mafia text-sm font-bold" placeholder="Nhập SĐT hoặc Tên..." autocomplete="off" onkeyup="filterMembers(); updateReceiptPreview();" onfocus="filterMembers(); updateReceiptPreview();">
+                <input type="text" id="player-search" class="input-mafia text-sm font-bold" placeholder="Nhập SĐT hoặc Tên..." autocomplete="off" oninput="onPlayerSearchInput()" onfocus="onPlayerSearchInput()">
                 <!-- AUTOCOMPLETE DROPDOWN -->
                 <div id="autocomplete-list" class="absolute z-20 w-full bg-[#1f1f1f] border border-[#d4af37]/30 rounded mt-1 hidden max-h-48 overflow-y-auto shadow-xl"></div>
+            </div>
+
+            <!-- QUICK MEMBER HISTORY CARD -->
+            <div id="member-quick-info" class="hidden p-3 bg-[#111] border border-[#d4af37]/30 rounded-lg text-xs space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-white text-sm" id="mqi-name">Hội viên</span>
+                    <button type="button" class="text-[10px] text-[#d4af37] underline hover:text-white" onclick="viewSelectedMemberProfile()"><i class="fa-solid fa-id-card mr-1"></i> Xem Hồ Sơ & Lịch Sử</button>
+                </div>
+                <div class="text-gray-400 text-[11px]" id="mqi-recent">
+                </div>
             </div>
 
             <div>
@@ -190,9 +199,9 @@
                 <input type="number" id="buy-in" class="input-mafia text-sm font-bold text-gray-500 bg-[#111] cursor-not-allowed" placeholder="VD: 5000000" value="" oninput="updateReceiptPreview()" readonly>
             </div>
             <div class="flex items-center justify-between p-3 bg-[#111] border border-[#333] rounded">
-                <div class="flex items-center space-x-2 cursor-pointer" onclick="document.getElementById('unpaid-checkbox').click()">
-                    <input type="checkbox" id="unpaid-checkbox" class="w-4 h-4 accent-[#800020] cursor-pointer">
-                    <label class="text-[#e74c3c] font-bold text-[11px] cursor-pointer uppercase tracking-widest">Khách Ghi Nợ</label>
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+                    <span class="text-gray-300 font-bold text-[11px] uppercase tracking-widest">Thu Tiền Mặt / Chuyển Khoản Đủ</span>
                 </div>
                 <div class="flex items-center space-x-2 cursor-pointer" onclick="document.getElementById('auto-print-chk').click()">
                     <input type="checkbox" id="auto-print-chk" class="w-4 h-4 accent-[#d4af37] cursor-pointer" checked>
@@ -393,9 +402,10 @@
                         <table class="w-full text-left text-[11px] text-gray-300">
                             <thead class="bg-[#1f1f1f] sticky top-0 text-[#d4af37] border-b border-[#333]">
                                 <tr>
-                                    <th class="p-4 font-bold uppercase tracking-wider">Thời Gian</th>
-                                    <th class="p-4 font-bold uppercase tracking-wider">Giải Đấu</th>
-                                    <th class="p-4 font-bold uppercase tracking-wider text-right">Phí Buy-in</th>
+                                    <th class="p-3 font-bold uppercase tracking-wider">Thời Gian Thi Đấu</th>
+                                    <th class="p-3 font-bold uppercase tracking-wider">Giải Đấu</th>
+                                    <th class="p-3 font-bold uppercase tracking-wider text-center">Bàn / Ghế</th>
+                                    <th class="p-3 font-bold uppercase tracking-wider text-right">Phí Buy-in</th>
                                 </tr>
                             </thead>
                             <tbody id="profile-history-body"></tbody>
@@ -509,31 +519,10 @@
 
 
         let currentTicketType = 'buy_in';
-        function selectTicketType(type) {
-            currentTicketType = type;
-            const btnBuyin = document.getElementById('btn-type-buyin');
-            const btnRebuy = document.getElementById('btn-type-rebuy');
-            const btnAddon = document.getElementById('btn-type-addon');
-            
-            [btnBuyin, btnRebuy, btnAddon].forEach(b => {
-                if (b) {
-                    b.classList.remove('bg-[#d4af37]', 'text-black', 'border-[#d4af37]');
-                    b.classList.add('bg-[#1a1a1a]', 'text-gray-300', 'border-[#333]');
-                }
-            });
-            
-            let activeBtn = btnBuyin;
-            if (type === 're_buy') activeBtn = btnRebuy;
-            else if (type === 'add_on') activeBtn = btnAddon;
-            
-            if (activeBtn) {
-                activeBtn.classList.remove('bg-[#1a1a1a]', 'text-gray-300', 'border-[#333]');
-                activeBtn.classList.add('bg-[#d4af37]', 'text-black', 'border-[#d4af37]');
-            }
-            
-            const label = type === 'add_on' ? 'ADD-ON' : (type === 're_buy' ? 'RE-BUY' : 'BUY-IN');
+        function selectTicketType(type = 'buy_in') {
+            currentTicketType = 'buy_in';
             const el = document.getElementById('rp-ticket-type');
-            if (el) el.innerText = label;
+            if (el) el.innerText = 'BUY-IN';
             updateReceiptPreview();
         }
 
@@ -558,6 +547,51 @@
             document.getElementById('rp-tour').innerText = tourName;
             document.getElementById('rp-buyin').innerText = (buyIn !== '' && buyIn !== null && buyIn !== undefined) ? new Intl.NumberFormat('vi-VN').format(buyIn) + ' VNĐ' : '...';
             document.getElementById('rp-time').innerText = timeStr;
+        }
+
+        function onPlayerSearchInput() {
+            filterMembers();
+            updateReceiptPreview();
+            const val = document.getElementById('player-search').value.trim();
+            const member = currentMembers.find(m => m.phone === val || (m.name && m.name.toLowerCase() === val.toLowerCase()));
+            updateMemberQuickInfo(member);
+        }
+
+        function updateMemberQuickInfo(member) {
+            const container = document.getElementById('member-quick-info');
+            if (!container) return;
+            if (!member) {
+                container.classList.add('hidden');
+                return;
+            }
+            container.classList.remove('hidden');
+            document.getElementById('mqi-name').innerText = (member.name || 'Hội viên') + ' (' + member.phone + ')';
+
+            const history = (member.play_history || []).slice().sort((a,b) => (b.time || 0) - (a.time || 0));
+            if (history.length > 0) {
+                const recent = history[0];
+                const date = recent.time_formatted || (recent.time ? new Date(recent.time).toLocaleString('vi-VN') : '---');
+                const seatBadge = (recent.table_id && recent.seat) ? `<span class="text-[#d4af37] font-bold">Bàn ${recent.table_id} - Ghế ${recent.seat}</span>` : '';
+                document.getElementById('mqi-recent').innerHTML = `
+                    <div class="flex items-center gap-1.5 text-gray-200">
+                        <i class="fa-solid fa-trophy text-[#d4af37] text-xs"></i> 
+                        <span class="font-bold text-white uppercase">${recent.tour_name}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[10px] text-gray-400 mt-1">
+                        <span><i class="fa-regular fa-clock mr-1 text-[#d4af37]/70"></i>${date}</span>
+                        ${seatBadge}
+                    </div>
+                `;
+            } else {
+                document.getElementById('mqi-recent').innerHTML = `<span class="italic text-gray-500">Chưa có lịch sử tham gia giải trước đây</span>`;
+            }
+        }
+
+        function viewSelectedMemberProfile() {
+            const phone = document.getElementById('player-search').value.trim();
+            const member = currentMembers.find(m => m.phone === phone || (m.name && m.name.toLowerCase() === phone.toLowerCase()));
+            if (member) openProfileModal(member.phone);
+            else if (phone) openProfileModal(phone);
         }
 
         function filterMembers() {
@@ -591,6 +625,8 @@
                 div.onclick = () => {
                     document.getElementById('player-search').value = m.phone; // Stick to phone
                     list.classList.add('hidden');
+                    updateReceiptPreview();
+                    updateMemberQuickInfo(m);
                 };
                 list.appendChild(div);
             });
@@ -652,19 +688,21 @@
 
             const tbody = document.getElementById('profile-history-body');
             tbody.innerHTML = '';
-            const history = (member.play_history || []).slice().sort((a,b) => b.time - a.time);
+            const history = (member.play_history || []).slice().sort((a,b) => (b.time || 0) - (a.time || 0));
 
             if(history.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="text-center p-8 text-gray-600 font-bold uppercase tracking-widest bg-[#161616]">Chưa có lịch sử thi đấu</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center p-8 text-gray-600 font-bold uppercase tracking-widest bg-[#161616]">Chưa có lịch sử thi đấu</td></tr>`;
             } else {
                 history.forEach(h => {
-                    const date = new Date(h.time).toLocaleString('vi-VN');
+                    const date = h.time_formatted || (h.time ? new Date(h.time).toLocaleString('vi-VN') : '---');
+                    const seatInfo = (h.table_id && h.seat) ? `<span class="bg-[#1f1f1f] px-2 py-1 rounded text-[#d4af37] font-bold border border-[#333]">Bàn ${h.table_id} - Ghế ${h.seat}</span>` : '<span class="text-gray-500">---</span>';
                     const tr = document.createElement('tr');
                     tr.className = 'border-b border-[#222] hover:bg-[#1a1a1a] transition';
                     tr.innerHTML = `
-                        <td class="p-4 text-gray-400">${date}</td>
-                        <td class="p-4 font-bold text-white">${h.tour_name}</td>
-                        <td class="p-4 font-bold text-emerald-400 text-right font-mono">${formatMoney(h.buy_in_amount)}</td>
+                        <td class="p-3 text-gray-400 font-mono"><i class="fa-regular fa-clock mr-1 text-[#d4af37]/70"></i>${date}</td>
+                        <td class="p-3 font-bold text-white uppercase">${h.tour_name}</td>
+                        <td class="p-3 text-center">${seatInfo}</td>
+                        <td class="p-3 font-bold text-emerald-400 text-right font-mono">${formatMoney(h.buy_in_amount)}</td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -862,19 +900,10 @@
             }
         }
 
-        // Global shortcuts for cashier (F8: Buy-in, F9: Re-buy, F10: Add-on)
+        // Global shortcut for cashier (F8: Buy-in)
         window.addEventListener('keydown', (e) => {
             if (e.key === 'F8') {
                 e.preventDefault();
-                selectTicketType('buy_in');
-                sellTicket();
-            } else if (e.key === 'F9') {
-                e.preventDefault();
-                selectTicketType('re_buy');
-                sellTicket();
-            } else if (e.key === 'F10') {
-                e.preventDefault();
-                selectTicketType('add_on');
                 sellTicket();
             }
         });
@@ -891,8 +920,8 @@
                 tour_id: tId,
                 member_phone: phoneVal,
                 buy_in_amount: Number(document.getElementById('buy-in').value),
-                is_paid: !document.getElementById('unpaid-checkbox').checked,
-                ticket_type: currentTicketType
+                is_paid: true,
+                ticket_type: 'buy_in'
             };
 
             const btn = document.getElementById('btn-sell');
@@ -903,7 +932,8 @@
                     printReceipt(payload.member_phone, payload.tour_id, payload.buy_in_amount, res.assigned_table, res.assigned_seat, res.ticket_type, res.ticket_id);
                     showAlert(res.message, false);
                     document.getElementById('player-search').value='';
-                    document.getElementById('unpaid-checkbox').checked=false;
+                    const qInfo = document.getElementById('member-quick-info');
+                    if (qInfo) qInfo.classList.add('hidden');
                 } else {
                     if (res.code === 'MEMBER_NOT_FOUND') {
                         showRegisterModal(phoneVal);

@@ -244,13 +244,13 @@ function getStaffForRole(staffList, role) {
 function getMembersForRole(membersList, role) {
     return membersList.map(m => {
         const copy = { ...m };
-        delete copy.bank_account;
-        delete copy.bank_name;
-        delete copy.dob;
-        delete copy.address;
-        delete copy.avatar_base64;
-        delete copy.play_history;
         if (!['god', 'cashier'].includes(role)) {
+            delete copy.bank_account;
+            delete copy.bank_name;
+            delete copy.dob;
+            delete copy.address;
+            delete copy.avatar_base64;
+            delete copy.play_history;
             delete copy.phone;
         }
         return copy;
@@ -710,7 +710,7 @@ io.on('connection', (socket) => {
   }));
 
   socket.on('sell_ticket', requireRole(socket, ['god', 'cashier'], (payload, callback) => {
-    const { tour_id, member_phone, is_paid, buy_in_amount, ticket_type = 'buy_in' } = payload;
+    const { tour_id, member_phone, buy_in_amount } = payload;
     const t = db.tournaments.find(t => t.id === tour_id);
     if (!t) return;
 
@@ -720,129 +720,103 @@ io.on('connection', (socket) => {
       return;
     }
 
-    let assigned_table = null;
-    let assigned_seat = null;
-
-    if (ticket_type === 'add_on') {
-      // ADD-ON: Khách phải đang còn thi đấu (alive) trong giải đấu này
-      const activePlayer = t.players.find(p => p.phone === member_phone && p.status === 'alive');
-      if (!activePlayer) {
-        if(callback) callback({ success: false, message: 'Khách chưa có ghế ngồi thi đấu tại giải này để mua Add-on!' });
-        return;
-      }
-      assigned_table = activePlayer.table_id;
-      assigned_seat = activePlayer.seat;
-    } else if (ticket_type === 're_buy') {
-      // RE-BUY: Khách phải bị bust trong giải này (hoặc chưa ngồi thi đấu)
-      const activeInThis = t.players.find(p => p.phone === member_phone && p.status === 'alive');
-      if (activeInThis) {
-        if(callback) callback({ success: false, message: `Khách đang thi đấu tại Bàn ${activeInThis.table_id} - Ghế ${activeInThis.seat}! Phải Busted trước khi Re-buy.` });
-        return;
-      }
-
-      // Check anti-ghosting ở các giải khác đang chạy
-      let ghostingTour = null;
-      db.tournaments.forEach(tour => {
-        if (tour.id !== t.id && tour.status !== 'archived' && tour.status !== 'finished') {
-          if (tour.players.find(p => p.phone === member_phone && p.status === 'alive')) {
-            ghostingTour = tour;
-          }
+    // Kiểm tra Anti-Ghosting: Khách đang thi đấu ở bất kỳ giải nào chưa kết thúc thì không được Buy-in
+    let ghostingTour = null;
+    db.tournaments.forEach(tour => {
+      if (tour.status !== 'archived' && tour.status !== 'finished') {
+        if (tour.players.find(p => p.phone === member_phone && p.status === 'alive')) {
+          ghostingTour = tour;
         }
-      });
-      if (ghostingTour) {
-        if(callback) callback({ success: false, message: `LỖI ANTI-GHOSTING! Khách đang thi đấu tại giải [${ghostingTour.name}], không thể Re-buy giải này!` });
-        return;
       }
-    } else {
-      // BUY-IN: Kiểm tra anti-ghosting toàn bộ các giải đang chạy
-      let ghostingTour = null;
-      db.tournaments.forEach(tour => {
-        if (tour.status !== 'archived' && tour.status !== 'finished') {
-          if (tour.players.find(p => p.phone === member_phone && p.status === 'alive')) {
-            ghostingTour = tour;
-          }
-        }
-      });
-      if (ghostingTour) {
-        if(callback) callback({ success: false, message: `LỖI ANTI-GHOSTING! Khách đang thi đấu tại giải [${ghostingTour.name}], không thể Buy-in!` });
-        return;
+    });
+
+    if (ghostingTour) {
+      if(callback) callback({ success: false, message: `LỖI ANTI-GHOSTING! Khách đang thi đấu tại giải [${ghostingTour.name}], không thể Buy-in!` });
+      return;
+    }
+
+    // Áp dụng Balance Seating & Random Seat Draw: Bốc thăm ngẫu nhiên chỗ ngồi
+    let minPlayers = 999;
+    for (let tableId of t.tables) {
+      const aliveCount = t.players.filter(p => p.table_id === tableId && p.status === 'alive').length;
+      if (aliveCount < minPlayers) {
+        minPlayers = aliveCount;
       }
     }
 
-    // Nếu là BUY-IN hoặc RE-BUY: Bốc thăm ngẫu nhiên chỗ ngồi (Random Seat Draw & Table Balancing)
-    if (ticket_type !== 'add_on') {
-      let minPlayers = 999;
-      for (let tableId of t.tables) {
-        const aliveCount = t.players.filter(p => p.table_id === tableId && p.status === 'alive').length;
-        if (aliveCount < minPlayers) {
-          minPlayers = aliveCount;
-        }
-      }
-
-      if (minPlayers >= 9) {
-        if (callback) callback({ success: false, message: "Hệ thống báo: TẤT CẢ CÁC BÀN ĐÃ ĐẦY (9/9)! Hãy yêu cầu Floor mở thêm bàn mới trước khi Thu ngân có thể bán vé!"});
-        return;
-      }
-
-      // Lọc các bàn có số người bằng minPlayers để cân bằng bàn
-      let candidateTables = [];
-      for (let tableId of t.tables) {
-        const alivePlayers = t.players.filter(p => p.table_id === tableId && p.status === 'alive');
-        if (alivePlayers.length === minPlayers && alivePlayers.length < 9) {
-          candidateTables.push(tableId);
-        }
-      }
-
-      // Bốc thăm ngẫu nhiên 1 bàn trong các bàn ít người nhất
-      assigned_table = candidateTables[Math.floor(Math.random() * candidateTables.length)];
-
-      const aliveOnTable = t.players.filter(p => p.table_id === assigned_table && p.status === 'alive');
-      const occupiedSeats = aliveOnTable.map(p => p.seat);
-      const emptySeats = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(s => !occupiedSeats.includes(s));
-
-      if (emptySeats.length === 0) {
-        if (callback) callback({ success: false, message: `Bàn ${assigned_table} đã đầy ghế!` });
-        return;
-      }
-
-      // BỐC THĂM NGẪU NHIÊN 1 GHẾ TRỐNG (Chuẩn Fair Random Seat Draw như Bee Poker)
-      assigned_seat = emptySeats[Math.floor(Math.random() * emptySeats.length)];
-
-      t.players.push({ 
-        phone: member_phone, 
-        name: member.name, 
-        status: 'alive', 
-        table_id: assigned_table, 
-        seat: assigned_seat,
-        ticket_type 
-      });
-      t.entries += 1;
+    if (minPlayers >= 9) {
+      if (callback) callback({ success: false, message: "Hệ thống báo: TẤT CẢ CÁC BÀN ĐÃ ĐẦY (9/9)! Hãy yêu cầu Floor mở thêm bàn mới trước khi Thu ngân có thể bán vé!"});
+      return;
     }
+
+    // Lọc các bàn có số người bằng minPlayers để cân bằng bàn
+    let candidateTables = [];
+    for (let tableId of t.tables) {
+      const alivePlayers = t.players.filter(p => p.table_id === tableId && p.status === 'alive');
+      if (alivePlayers.length === minPlayers && alivePlayers.length < 9) {
+        candidateTables.push(tableId);
+      }
+    }
+
+    // Bốc thăm ngẫu nhiên 1 bàn trong các bàn ít người nhất
+    const assigned_table = candidateTables[Math.floor(Math.random() * candidateTables.length)];
+
+    const aliveOnTable = t.players.filter(p => p.table_id === assigned_table && p.status === 'alive');
+    const occupiedSeats = aliveOnTable.map(p => p.seat);
+    const emptySeats = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(s => !occupiedSeats.includes(s));
+
+    if (emptySeats.length === 0) {
+      if (callback) callback({ success: false, message: `Bàn ${assigned_table} đã đầy ghế!` });
+      return;
+    }
+
+    // BỐC THĂM NGẪU NHIÊN 1 GHẾ TRỐNG (Random Seat Draw)
+    const assigned_seat = emptySeats[Math.floor(Math.random() * emptySeats.length)];
+
+    t.players.push({ 
+      phone: member_phone, 
+      name: member.name, 
+      status: 'alive', 
+      table_id: assigned_table, 
+      seat: assigned_seat,
+      ticket_type: 'buy_in'
+    });
+    t.entries += 1;
 
     const amount = Number(buy_in_amount) || 0;
+    const now = Date.now();
+    const dateFormatted = new Date(now).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+    // GHI NHẬN LỊCH SỬ THI ĐẤU CỦA HỘI VIÊN: Thời gian, Giải đấu, Vị trí bàn ghế, Số tiền
     member.total_tours = (member.total_tours || 0) + 1;
     member.play_history = member.play_history || [];
-    member.play_history.push({ tour_name: t.name, ticket_type, buy_in_amount: amount, time: Date.now() });
+    member.play_history.push({ 
+      tour_id: t.id,
+      tour_name: t.name, 
+      ticket_type: 'buy_in', 
+      buy_in_amount: amount, 
+      table_id: assigned_table,
+      seat: assigned_seat,
+      time: now,
+      time_formatted: dateFormatted
+    });
 
-    if (is_paid) {
-      t.fund.total_paid += amount;
-    } else {
-      t.fund.debt += amount;
-    }
+    // BỎ KHÁCH NỢ: Tiền bán vé luôn được tính vào thực thu
+    t.fund.total_paid += amount;
     t.fund.net_fund = t.fund.total_paid - t.fund.expenses;
 
     broadcastState();
     const ticket_id = 'AK-' + Date.now().toString().slice(-6);
-    const typeLabel = ticket_type === 'add_on' ? 'ADD-ON' : (ticket_type === 're_buy' ? 'RE-BUY' : 'BUY-IN');
     if(callback) callback({ 
       success: true, 
       assigned_table, 
       assigned_seat, 
-      ticket_type,
+      ticket_type: 'buy_in',
       ticket_id,
       tour_name: t.name,
+      time_formatted: dateFormatted,
       amount,
-      message: `In Vé ${typeLabel} Thành Công! Bàn ${assigned_table} - Ghế ${assigned_seat}` 
+      message: `In Vé BUY-IN Thành Công! Bàn ${assigned_table} - Ghế ${assigned_seat}` 
     });
   }));
 
