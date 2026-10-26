@@ -35,10 +35,11 @@
             body * {
                 visibility: hidden;
             }
-            #receipt-preview, #receipt-preview * {
-                visibility: visible;
+            #receipt-preview:not(.print-hidden), #receipt-preview:not(.print-hidden) *,
+            #shift-receipt-print.print-active, #shift-receipt-print.print-active * {
+                visibility: visible !important;
             }
-            #receipt-preview {
+            #receipt-preview:not(.print-hidden), #shift-receipt-print.print-active {
                 position: absolute;
                 left: 0;
                 top: 0;
@@ -131,6 +132,7 @@
                     <div><strong>VĐV:</strong> <span id="rp-name" style="font-weight: bold;">...</span></div>
                     <div><strong>SĐT/Mã:</strong> <span id="rp-phone">...</span></div>
                     <div><strong>Mức phí:</strong> <span id="rp-buyin" style="font-weight: bold;">...</span></div>
+                    <div><strong>PTTT:</strong> <span id="rp-payment-method" style="font-weight: bold; color: #000;">TIỀN MẶT</span></div>
                     <div><strong>Mã vé:</strong> <span id="rp-ticket-id">ACE-TICKET</span></div>
                     <div><strong>Thời gian:</strong> <span id="rp-time">...</span></div>
                 </div>
@@ -151,9 +153,16 @@
     <div class="w-[480px] p-8 bg-[#161616] flex flex-col shadow-[-10px_0_20px_rgba(0,0,0,0.8)] z-10 overflow-y-auto">
         <div class="flex justify-between items-center w-full mb-8 border-b border-[#d4af37]/30 pb-5">
             <h2 class="text-2xl font-mafia text-gold tracking-wider drop-shadow-md"><i class="fa-solid fa-cash-register mr-2"></i> POS THU NGÂN</h2>
-            <button class="bg-[#1f1f1f] border border-[#d4af37]/50 text-[#d4af37] px-3 py-2 rounded font-bold uppercase tracking-widest text-[10px] hover:bg-[#d4af37]/20 transition shadow-md whitespace-nowrap" onclick="openMembersModal()">
-                <i class="fa-solid fa-address-book mr-1"></i> KHO HỘI VIÊN
-            </button>
+            <div class="flex items-center gap-2">
+                <button id="btn-shift-mgmt" class="bg-[#1f1f1f] border border-[#d4af37]/50 text-[#d4af37] px-3 py-2 rounded font-bold uppercase tracking-widest text-[10px] hover:bg-[#d4af37]/20 transition shadow-md whitespace-nowrap flex items-center gap-1.5" onclick="openShiftModal()">
+                    <i class="fa-solid fa-wallet"></i>
+                    <span id="shift-btn-label">CA TRỰC & KÉT TIỀN</span>
+                    <span id="shift-status-dot" class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+                </button>
+                <button class="bg-[#1f1f1f] border border-[#d4af37]/50 text-[#d4af37] px-3 py-2 rounded font-bold uppercase tracking-widest text-[10px] hover:bg-[#d4af37]/20 transition shadow-md whitespace-nowrap" onclick="openMembersModal()">
+                    <i class="fa-solid fa-address-book mr-1"></i> HỘI VIÊN
+                </button>
+            </div>
         </div>
 
         <div id="alert-box" class="hidden p-4 mb-6 rounded border font-bold text-sm text-center uppercase tracking-wider"></div>
@@ -212,6 +221,22 @@
                 </div>
                 <p class="text-[10px] text-gray-500 mt-1 italic">* Thu ngân không cần nhập tay, hệ thống tự động khóa mức phí theo cấu hình giải đấu của TD.</p>
             </div>
+
+            <!-- PAYMENT METHOD SELECTOR -->
+            <div>
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">
+                    <i class="fa-solid fa-coins mr-1 text-emerald-400"></i> Phương Thức Thanh Toán:
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="pay-btn-cash" onclick="setPaymentMethod('cash')" class="p-3 rounded-lg border-2 border-[#d4af37] bg-[#d4af37]/20 text-[#d4af37] font-bold text-xs uppercase flex items-center justify-center gap-2 transition shadow-md">
+                        <i class="fa-solid fa-money-bill-wave text-emerald-400 text-sm"></i> Tiền Mặt (Vào Két)
+                    </button>
+                    <button type="button" id="pay-btn-banking" onclick="setPaymentMethod('banking')" class="p-3 rounded-lg border-2 border-[#333] bg-[#111] text-gray-400 font-bold text-xs uppercase flex items-center justify-center gap-2 transition hover:border-[#555]">
+                        <i class="fa-solid fa-qrcode text-blue-400 text-sm"></i> Chuyển Khoản (QR)
+                    </button>
+                </div>
+            </div>
+
             <div class="flex items-center justify-between p-3 bg-[#111] border border-[#333] rounded">
                 <div class="flex items-center space-x-2">
                     <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
@@ -430,6 +455,263 @@
         </div>
     </div>
 
+    <!-- MODAL QUẢN LÝ CA TRỰC & KÉT TIỀN THU NGÂN -->
+    <div id="shift-modal" class="fixed inset-0 z-50 bg-black/90 hidden items-center justify-center backdrop-blur-md p-4">
+        <div class="bg-[#111] border border-[#d4af37]/50 rounded-xl p-6 w-full max-w-3xl shadow-[0_0_50px_rgba(212,175,55,0.3)] flex flex-col max-h-[92vh] overflow-hidden">
+            
+            <!-- HEADER -->
+            <div class="flex justify-between items-center border-b border-[#333] pb-4 mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-[#d4af37]/20 border border-[#d4af37] flex items-center justify-center text-[#d4af37]">
+                        <i class="fa-solid fa-cash-register text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-mafia text-xl text-gold tracking-wider uppercase" id="shift-modal-title">QUẢN LÝ CA TRỰC & KÉT TIỀN</h3>
+                        <p class="text-[11px] text-gray-400 font-sans" id="shift-modal-subtitle">Theo dõi dòng tiền mặt, chuyển khoản và kiểm đếm chốt két</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button class="bg-[#1a1a1a] border border-[#333] hover:border-[#d4af37] text-gray-300 px-3 py-1.5 rounded text-[11px] font-bold uppercase transition" onclick="toggleShiftHistoryView()">
+                        <i class="fa-solid fa-clock-rotate-left mr-1 text-[#d4af37]"></i> <span id="shift-history-toggle-text">Lịch Sử Ca</span>
+                    </button>
+                    <button class="text-gray-400 hover:text-white text-xl p-1" onclick="closeShiftModal()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <!-- VIEW 1: FORM MỞ CA (KHI CHƯA CÓ CA MỞ) -->
+            <div id="shift-open-view" class="space-y-5 py-2 hidden">
+                <div class="bg-amber-950/20 border border-amber-600/40 p-4 rounded-lg flex items-center gap-3 text-amber-300 text-xs">
+                    <i class="fa-solid fa-circle-exclamation text-xl text-amber-400"></i>
+                    <div>
+                        <b class="uppercase font-bold">Hiện chưa có ca trực nào đang mở!</b>
+                        <p class="text-gray-400 text-[11px] mt-0.5">Vui lòng kiểm đếm tiền mặt đầu ca (tiền thối lẻ bàn giao) và nhập vào hệ thống để bắt đầu ca mới.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-[#d4af37] uppercase tracking-wider mb-1">Tên Thu Ngân Nhận Ca:</label>
+                        <input type="text" id="shift-open-cashier-name" class="input-mafia text-sm font-bold text-white" value="Thu Ngân 1">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-[#d4af37] uppercase tracking-wider mb-1">Tiền Mặt Đầu Ca (Tiền Thối Lẻ):</label>
+                        <input type="number" id="shift-open-cash" class="input-mafia text-base font-bold text-emerald-400 font-mono" value="5000000" placeholder="5000000">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">Chọn nhanh mệnh giá bàn giao đầu ca:</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" onclick="setOpenCashQuick(2000000)" class="py-2 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] hover:border-[#d4af37] rounded text-xs font-mono font-bold text-gray-300 transition">2.000.000đ</button>
+                        <button type="button" onclick="setOpenCashQuick(5000000)" class="py-2 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] hover:border-[#d4af37] rounded text-xs font-mono font-bold text-emerald-400 transition">5.000.000đ</button>
+                        <button type="button" onclick="setOpenCashQuick(10000000)" class="py-2 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] hover:border-[#d4af37] rounded text-xs font-mono font-bold text-gray-300 transition">10.000.000đ</button>
+                        <button type="button" onclick="setOpenCashQuick(20000000)" class="py-2 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] hover:border-[#d4af37] rounded text-xs font-mono font-bold text-gray-300 transition">20.000.000đ</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-[#d4af37] uppercase tracking-wider mb-1">Ghi Chú Mở Ca (Nếu có):</label>
+                    <textarea id="shift-open-note" class="input-mafia text-xs h-16 resize-none" placeholder="Ví dụ: Nhận bàn giao từ Thu Ngân Lan, két có cọc 500k..."></textarea>
+                </div>
+
+                <button class="btn-gold py-4 w-full uppercase tracking-widest text-sm font-bold shadow-lg flex items-center justify-center gap-2" onclick="submitOpenShift()">
+                    <i class="fa-solid fa-play"></i> BẮT ĐẦU CA TRỰC MỚI
+                </button>
+            </div>
+
+            <!-- VIEW 2: DASHBOARD CA ĐANG CHẠY & FORM CHỐT KÉT -->
+            <div id="shift-active-view" class="flex-1 flex flex-col overflow-hidden space-y-4">
+                <!-- INFO BAR -->
+                <div class="bg-[#161616] border border-[#333] p-3 rounded-lg flex justify-between items-center text-xs">
+                    <div class="flex items-center gap-3">
+                        <span class="px-2.5 py-1 rounded bg-emerald-950/60 border border-emerald-500/50 text-emerald-400 font-mono font-bold uppercase text-[10px]" id="shift-view-id">SHIFT-000000</span>
+                        <span class="text-gray-300 font-bold" id="shift-view-cashier">Thu Ngân: ...</span>
+                    </div>
+                    <div class="text-gray-400 text-[11px]">
+                        Bắt đầu: <span class="text-white font-mono" id="shift-view-start">--:--</span>
+                    </div>
+                </div>
+
+                <!-- LIVE BALANCE CARDS -->
+                <div class="grid grid-cols-4 gap-3">
+                    <div class="bg-[#141414] border border-[#333] p-3 rounded-lg">
+                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tiền Đầu Ca:</div>
+                        <div class="text-sm font-mono font-bold text-gray-200 mt-1" id="shift-card-opening">0 VNĐ</div>
+                    </div>
+                    <div class="bg-[#141414] border border-emerald-900/50 p-3 rounded-lg">
+                        <div class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">+ Thu Tiền Mặt:</div>
+                        <div class="text-sm font-mono font-bold text-emerald-400 mt-1" id="shift-card-cashin">0 VNĐ</div>
+                    </div>
+                    <div class="bg-[#141414] border border-red-900/50 p-3 rounded-lg">
+                        <div class="text-[10px] text-red-400 font-bold uppercase tracking-wider">- Chi Tiền Mặt:</div>
+                        <div class="text-sm font-mono font-bold text-red-400 mt-1" id="shift-card-cashout">0 VNĐ</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-[#1f1905] to-[#141414] border-2 border-[#d4af37] p-3 rounded-lg shadow-[0_0_15px_rgba(212,175,55,0.2)]">
+                        <div class="text-[10px] text-[#d4af37] font-extrabold uppercase tracking-wider">Két Phải Có:</div>
+                        <div class="text-base font-mono font-extrabold text-[#d4af37] mt-1" id="shift-card-expected">0 VNĐ</div>
+                    </div>
+                </div>
+
+                <!-- BANKING STRIP -->
+                <div class="bg-[#101520] border border-blue-900/40 p-2.5 rounded-lg flex justify-between items-center text-xs text-blue-300">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-qrcode text-blue-400"></i>
+                        <span>Giao Dịch Chuyển Khoản (Không Qua Két):</span>
+                    </div>
+                    <div class="flex items-center gap-4 font-mono font-bold">
+                        <span>Thu QR: <b class="text-emerald-400" id="shift-card-bankin">+0 VNĐ</b></span>
+                        <span>Chi QR: <b class="text-red-400" id="shift-card-bankout">-0 VNĐ</b></span>
+                    </div>
+                </div>
+
+                <!-- LIVE TRANSACTION LIST & CLOSING FORM -->
+                <div class="flex-1 flex gap-4 overflow-hidden min-h-[220px]">
+                    <!-- Transactions Stream -->
+                    <div class="flex-1 bg-[#0d0d0d] border border-[#222] rounded-lg flex flex-col overflow-hidden">
+                        <div class="p-2.5 bg-[#141414] border-b border-[#222] flex justify-between items-center text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                            <span><i class="fa-solid fa-list-check mr-1 text-[#d4af37]"></i> Giao Dịch Trong Ca</span>
+                            <span id="shift-tx-count" class="text-[10px] font-mono text-gray-500">0 GD</span>
+                        </div>
+                        <div class="flex-1 overflow-y-auto divide-y divide-[#1a1a1a]" id="shift-tx-list">
+                            <div class="p-4 text-center text-gray-500 text-xs italic">Chưa có giao dịch phát sinh trong ca</div>
+                        </div>
+                    </div>
+
+                    <!-- Closing & Handover Form -->
+                    <div class="w-[310px] bg-[#161616] border border-[#333] rounded-lg p-3.5 flex flex-col justify-between overflow-y-auto">
+                        <div class="space-y-3">
+                            <div class="text-xs font-bold text-amber-400 uppercase tracking-widest border-b border-[#333] pb-1.5 flex items-center gap-1.5">
+                                <i class="fa-solid fa-calculator"></i> Kiểm Đếm & Chốt Két
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold text-[#d4af37] uppercase tracking-wider mb-1">
+                                    Tiền Mặt Thực Tế Đếm Được:
+                                </label>
+                                <input type="number" id="shift-close-actual-cash" class="input-mafia text-base font-bold text-white font-mono" placeholder="Nhập số tiền thực đếm..." oninput="calculateShiftDiff()">
+                            </div>
+
+                            <!-- Difference Status Card -->
+                            <div id="shift-diff-box" class="p-2.5 rounded-lg border border-[#333] bg-[#0f0f0f] text-center text-xs">
+                                <div class="text-[10px] uppercase font-bold text-gray-400">Chênh Lệch Két:</div>
+                                <div class="text-sm font-mono font-bold text-gray-400 mt-0.5" id="shift-diff-val">Nhập tiền thực đếm</div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-wider mb-1">Thu Ngân Nhận Ca:</label>
+                                <input type="text" id="shift-close-handover-to" class="input-mafia text-xs text-white" placeholder="Tên thu ngân nhận bàn giao...">
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-wider mb-1">Ghi Chú Chốt Ca:</label>
+                                <input type="text" id="shift-close-note" class="input-mafia text-xs text-gray-300" placeholder="Ghi chú bàn giao két...">
+                            </div>
+                        </div>
+
+                        <div class="pt-3 border-t border-[#333] mt-3">
+                            <button class="btn-gold py-3 w-full uppercase tracking-widest text-xs font-bold shadow-lg flex items-center justify-center gap-2" onclick="submitCloseShift()">
+                                <i class="fa-solid fa-print"></i> CHỐT CA & IN BIÊN BẢN (80MM)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: LỊCH SỬ CÁC CA ĐÃ ĐÓNG -->
+            <div id="shift-history-view" class="flex-1 overflow-y-auto hidden">
+                <table class="w-full text-left text-xs text-gray-300">
+                    <thead class="bg-[#1a1a1a] text-[#d4af37] uppercase tracking-wider sticky top-0 border-b border-[#333]">
+                        <tr>
+                            <th class="p-3">Mã Ca</th>
+                            <th class="p-3">Thu Ngân Giao / Nhận</th>
+                            <th class="p-3">Thời Gian</th>
+                            <th class="p-3 text-right">Két Thực Tế</th>
+                            <th class="p-3 text-right">Chênh Lệch</th>
+                            <th class="p-3 text-center">In Lại</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shift-history-tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="mt-4 pt-3 border-t border-[#222] flex justify-between items-center text-xs">
+                <div class="text-[11px] text-gray-500 italic">
+                    * Mọi giao dịch được ghi nhận tự động vào ca trực theo thời gian thực *
+                </div>
+                <button class="bg-[#222] border border-[#444] text-gray-300 px-5 py-2 rounded font-bold uppercase text-xs hover:bg-[#333] transition" onclick="closeShiftModal()">ĐÓNG</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHUNG IN BIÊN BẢN CHỐT CA & BÀN GIAO KÉT 80MM (CHUẨN ESC-POS) -->
+    <div id="shift-receipt-print" class="hidden">
+        <div style="width: 80mm; font-family: 'Courier New', Courier, monospace; color: black; background: white; padding: 12px; margin: 0 auto;">
+            <div style="text-align: center; margin-bottom: 8px;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px;">♠️ ACE POKER CLUB ♠️</h2>
+                <div style="font-size: 13px; font-weight: bold; margin-top: 4px; text-transform: uppercase;">BIÊN BẢN CHỐT CA & BÀN GIAO KÉT</div>
+                <div style="display: inline-block; background: #000; color: #fff; padding: 2px 10px; font-size: 11px; font-weight: bold; margin-top: 5px; border-radius: 3px;">SHIFT HANDOVER</div>
+            </div>
+            <div style="border-top: 2px dashed black; margin: 8px 0;"></div>
+            <div style="font-size: 11px; line-height: 1.7;">
+                <div><b>MÃ CA:</b> <span id="sr-shift-id">SHIFT-000000</span></div>
+                <div><b>THU NGÂN GIAO:</b> <span id="sr-cashier-name">...</span></div>
+                <div><b>THU NGÂN NHẬN:</b> <span id="sr-handover-to">...</span></div>
+                <div><b>GIỜ MỞ CA:</b> <span id="sr-start-time">...</span></div>
+                <div><b>GIỜ CHỐT CA:</b> <span id="sr-end-time">...</span></div>
+            </div>
+            <div style="border-top: 1px dashed black; margin: 8px 0;"></div>
+            <div style="font-size: 11px; line-height: 1.8;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>1. Tiền mặt đầu ca (Két cũ):</span>
+                    <b id="sr-opening-cash">0 VNĐ</b>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>2. Tổng thu tiền mặt (+):</span>
+                    <b id="sr-cash-in" style="color: #000;">+0 VNĐ</b>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>3. Tổng chi tiền mặt (-):</span>
+                    <b id="sr-cash-out" style="color: #000;">-0 VNĐ</b>
+                </div>
+                <div style="border-top: 1px dotted #888; margin: 4px 0;"></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                    <b>4. Tiền lý thuyết trong két:</b>
+                    <b id="sr-expected-cash" style="font-size: 13px;">0 VNĐ</b>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; background: #f0f0f0; padding: 3px 6px; border: 1px solid black; margin: 4px 0;">
+                    <b>5. Thực tế kiểm đếm:</b>
+                    <b id="sr-actual-cash" style="font-size: 14px;">0 VNĐ</b>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 12px; margin: 4px 0;">
+                    <span>6. CHÊNH LỆCH KÉT:</span>
+                    <span id="sr-diff">0 VNĐ (KHỚP)</span>
+                </div>
+                <div style="border-top: 1px dashed black; margin: 6px 0;"></div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>* Thu Chuyển Khoản (QR):</span>
+                    <b id="sr-bank-in">+0 VNĐ</b>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>* Chi Chuyển Khoản (QR):</span>
+                    <b id="sr-bank-out">-0 VNĐ</b>
+                </div>
+            </div>
+            <div style="border-top: 1px dashed black; margin: 8px 0;"></div>
+            <div style="font-size: 10px; line-height: 1.5;">
+                <div><b>Ghi chú:</b> <span id="sr-note">Không có</span></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 25px; text-align: center; font-size: 11px;">
+                <div style="width: 45%;">
+                    <b>THU NGÂN GIAO</b><br><br><br>
+                </div>
+                <div style="width: 45%;">
+                    <b>THU NGÂN NHẬN</b><br><br><br>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
         const firebaseConfig = {
@@ -458,6 +740,9 @@
         
         let currentTours = [];
         let currentMembers = [];
+        let currentShift = null;
+        let currentPaymentMethod = 'cash';
+        let isShowingShiftHistory = false;
         const alertBox = document.getElementById('alert-box');
 
         // WEBCAM KY LOGIC
@@ -919,7 +1204,25 @@
             onTourSelectChange();
         }
 
-        function printReceipt(phone, tourId, amount, assigned_table, assigned_seat, ticket_type, ticket_id) {
+        function setPaymentMethod(method) {
+            currentPaymentMethod = method;
+            const cashBtn = document.getElementById('pay-btn-cash');
+            const bankBtn = document.getElementById('pay-btn-banking');
+
+            if (method === 'cash') {
+                cashBtn.className = "p-3 rounded-lg border-2 border-[#d4af37] bg-[#d4af37]/20 text-[#d4af37] font-bold text-xs uppercase flex items-center justify-center gap-2 transition shadow-md";
+                bankBtn.className = "p-3 rounded-lg border-2 border-[#333] bg-[#111] text-gray-400 font-bold text-xs uppercase flex items-center justify-center gap-2 transition hover:border-[#555]";
+            } else {
+                bankBtn.className = "p-3 rounded-lg border-2 border-blue-500 bg-blue-900/30 text-blue-400 font-bold text-xs uppercase flex items-center justify-center gap-2 transition shadow-md";
+                cashBtn.className = "p-3 rounded-lg border-2 border-[#333] bg-[#111] text-gray-400 font-bold text-xs uppercase flex items-center justify-center gap-2 transition hover:border-[#555]";
+            }
+            const pMethodEl = document.getElementById('rp-payment-method');
+            if (pMethodEl) {
+                pMethodEl.innerText = method === 'banking' ? 'CHUYỂN KHOẢN (QR)' : 'TIỀN MẶT';
+            }
+        }
+
+        function printReceipt(phone, tourId, amount, assigned_table, assigned_seat, ticket_type, ticket_id, payment_method) {
             updateReceiptPreview();
             document.getElementById('rp-table').innerText = (assigned_table !== null && assigned_table !== undefined) ? assigned_table : '---';
             document.getElementById('rp-seat').innerText = (assigned_seat !== null && assigned_seat !== undefined) ? assigned_seat : '---';
@@ -931,7 +1234,16 @@
                 const el = document.getElementById('rp-ticket-id');
                 if (el) el.innerText = ticket_id;
             }
-            
+            const pMethodEl = document.getElementById('rp-payment-method');
+            if (pMethodEl) {
+                const pm = payment_method || currentPaymentMethod;
+                pMethodEl.innerText = pm === 'banking' ? 'CHUYỂN KHOẢN (QR)' : 'TIỀN MẶT';
+            }
+
+            // Đảm bảo phiếu bán vé hiển thị và ẩn phiếu ca trực khi in
+            document.getElementById('receipt-preview')?.classList.remove('print-hidden');
+            document.getElementById('shift-receipt-print')?.classList.remove('print-active');
+
             const autoPrint = document.getElementById('auto-print-chk')?.checked;
             if (autoPrint) {
                 setTimeout(() => {
@@ -966,6 +1278,7 @@
                 tour_id: tId,
                 member_phone: phoneVal,
                 buy_in_amount: fee,
+                payment_method: currentPaymentMethod,
                 is_paid: true,
                 ticket_type: 'buy_in'
             };
@@ -975,7 +1288,7 @@
             socket.emit('sell_ticket', payload, (res) => {
                 btn.disabled = false;
                 if(res.success) {
-                    printReceipt(payload.member_phone, payload.tour_id, res.amount !== undefined ? res.amount : payload.buy_in_amount, res.assigned_table, res.assigned_seat, res.ticket_type, res.ticket_id);
+                    printReceipt(payload.member_phone, payload.tour_id, res.amount !== undefined ? res.amount : payload.buy_in_amount, res.assigned_table, res.assigned_seat, res.ticket_type, res.ticket_id, res.payment_method);
                     showAlert(res.message, false);
                     document.getElementById('player-search').value = '';
                     const qInfo = document.getElementById('member-quick-info');
@@ -1110,6 +1423,348 @@
                 onTourSelectChange();
             } else {
                 onTourSelectChange();
+            }
+        });
+
+        // =========================================================
+        // QUẢN LÝ CA TRỰC & KÉT TIỀN THU NGÂN (SHIFT & CASH BALANCING)
+        // =========================================================
+        function renderShiftStatus() {
+            const btnLabel = document.getElementById('shift-btn-label');
+            const dot = document.getElementById('shift-status-dot');
+            if (!btnLabel || !dot) return;
+
+            if (currentShift && currentShift.status === 'open') {
+                const expected = (Number(currentShift.opening_cash) || 0) + (Number(currentShift.cash_in) || 0) - (Number(currentShift.cash_out) || 0);
+                btnLabel.innerText = `KÉT: ${formatMoney(expected)}`;
+                dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shadow-[0_0_8px_rgba(52,211,153,0.9)]";
+            } else {
+                btnLabel.innerText = "CHƯA MỞ CA";
+                dot.className = "w-2.5 h-2.5 rounded-full bg-red-500 inline-block shadow-[0_0_8px_rgba(239,68,68,0.8)]";
+            }
+        }
+
+        function openShiftModal() {
+            isShowingShiftHistory = false;
+            document.getElementById('shift-history-toggle-text').innerText = "Lịch Sử Ca";
+            const modal = document.getElementById('shift-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const openView = document.getElementById('shift-open-view');
+            const activeView = document.getElementById('shift-active-view');
+            const historyView = document.getElementById('shift-history-view');
+            historyView.classList.add('hidden');
+
+            if (!currentShift || currentShift.status !== 'open') {
+                openView.classList.remove('hidden');
+                activeView.classList.add('hidden');
+                document.getElementById('shift-modal-subtitle').innerText = "Chưa mở ca trực - Vui lòng nhập số tiền mặt đầu ca để bắt đầu.";
+            } else {
+                openView.classList.add('hidden');
+                activeView.classList.remove('hidden');
+                document.getElementById('shift-modal-subtitle').innerText = `Ca trực ${currentShift.id} đang chạy - Bắt đầu lúc ${currentShift.start_time_formatted || '---'}`;
+
+                // Nạp dữ liệu số dư ca trực
+                document.getElementById('shift-view-id').innerText = currentShift.id;
+                document.getElementById('shift-view-cashier').innerText = `Thu Ngân: ${currentShift.cashier_name || 'Thu Ngân'}`;
+                document.getElementById('shift-view-start').innerText = currentShift.start_time_formatted || '--:--';
+
+                const opening = Number(currentShift.opening_cash) || 0;
+                const cashIn = Number(currentShift.cash_in) || 0;
+                const cashOut = Number(currentShift.cash_out) || 0;
+                const expected = opening + cashIn - cashOut;
+
+                document.getElementById('shift-card-opening').innerText = formatMoney(opening);
+                document.getElementById('shift-card-cashin').innerText = '+' + formatMoney(cashIn);
+                document.getElementById('shift-card-cashout').innerText = '-' + formatMoney(cashOut);
+                document.getElementById('shift-card-expected').innerText = formatMoney(expected);
+                document.getElementById('shift-card-bankin').innerText = '+' + formatMoney(currentShift.bank_in || 0);
+                document.getElementById('shift-card-bankout').innerText = '-' + formatMoney(currentShift.bank_out || 0);
+
+                // Render stream giao dịch trong ca
+                const txList = document.getElementById('shift-tx-list');
+                const txCount = document.getElementById('shift-tx-count');
+                const transactions = currentShift.transactions || [];
+                txCount.innerText = `${transactions.length} GD`;
+
+                if (transactions.length === 0) {
+                    txList.innerHTML = `<div class="p-6 text-center text-gray-500 text-xs italic">Chưa có giao dịch phát sinh trong ca này</div>`;
+                } else {
+                    txList.innerHTML = transactions.map(tx => {
+                        const isOut = tx.type === 'payout';
+                        const sign = isOut ? '-' : '+';
+                        const color = isOut ? 'text-red-400' : 'text-emerald-400';
+                        const typeBadge = tx.type === 'buy_in' 
+                            ? '<span class="bg-amber-900/40 text-amber-300 border border-amber-600/40 px-1.5 py-0.5 rounded text-[9px] font-bold">BUY-IN</span>'
+                            : (tx.type === 'fnb' 
+                                ? '<span class="bg-purple-900/40 text-purple-300 border border-purple-600/40 px-1.5 py-0.5 rounded text-[9px] font-bold">F&B</span>'
+                                : '<span class="bg-red-900/40 text-red-300 border border-red-600/40 px-1.5 py-0.5 rounded text-[9px] font-bold">PAYOUT</span>');
+                        
+                        const methodBadge = tx.payment_method === 'banking'
+                            ? '<span class="text-blue-400 font-bold text-[9px]"><i class="fa-solid fa-qrcode mr-0.5"></i>QR</span>'
+                            : '<span class="text-emerald-400 font-bold text-[9px]"><i class="fa-solid fa-money-bill mr-0.5"></i>TIỀN MẶT</span>';
+
+                        return `
+                            <div class="p-2.5 hover:bg-[#161616] transition flex justify-between items-center text-xs">
+                                <div class="flex items-center gap-2">
+                                    ${typeBadge}
+                                    <div>
+                                        <div class="font-bold text-gray-200">${tx.player_name || 'Khách'} <span class="text-[10px] text-gray-500">(${tx.table_seat || ''})</span></div>
+                                        <div class="text-[10px] text-gray-500">${tx.time_formatted || ''} • ${methodBadge}</div>
+                                    </div>
+                                </div>
+                                <div class="font-mono font-bold text-right ${color}">
+                                    ${sign}${formatMoney(tx.amount)}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                calculateShiftDiff();
+            }
+        }
+
+        function closeShiftModal() {
+            const modal = document.getElementById('shift-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function setOpenCashQuick(amt) {
+            document.getElementById('shift-open-cash').value = amt;
+        }
+
+        function calculateShiftDiff() {
+            if (!currentShift) return;
+            const opening = Number(currentShift.opening_cash) || 0;
+            const cashIn = Number(currentShift.cash_in) || 0;
+            const cashOut = Number(currentShift.cash_out) || 0;
+            const expected = opening + cashIn - cashOut;
+
+            const actualInput = document.getElementById('shift-close-actual-cash');
+            const diffBox = document.getElementById('shift-diff-box');
+            const diffVal = document.getElementById('shift-diff-val');
+            if (!actualInput || !diffBox || !diffVal) return;
+
+            const valStr = actualInput.value.trim();
+            if (valStr === '') {
+                diffVal.innerText = "Nhập tiền thực đếm";
+                diffVal.className = "text-sm font-mono font-bold text-gray-400 mt-0.5";
+                diffBox.className = "p-2.5 rounded-lg border border-[#333] bg-[#0f0f0f] text-center text-xs";
+                return;
+            }
+
+            const actual = Number(valStr) || 0;
+            const diff = actual - expected;
+
+            if (diff === 0) {
+                diffVal.innerText = "🟢 KHỚP KÉT 100% (0 VNĐ)";
+                diffVal.className = "text-sm font-mono font-bold text-emerald-400 mt-0.5";
+                diffBox.className = "p-2.5 rounded-lg border border-emerald-500/50 bg-emerald-950/40 text-center text-xs shadow-inner";
+            } else if (diff > 0) {
+                diffVal.innerText = `🟡 THỪA KÉT: +${formatMoney(diff)}`;
+                diffVal.className = "text-sm font-mono font-bold text-amber-400 mt-0.5";
+                diffBox.className = "p-2.5 rounded-lg border border-amber-500/50 bg-amber-950/40 text-center text-xs shadow-inner";
+            } else {
+                diffVal.innerText = `🔴 THIẾU KÉT: -${formatMoney(Math.abs(diff))}`;
+                diffVal.className = "text-sm font-mono font-bold text-red-400 mt-0.5";
+                diffBox.className = "p-2.5 rounded-lg border border-red-500/50 bg-red-950/40 text-center text-xs shadow-inner";
+            }
+        }
+
+        function submitOpenShift() {
+            const cashierName = document.getElementById('shift-open-cashier-name').value.trim() || 'Thu Ngân 1';
+            const openingCash = Number(document.getElementById('shift-open-cash').value) || 0;
+            const note = document.getElementById('shift-open-note').value.trim();
+
+            socket.emit('open_shift', {
+                cashier_name: cashierName,
+                opening_cash: openingCash,
+                note: note
+            }, (res) => {
+                if (res && res.success) {
+                    currentShift = res.shift;
+                    renderShiftStatus();
+                    openShiftModal();
+                    showAlert(res.message, false);
+                } else {
+                    showAlert((res && res.message) || 'Lỗi khi mở ca trực!', true);
+                }
+            });
+        }
+
+        function submitCloseShift() {
+            if (!currentShift) return;
+            const actualVal = document.getElementById('shift-close-actual-cash').value.trim();
+            if (actualVal === '') {
+                return alert('Vui lòng nhập số tiền mặt thực tế kiểm đếm được trong két!');
+            }
+            const actualCash = Number(actualVal) || 0;
+            const handoverTo = document.getElementById('shift-close-handover-to').value.trim() || 'Thu Ngân Nhận Ca';
+            const note = document.getElementById('shift-close-note').value.trim();
+
+            const opening = Number(currentShift.opening_cash) || 0;
+            const cashIn = Number(currentShift.cash_in) || 0;
+            const cashOut = Number(currentShift.cash_out) || 0;
+            const expected = opening + cashIn - cashOut;
+            const diff = actualCash - expected;
+
+            const diffText = diff === 0 ? 'Khớp két (0đ)' : (diff > 0 ? `Thừa +${formatMoney(diff)}` : `Thiếu -${formatMoney(Math.abs(diff))}`);
+            const confirmMsg = `XÁC NHẬN CHỐT CA TRỰC:\n- Tiền thực đếm: ${formatMoney(actualCash)}\n- Két lý thuyết: ${formatMoney(expected)}\n- Chênh lệch: ${diffText}\n- Bàn giao cho: ${handoverTo}\n\nBạn có chắc chắn muốn chốt ca và in Biên Bản Bàn Giao?`;
+
+            if (!confirm(confirmMsg)) return;
+
+            socket.emit('close_shift', {
+                actual_closing_cash: actualCash,
+                handover_to: handoverTo,
+                note: note
+            }, (res) => {
+                if (res && res.success) {
+                    currentShift = null;
+                    renderShiftStatus();
+                    printShiftReceipt(res.shift);
+                    openShiftModal();
+                    showAlert(res.message, false);
+                } else {
+                    showAlert((res && res.message) || 'Lỗi khi chốt ca trực!', true);
+                }
+            });
+        }
+
+        function printShiftReceipt(shift) {
+            if (!shift) return;
+            document.getElementById('sr-shift-id').innerText = shift.id || 'SHIFT-000000';
+            document.getElementById('sr-cashier-name').innerText = shift.cashier_name || 'Thu Ngân';
+            document.getElementById('sr-handover-to').innerText = shift.handover_to || 'Thu Ngân Nhận Ca';
+            document.getElementById('sr-start-time').innerText = shift.start_time_formatted || '---';
+            document.getElementById('sr-end-time').innerText = shift.end_time_formatted || new Date().toLocaleString('vi-VN');
+
+            const opening = Number(shift.opening_cash) || 0;
+            const cashIn = Number(shift.cash_in) || 0;
+            const cashOut = Number(shift.cash_out) || 0;
+            const expected = (shift.expected_cash !== undefined) ? shift.expected_cash : (opening + cashIn - cashOut);
+            const actual = Number(shift.closing_cash) || 0;
+            const diff = (shift.difference !== undefined) ? shift.difference : (actual - expected);
+
+            document.getElementById('sr-opening-cash').innerText = formatMoney(opening);
+            document.getElementById('sr-cash-in').innerText = '+' + formatMoney(cashIn);
+            document.getElementById('sr-cash-out').innerText = '-' + formatMoney(cashOut);
+            document.getElementById('sr-expected-cash').innerText = formatMoney(expected);
+            document.getElementById('sr-actual-cash').innerText = formatMoney(actual);
+            
+            const diffEl = document.getElementById('sr-diff');
+            if (diff === 0) {
+                diffEl.innerText = "0 VNĐ (KHỚP)";
+                diffEl.style.color = "#000";
+            } else if (diff > 0) {
+                diffEl.innerText = `+${formatMoney(diff)} (THỪA)`;
+                diffEl.style.color = "#b45309";
+            } else {
+                diffEl.innerText = `-${formatMoney(Math.abs(diff))} (THIẾU)`;
+                diffEl.style.color = "#b91c1c";
+            }
+
+            document.getElementById('sr-bank-in').innerText = '+' + formatMoney(shift.bank_in || 0);
+            document.getElementById('sr-bank-out').innerText = '-' + formatMoney(shift.bank_out || 0);
+            document.getElementById('sr-note').innerText = shift.closing_note || shift.note || 'Không có';
+
+            // Kích hoạt chế độ in Biên Bản Chốt Ca
+            document.getElementById('receipt-preview')?.classList.add('print-hidden');
+            document.getElementById('shift-receipt-print')?.classList.add('print-active');
+
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    document.getElementById('receipt-preview')?.classList.remove('print-hidden');
+                    document.getElementById('shift-receipt-print')?.classList.remove('print-active');
+                }, 500);
+            }, 300);
+        }
+
+        function toggleShiftHistoryView() {
+            isShowingShiftHistory = !isShowingShiftHistory;
+            const openView = document.getElementById('shift-open-view');
+            const activeView = document.getElementById('shift-active-view');
+            const historyView = document.getElementById('shift-history-view');
+            const toggleText = document.getElementById('shift-history-toggle-text');
+
+            if (isShowingShiftHistory) {
+                openView.classList.add('hidden');
+                activeView.classList.add('hidden');
+                historyView.classList.remove('hidden');
+                toggleText.innerText = "Quay Lại Ca";
+                loadShiftHistory();
+            } else {
+                openShiftModal();
+            }
+        }
+
+        function loadShiftHistory() {
+            const tbody = document.getElementById('shift-history-tbody');
+            tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-gray-500 italic">Đang tải lịch sử ca trực...</td></tr>`;
+
+            socket.emit('get_shift_history', (res) => {
+                if (!res || !res.success || !res.shifts || res.shifts.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-gray-500 italic">Chưa có ca trực nào được chốt trong hệ thống</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = res.shifts.map(s => {
+                    const diff = Number(s.difference) || 0;
+                    const diffText = diff === 0 
+                        ? '<span class="text-emerald-400 font-bold">Khớp (0đ)</span>' 
+                        : (diff > 0 
+                            ? `<span class="text-amber-400 font-bold">+${formatMoney(diff)}</span>` 
+                            : `<span class="text-red-400 font-bold">-${formatMoney(Math.abs(diff))}</span>`);
+
+                    return `
+                        <tr class="border-b border-[#222] hover:bg-[#151515] transition">
+                            <td class="p-3 font-mono font-bold text-white">${s.id}</td>
+                            <td class="p-3">
+                                <div class="font-bold text-gray-200">${s.cashier_name || 'Thu Ngân'}</div>
+                                <div class="text-[10px] text-gray-500">Bàn giao: ${s.handover_to || '---'}</div>
+                            </td>
+                            <td class="p-3 text-[11px] text-gray-400 font-mono">
+                                <div>Mở: ${s.start_time_formatted || '---'}</div>
+                                <div>Đóng: ${s.end_time_formatted || '---'}</div>
+                            </td>
+                            <td class="p-3 text-right font-mono font-bold text-white">${formatMoney(s.closing_cash || 0)}</td>
+                            <td class="p-3 text-right font-mono">${diffText}</td>
+                            <td class="p-3 text-center">
+                                <button class="bg-[#1a1a1a] border border-[#333] hover:border-[#d4af37] text-gray-300 px-2.5 py-1 rounded text-[10px] font-bold uppercase transition" onclick='printShiftReceipt(${JSON.stringify(s)})'>
+                                    <i class="fa-solid fa-print mr-1"></i> In
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            });
+        }
+
+        // SOCKET LISTENERS CHO CA TRỰC
+        socket.on('update_current_shift', (shift) => {
+            currentShift = shift;
+            renderShiftStatus();
+            const modal = document.getElementById('shift-modal');
+            if (modal && !modal.classList.contains('hidden') && !isShowingShiftHistory) {
+                openShiftModal();
+            }
+        });
+
+        // Lấy thông tin ca trực ngay khi khởi tạo
+        socket.on('connect', () => {
+            socket.emit('get_current_shift_summary', (res) => {
+                if (res && res.success) {
+                    currentShift = res.shift;
+                    renderShiftStatus();
+                }
+            });
+        });
+        socket.emit('get_current_shift_summary', (res) => {
+            if (res && res.success) {
+                currentShift = res.shift;
+                renderShiftStatus();
             }
         });
     </script>

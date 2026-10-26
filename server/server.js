@@ -1,4 +1,4 @@
-// ACE POKER SERVER - v2.5.1 (Auto-release finished tours & Floor lobby separation)
+// ACE POKER SERVER - v2.6.0 (Cashier Shift Balancing, 10% TNCN Payout Tax & Tournament P&L Financial Report)
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const http = require('http');
@@ -92,7 +92,9 @@ let db = {
   financial: { net_cash: 0, total_debt: 0, total_rake: 0 },
   payroll_history: [],
   fnb_menu: [...defaultFnbMenu],
-  fnb_orders: []
+  fnb_orders: [],
+  cashier_shifts: [],
+  current_shift: null
 };
 
 if (fdb) {
@@ -127,6 +129,14 @@ if (fdb) {
           db.fnb_orders = data.fnb_orders;
         } else {
           db.fnb_orders = [];
+        }
+        if (data.cashier_shifts && Array.isArray(data.cashier_shifts)) {
+          db.cashier_shifts = data.cashier_shifts;
+        } else {
+          db.cashier_shifts = [];
+        }
+        if (data.current_shift) {
+          db.current_shift = data.current_shift;
         }
         if (data.tables) {
           db.tables = data.tables;
@@ -185,12 +195,17 @@ function sendTargetedState(sock, activeTours) {
       sock.emit('update_fnb_orders', db.fnb_orders || []);
     }
 
+    if (['god', 'td', 'cashier'].includes(role)) {
+      sock.emit('update_current_shift', db.current_shift);
+    }
+
     if (role === 'god') {
       sock.emit('update_payroll_history', db.payroll_history || []);
       sock.emit('update_god_mode', {
           financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 },
           staff: staffList,
-          all_tours: tTours
+          all_tours: tTours,
+          current_shift: db.current_shift
       });
     }
 }
@@ -214,6 +229,8 @@ function broadcastState(skipSave = false) {
     saveToFirebase('tables', db.tables);
     saveToFirebase('fnb_menu', db.fnb_menu);
     saveToFirebase('fnb_orders', db.fnb_orders);
+    saveToFirebase('cashier_shifts', db.cashier_shifts);
+    saveToFirebase('current_shift', db.current_shift);
   }
 }
 
@@ -842,6 +859,8 @@ io.on('connection', (socket) => {
       : (Number(t.buyin_fee) || 0);
     const now = Date.now();
     const dateFormatted = new Date(now).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const payment_method = payload.payment_method === 'banking' ? 'banking' : 'cash';
+    const ticket_id = 'ACE-' + Date.now().toString().slice(-6);
 
     // GHI NHẬN LỊCH SỬ THI ĐẤU CỦA HỘI VIÊN: Thời gian, Giải đấu, Vị trí bàn ghế, Số tiền
     member.total_tours = (member.total_tours || 0) + 1;
@@ -851,6 +870,7 @@ io.on('connection', (socket) => {
       tour_name: t.name, 
       ticket_type: 'buy_in', 
       buy_in_amount: amount, 
+      payment_method: payment_method,
       table_id: assigned_table,
       seat: assigned_seat,
       time: now,
@@ -861,14 +881,39 @@ io.on('connection', (socket) => {
     t.fund.total_paid += amount;
     t.fund.net_fund = t.fund.total_paid - t.fund.expenses;
 
+    // GHI NHẬN VÀO CA TRỰC HIỆN TẠI NẾU ĐANG MỞ
+    if (db.current_shift && db.current_shift.status === 'open') {
+      if (payment_method === 'banking') {
+        db.current_shift.bank_in = (db.current_shift.bank_in || 0) + amount;
+      } else {
+        db.current_shift.cash_in = (db.current_shift.cash_in || 0) + amount;
+      }
+      db.current_shift.transactions = db.current_shift.transactions || [];
+      db.current_shift.transactions.unshift({
+        id: ticket_id,
+        type: 'buy_in',
+        desc: `Buy-in: ${t.name}`,
+        table_seat: `Bàn ${assigned_table} - Ghế ${assigned_seat}`,
+        player_name: member.name,
+        phone: member_phone,
+        amount: amount,
+        payment_method: payment_method,
+        time: now,
+        time_formatted: dateFormatted
+      });
+      if (db.current_shift.transactions.length > 200) {
+        db.current_shift.transactions = db.current_shift.transactions.slice(0, 200);
+      }
+    }
+
     broadcastState();
-    const ticket_id = 'ACE-' + Date.now().toString().slice(-6);
     if(callback) callback({ 
       success: true, 
       assigned_table, 
       assigned_seat, 
       ticket_type: 'buy_in',
       ticket_id,
+      payment_method,
       tour_name: t.name,
       time_formatted: dateFormatted,
       amount,
@@ -1366,8 +1411,8 @@ io.on('connection', (socket) => {
     });
   }));
 
-  // 4. XÁC NHẬN & GHI NHẬN PAYOUT (IN PHIẾU THƯỞNG)
-  socket.on('record_payout', requireRole(socket, ['god', 'td'], (payload, callback) => {
+  // 4. XÁC NHẬN & GHI NHẬN PAYOUT (IN PHIẾU THƯỞNG & KHẤU TRỪ THUẾ TNCN)
+  socket.on('record_payout', requireRole(socket, ['god', 'td', 'cashier'], (payload, callback) => {
     const { tour_id, rank, phone, name, amount } = payload;
     const t = db.tournaments.find(tour => tour.id === tour_id);
     if (!t) return callback && callback({ success: false, message: 'Không tìm thấy giải đấu!' });
@@ -1375,6 +1420,19 @@ io.on('connection', (socket) => {
     t.payouts = t.payouts || [];
     const now = Date.now();
     const dateFormatted = new Date(now).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+    // Thuế TNCN (10% phần vượt quá 10.000.000 VNĐ) & Thực lĩnh
+    const gross_amount = Number(amount) || 0;
+    const payment_method = payload.payment_method === 'banking' ? 'banking' : 'cash';
+    let tax_tncn = 0;
+    if (payload.tax_tncn !== undefined && payload.tax_tncn !== null) {
+      tax_tncn = Number(payload.tax_tncn) || 0;
+    } else if (payload.apply_tax !== false && gross_amount > 10000000) {
+      tax_tncn = Math.round((gross_amount - 10000000) * 0.1);
+    }
+    const net_amount = (payload.net_amount !== undefined && payload.net_amount !== null)
+      ? Number(payload.net_amount)
+      : Math.max(0, gross_amount - tax_tncn);
 
     // Kiểm tra xem hạng này đã được in/ghi nhận trước đó chưa
     const existingIdx = t.payouts.findIndex(p => Number(p.rank) === Number(rank));
@@ -1387,7 +1445,10 @@ io.on('connection', (socket) => {
       rank: Number(rank),
       phone: phone || '',
       name: name || 'Khách Vô Danh',
-      amount: Number(amount),
+      amount: gross_amount,
+      tax_tncn: tax_tncn,
+      net_amount: net_amount,
+      payment_method: payment_method,
       time: now,
       time_formatted: dateFormatted
     };
@@ -1400,11 +1461,38 @@ io.on('connection', (socket) => {
     t.itm_results = t.itm_results || {};
     t.itm_results[rank] = name;
 
+    // GHI NHẬN CHI TIỀN VÀO CA TRỰC HIỆN TẠI NẾU ĐANG MỞ
+    if (db.current_shift && db.current_shift.status === 'open') {
+      if (payment_method === 'banking') {
+        db.current_shift.bank_out = (db.current_shift.bank_out || 0) + net_amount;
+      } else {
+        db.current_shift.cash_out = (db.current_shift.cash_out || 0) + net_amount;
+      }
+      db.current_shift.transactions = db.current_shift.transactions || [];
+      db.current_shift.transactions.unshift({
+        id: ticket_id,
+        type: 'payout',
+        desc: `Trả thưởng Hạng ${rank}: ${t.name}`,
+        table_seat: `Hạng ${rank}`,
+        player_name: name,
+        phone: phone || '',
+        amount: net_amount,
+        gross_amount: gross_amount,
+        tax_tncn: tax_tncn,
+        payment_method: payment_method,
+        time: now,
+        time_formatted: dateFormatted
+      });
+      if (db.current_shift.transactions.length > 200) {
+        db.current_shift.transactions = db.current_shift.transactions.slice(0, 200);
+      }
+    }
+
     broadcastState();
     if (callback) callback({
       success: true,
       payout: payoutItem,
-      message: `Đã ghi nhận Payout Hạng ${rank} cho ${name} (${Number(amount).toLocaleString('vi-VN')} VNĐ)`
+      message: `Đã ghi nhận Payout Hạng ${rank} cho ${name} (Thực lĩnh: ${net_amount.toLocaleString('vi-VN')} VNĐ)`
     });
   }));
 
@@ -1523,13 +1611,42 @@ io.on('connection', (socket) => {
   }));
 
   socket.on('update_fnb_payment_status', requireRole(socket, ['god', 'td', 'floor', 'cashier', 'fnb'], (payload, callback) => {
-    const { order_id, payment_status } = payload;
+    const { order_id, payment_status, payment_method } = payload;
     db.fnb_orders = db.fnb_orders || [];
     const order = db.fnb_orders.find(o => o.id === order_id);
     if (!order) return callback && callback({ success: false, message: 'Không tìm thấy đơn hàng!' });
 
+    const prevPayment = order.payment_status;
     order.payment_status = payment_status;
     order.payment_updated_at = Date.now();
+    if (payment_method) order.payment_method = payment_method;
+
+    // Nếu chuyển sang trạng thái đã thanh toán ('paid') và có ca trực đang mở -> ghi nhận tiền vào két / ngân hàng
+    if (payment_status === 'paid' && prevPayment !== 'paid' && db.current_shift && db.current_shift.status === 'open') {
+      const pMethod = order.payment_method === 'banking' ? 'banking' : 'cash';
+      if (pMethod === 'banking') {
+        db.current_shift.bank_in = (db.current_shift.bank_in || 0) + order.total_amount;
+      } else {
+        db.current_shift.cash_in = (db.current_shift.cash_in || 0) + order.total_amount;
+      }
+      db.current_shift.transactions = db.current_shift.transactions || [];
+      db.current_shift.transactions.unshift({
+        id: order.id,
+        type: 'fnb',
+        desc: `Thanh toán F&B (${order.table_id || 'Bar'})`,
+        table_seat: `${order.table_id || 'Bar'}${order.seat ? ' - Ghế ' + order.seat : ''}`,
+        player_name: order.player_name,
+        phone: order.player_phone || '',
+        amount: order.total_amount,
+        payment_method: pMethod,
+        time: Date.now(),
+        time_formatted: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+      });
+      if (db.current_shift.transactions.length > 200) {
+        db.current_shift.transactions = db.current_shift.transactions.slice(0, 200);
+      }
+    }
+
     broadcastState();
     if (callback) callback({ success: true, order, message: `Đã cập nhật trạng thái thanh toán đơn ${order_id}!` });
   }));
@@ -1556,6 +1673,140 @@ io.on('connection', (socket) => {
     db.fnb_menu = db.fnb_menu.filter(m => m.id !== itemId);
     broadcastState();
     if (callback) callback({ success: true, message: 'Đã xóa món khỏi thực đơn!' });
+  }));
+
+  // =========================================================
+  // QUẢN LÝ CA TRỰC & KÉT TIỀN THU NGÂN (SHIFT & CASH DRAWER)
+  // =========================================================
+  socket.on('open_shift', requireRole(socket, ['god', 'cashier'], (payload, callback) => {
+    if (db.current_shift && db.current_shift.status === 'open') {
+      return callback && callback({ success: false, message: 'Ca trực hiện tại chưa chốt! Vui lòng chốt ca trước khi mở ca mới.' });
+    }
+    const now = Date.now();
+    const dateFormatted = new Date(now).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const shiftId = 'SHIFT-' + now.toString().slice(-6);
+
+    db.current_shift = {
+      id: shiftId,
+      cashier_role: socket.user.role,
+      cashier_name: (payload && payload.cashier_name) ? payload.cashier_name.trim() : 'Thu Ngân 1',
+      start_time: now,
+      start_time_formatted: dateFormatted,
+      end_time: null,
+      end_time_formatted: null,
+      status: 'open',
+      opening_cash: Number(payload && payload.opening_cash) || 0,
+      cash_in: 0,
+      bank_in: 0,
+      cash_out: 0,
+      bank_out: 0,
+      closing_cash: null,
+      expected_cash: null,
+      difference: null,
+      handover_to: '',
+      note: (payload && payload.note) ? payload.note.trim() : '',
+      transactions: []
+    };
+
+    broadcastState();
+    io.emit('update_current_shift', db.current_shift);
+    if (callback) callback({ success: true, shift: db.current_shift, message: `Mở ca trực ${shiftId} thành công!` });
+  }));
+
+  socket.on('get_current_shift_summary', requireRole(socket, ['god', 'cashier', 'td'], (callback) => {
+    if (!db.current_shift) {
+      return callback && callback({ success: true, shift: null });
+    }
+    const cs = db.current_shift;
+    const expected = (cs.opening_cash || 0) + (cs.cash_in || 0) - (cs.cash_out || 0);
+    callback && callback({ success: true, shift: { ...cs, expected_cash: expected } });
+  }));
+
+  socket.on('close_shift', requireRole(socket, ['god', 'cashier'], (payload, callback) => {
+    if (!db.current_shift || db.current_shift.status !== 'open') {
+      return callback && callback({ success: false, message: 'Không có ca trực nào đang mở để chốt!' });
+    }
+    const now = Date.now();
+    const dateFormatted = new Date(now).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const cs = db.current_shift;
+
+    const actualCash = Number(payload && payload.actual_closing_cash) || 0;
+    const expectedCash = (cs.opening_cash || 0) + (cs.cash_in || 0) - (cs.cash_out || 0);
+    const diff = actualCash - expectedCash;
+
+    cs.closing_cash = actualCash;
+    cs.expected_cash = expectedCash;
+    cs.difference = diff;
+    cs.handover_to = (payload && payload.handover_to) ? payload.handover_to.trim() : 'Thu Ngân Nhận Ca';
+    cs.closing_note = (payload && payload.note) ? payload.note.trim() : '';
+    cs.end_time = now;
+    cs.end_time_formatted = dateFormatted;
+    cs.status = 'closed';
+
+    db.cashier_shifts = db.cashier_shifts || [];
+    db.cashier_shifts.unshift({ ...cs });
+    if (db.cashier_shifts.length > 100) db.cashier_shifts = db.cashier_shifts.slice(0, 100);
+
+    const closedReport = { ...cs };
+    db.current_shift = null;
+
+    broadcastState();
+    io.emit('update_current_shift', null);
+    if (callback) callback({ success: true, shift: closedReport, message: `Chốt ca ${closedReport.id} thành công!` });
+  }));
+
+  socket.on('get_shift_history', requireRole(socket, ['god', 'cashier', 'td'], (callback) => {
+    if (callback) callback({ success: true, shifts: db.cashier_shifts || [] });
+  }));
+
+  // =========================================================
+  // BÁO CÁO TÀI CHÍNH & LỢI NHUẬN GIẢI ĐẤU (TOURNAMENT P&L)
+  // =========================================================
+  socket.on('get_tour_profit_report', requireRole(socket, ['god', 'td', 'cashier'], (tourId, callback) => {
+    const t = db.tournaments.find(tour => tour.id === tourId);
+    if (!t) return callback && callback({ success: false, message: 'Không tìm thấy giải đấu!' });
+
+    const entries = Number(t.entries) || 0;
+    const buyin_fee = Number(t.buyin_fee) || 0;
+    const gross_revenue = (t.fund && t.fund.total_paid) ? t.fund.total_paid : (entries * buyin_fee);
+
+    // Tỉ lệ cơ cấu chuẩn TDA / Bee Poker: 85% Net Prize Pool, 12% Club Rake, 3% Quỹ Staff/Dealer Tip
+    const prize_pool_rate = 0.85;
+    const rake_rate = 0.12;
+    const staff_rate = 0.03;
+
+    const net_prize_pool = Math.round(gross_revenue * prize_pool_rate);
+    const club_rake = Math.round(gross_revenue * rake_rate);
+    const staff_tip_pool = Math.round(gross_revenue * staff_rate);
+
+    const payouts = t.payouts || [];
+    const total_payout_gross = payouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    const total_tax_tncn = payouts.reduce((sum, p) => sum + (Number(p.tax_tncn) || 0), 0);
+    const total_payout_net = payouts.reduce((sum, p) => sum + (Number(p.net_amount) || Number(p.amount) || 0), 0);
+
+    // Lợi nhuận ròng của CLB từ giải đấu: Tổng Doanh thu - Tổng tiền thưởng đã trao
+    const club_net_profit = gross_revenue - total_payout_gross;
+
+    if (callback) callback({
+      success: true,
+      report: {
+        tour_id: t.id,
+        tour_name: t.name,
+        status: t.status,
+        entries,
+        buyin_fee,
+        gross_revenue,
+        net_prize_pool,
+        club_rake,
+        staff_tip_pool,
+        payouts_count: payouts.length,
+        total_payout_gross,
+        total_tax_tncn,
+        total_payout_net,
+        club_net_profit,
+        payouts
+      }
+    });
   }));
 });
 

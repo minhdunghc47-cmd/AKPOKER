@@ -43,8 +43,9 @@
 
         @media print {
             body * { visibility: hidden !important; }
-            #payout-receipt-print, #payout-receipt-print * { visibility: visible !important; }
-            #payout-receipt-print {
+            #payout-receipt-print.print-active, #payout-receipt-print.print-active *,
+            #tour-profit-receipt-print.print-active, #tour-profit-receipt-print.print-active * { visibility: visible !important; }
+            #payout-receipt-print.print-active, #tour-profit-receipt-print.print-active {
                 display: block !important;
                 position: absolute !important;
                 left: 0 !important;
@@ -267,18 +268,15 @@
                 </div>
 
                 <!-- Right: Issue & Print Payout Receipt -->
-                <div class="w-[360px] bg-[#111] border border-[#333] rounded-lg p-5 flex flex-col justify-between">
-                    <div class="space-y-4">
-                        <div class="text-xs font-bold text-amber-400 uppercase tracking-widest border-b border-[#333] pb-2 flex items-center gap-1.5">
-                            <i class="fa-solid fa-print"></i> Xuất Phiếu Payout Cho Khách
+                <div class="w-[380px] bg-[#111] border border-[#333] rounded-lg p-5 flex flex-col justify-between overflow-y-auto">
+                    <div class="space-y-3.5">
+                        <div class="text-xs font-bold text-amber-400 uppercase tracking-widest border-b border-[#333] pb-2 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-print"></i> Xuất Phiếu Payout Cho Khách</span>
+                            <span class="text-[10px] text-gray-500 font-mono">ESC-POS 80MM</span>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Thứ Hạng Đạt Được:</label>
                             <select id="pm-select-rank" class="input-mafia text-xs font-bold text-gold" onchange="onRankSelectChange()"></select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tiền Thưởng (VNĐ):</label>
-                            <input type="text" id="pm-input-amount" class="input-mafia text-sm font-bold text-emerald-400 font-mono" readonly>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Hội Viên Nhận Giải:</label>
@@ -288,9 +286,47 @@
                             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">SĐT Hội Viên:</label>
                             <input type="text" id="pm-input-phone" class="input-mafia text-xs text-gray-300 font-mono" placeholder="SĐT khách...">
                         </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tiền Thưởng Gốc (Gross):</label>
+                            <input type="text" id="pm-input-amount" class="input-mafia text-sm font-bold text-gray-200 font-mono" readonly>
+                        </div>
+
+                        <!-- KHẤU TRỪ THUẾ TNCN 10% -->
+                        <div class="p-3 bg-[#161616] border border-[#333] rounded-lg space-y-2">
+                            <div class="flex items-center justify-between cursor-pointer" onclick="document.getElementById('pm-chk-tax').click()">
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" id="pm-chk-tax" class="w-4 h-4 accent-[#d4af37] cursor-pointer" onchange="calculatePayoutAmounts()" checked>
+                                    <label class="text-[11px] font-bold text-[#d4af37] uppercase tracking-wider cursor-pointer">Khấu trừ Thuế TNCN 10%</label>
+                                </div>
+                                <span class="text-[9px] text-gray-500 font-mono">(Phần > 10 triệu)</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-[11px] pt-1.5 border-t border-[#252525]">
+                                <div>
+                                    <span class="text-gray-500 block text-[9px] uppercase font-bold">Thuế TNCN 10%:</span>
+                                    <span id="pm-tax-amount" class="font-mono font-bold text-red-400 text-xs">0 VNĐ</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-gray-500 block text-[9px] uppercase font-bold">Thực Lĩnh:</span>
+                                    <span id="pm-net-amount" class="font-mono font-bold text-emerald-400 text-sm">0 VNĐ</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PHƯƠNG THỨC CHI TRẢ -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Phương Thức Chi Trả:</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="pm-btn-cash" onclick="setPayoutPayMethod('cash')" class="p-2 rounded border-2 border-[#d4af37] bg-[#d4af37]/20 text-[#d4af37] font-bold text-xs uppercase flex items-center justify-center gap-1.5 transition">
+                                    <i class="fa-solid fa-money-bill-wave text-emerald-400"></i> Tiền Mặt (Két)
+                                </button>
+                                <button type="button" id="pm-btn-banking" onclick="setPayoutPayMethod('banking')" class="p-2 rounded border-2 border-[#333] bg-[#111] text-gray-400 font-bold text-xs uppercase flex items-center justify-center gap-1.5 transition hover:border-[#555]">
+                                    <i class="fa-solid fa-qrcode text-blue-400"></i> Chuyển Khoản
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="pt-4 border-t border-[#333]">
+                    <div class="pt-4 border-t border-[#333] mt-3">
                         <button class="btn-gold py-3.5 w-full uppercase tracking-widest text-xs font-bold shadow-lg flex items-center justify-center gap-2" onclick="recordAndPrintPayout()">
                             <i class="fa-solid fa-receipt"></i> IN PHIẾU PAYOUT (80MM)
                         </button>
@@ -298,9 +334,12 @@
                 </div>
             </div>
 
-            <!-- Footer Close -->
-            <div class="mt-4 flex justify-end">
-                <button class="bg-[#222] border border-[#444] text-gray-300 px-6 py-2.5 rounded font-bold uppercase text-xs hover:bg-[#333] transition" onclick="closePayoutModal()">ĐÓNG</button>
+            <!-- Footer Close & Profit Report Link -->
+            <div class="mt-4 flex justify-between items-center pt-2 border-t border-[#222]">
+                <button class="bg-[#141d26] border border-blue-500/60 text-blue-400 hover:bg-blue-900/30 px-4 py-2 rounded font-bold uppercase text-xs transition flex items-center gap-1.5 shadow" onclick="if(currentPayoutTour) openTourProfitModal(currentPayoutTour.id)">
+                    <i class="fa-solid fa-chart-pie"></i> Xem Báo Cáo Lợi Nhuận Tour
+                </button>
+                <button class="bg-[#222] border border-[#444] text-gray-300 px-6 py-2 rounded font-bold uppercase text-xs hover:bg-[#333] transition" onclick="closePayoutModal()">ĐÓNG</button>
             </div>
         </div>
     </div>
@@ -326,9 +365,21 @@
                     <div style="font-size: 13px; font-weight: bold;">THỨ HẠNG ĐẠT ĐƯỢC</div>
                     <div id="pr-rank" style="font-size: 20px; font-weight: 900; color: #000;">HẠNG 1 (CHAMPION)</div>
                 </div>
-                <div style="background: #f0f0f0; border: 2px solid black; padding: 8px; text-align: center; margin: 6px 0;">
-                    <div style="font-size: 11px; font-weight: bold;">SỐ TIỀN THỰC LĨNH</div>
-                    <div id="pr-amount" style="font-size: 18px; font-weight: 900;">0 VNĐ</div>
+                <div style="background: #f0f0f0; border: 2px solid black; padding: 8px; margin: 6px 0;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+                        <span>TIỀN THƯỞNG GỐC:</span>
+                        <b id="pr-gross-amount">0 VNĐ</b>
+                    </div>
+                    <div id="pr-tax-row" style="display: flex; justify-content: space-between; font-size: 11px; color: #b91c1c; margin-bottom: 4px;">
+                        <span>THUẾ TNCN (10% >10M):</span>
+                        <b id="pr-tax-amount">-0 VNĐ</b>
+                    </div>
+                    <div style="border-top: 1px dashed black; margin: 4px 0;"></div>
+                    <div style="text-align: center; margin-top: 4px;">
+                        <div style="font-size: 11px; font-weight: bold;">SỐ TIỀN THỰC LĨNH</div>
+                        <div id="pr-amount" style="font-size: 18px; font-weight: 900; color: #000;">0 VNĐ</div>
+                        <div style="font-size: 10px; font-weight: bold; margin-top: 3px;" id="pr-pay-method">PTTT: TIỀN MẶT</div>
+                    </div>
                 </div>
                 <div style="font-size: 10px; text-align: center; margin-top: 6px; font-style: italic;">
                     * Quý khách vui lòng mang phiếu này đến quầy Thu ngân để nhận tiền mặt hoặc chuyển khoản *
@@ -340,6 +391,192 @@
                     <div style="width: 45%;">
                         <b>XÁC NHẬN TD</b><br><br><br>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BÁO CÁO LỢI NHUẬN & TÀI CHÍNH GIẢI ĐẤU (TOURNAMENT P&L) -->
+    <div id="modal-tour-profit" class="fixed inset-0 z-50 bg-black/90 hidden items-center justify-center backdrop-blur-md p-4">
+        <div class="bg-[#111] border border-[#d4af37]/50 rounded-xl p-6 w-full max-w-3xl shadow-[0_0_50px_rgba(212,175,55,0.3)] flex flex-col max-h-[92vh] overflow-hidden">
+            
+            <!-- HEADER -->
+            <div class="flex justify-between items-center border-b border-[#333] pb-4 mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-blue-900/40 border border-blue-500/60 flex items-center justify-center text-blue-400">
+                        <i class="fa-solid fa-chart-pie text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-mafia text-xl text-gold tracking-wider uppercase">BÁO CÁO TÀI CHÍNH & LỢI NHUẬN TOUR</h3>
+                        <p class="text-[11px] text-gray-400 font-sans" id="tp-tour-subtitle">Chi tiết doanh thu, phân bổ quỹ và lợi nhuận ròng của CLB</p>
+                    </div>
+                </div>
+                <button class="text-gray-400 hover:text-white text-xl p-1" onclick="closeTourProfitModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto space-y-4 pr-1">
+                <!-- 4 KPI SUMMARY CARDS -->
+                <div class="grid grid-cols-4 gap-3">
+                    <div class="bg-[#161616] border border-[#333] p-3 rounded-lg text-center">
+                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tổng Lượt Entries:</div>
+                        <div class="text-lg font-mono font-bold text-white mt-1" id="tp-kpi-entries">0</div>
+                    </div>
+                    <div class="bg-[#161616] border border-[#333] p-3 rounded-lg text-center">
+                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Mức Phí Buy-in:</div>
+                        <div class="text-base font-mono font-bold text-emerald-400 mt-1" id="tp-kpi-fee">0 VNĐ</div>
+                    </div>
+                    <div class="bg-[#161616] border border-[#333] p-3 rounded-lg text-center">
+                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Doanh Thu Vé (Gross):</div>
+                        <div class="text-base font-mono font-bold text-emerald-400 mt-1" id="tp-kpi-gross">0 VNĐ</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-[#1f1905] to-[#141414] border-2 border-[#d4af37] p-3 rounded-lg text-center shadow-[0_0_15px_rgba(212,175,55,0.2)]">
+                        <div class="text-[10px] text-[#d4af37] font-extrabold uppercase tracking-wider">Lợi Nhuận CLB:</div>
+                        <div class="text-lg font-mono font-extrabold text-[#d4af37] mt-0.5" id="tp-kpi-profit">0 VNĐ</div>
+                    </div>
+                </div>
+
+                <!-- PHÂN BỔ QUỸ GIẢI ĐẤU (85% / 12% / 3%) -->
+                <div class="bg-[#141414] border border-[#333] p-4 rounded-lg">
+                    <div class="text-xs font-bold text-[#d4af37] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <i class="fa-solid fa-scale-balanced"></i> Phân Bổ Quỹ Giải Đấu Chuẩn TDA / Bee Poker
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-[#0e0e0e] border border-[#2a2a2a] p-3 rounded-lg">
+                            <div class="flex justify-between items-center text-[11px] mb-1">
+                                <span class="text-gray-300 font-bold">1. Quỹ Thưởng VĐV:</span>
+                                <span class="text-emerald-400 font-bold font-mono">85%</span>
+                            </div>
+                            <div class="text-base font-mono font-bold text-emerald-400" id="tp-fund-prize">0 VNĐ</div>
+                            <div class="text-[9px] text-gray-500 mt-1">Dành trả thưởng cho các vị trí ITM</div>
+                        </div>
+                        <div class="bg-[#0e0e0e] border border-[#2a2a2a] p-3 rounded-lg">
+                            <div class="flex justify-between items-center text-[11px] mb-1">
+                                <span class="text-gray-300 font-bold">2. Phí Dịch Vụ CLB (Rake):</span>
+                                <span class="text-[#d4af37] font-bold font-mono">12%</span>
+                            </div>
+                            <div class="text-base font-mono font-bold text-[#d4af37]" id="tp-fund-rake">0 VNĐ</div>
+                            <div class="text-[9px] text-gray-500 mt-1">Chi phí vận hành & lợi nhuận CLB</div>
+                        </div>
+                        <div class="bg-[#0e0e0e] border border-[#2a2a2a] p-3 rounded-lg">
+                            <div class="flex justify-between items-center text-[11px] mb-1">
+                                <span class="text-gray-300 font-bold">3. Quỹ Tip Nhân Sự:</span>
+                                <span class="text-blue-400 font-bold font-mono">3%</span>
+                            </div>
+                            <div class="text-base font-mono font-bold text-blue-400" id="tp-fund-staff">0 VNĐ</div>
+                            <div class="text-[9px] text-gray-500 mt-1">Thưởng chia cho Dealer & Floor</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- THỰC TẾ CHI TRẢ PAYOUT VÀ THUẾ TNCN -->
+                <div class="bg-[#141414] border border-[#333] p-4 rounded-lg">
+                    <div class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-3 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-receipt"></i> Thực Tế Chi Trả Thưởng & Khấu Trừ Thuế TNCN</span>
+                        <span class="text-[10px] text-gray-400 font-mono" id="tp-payout-count">0 VĐV ITM</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3 mb-3 text-xs">
+                        <div class="bg-[#0e0e0e] p-2.5 rounded border border-[#252525]">
+                            <span class="text-gray-400 block text-[10px] uppercase font-bold">Tổng Thưởng Gốc:</span>
+                            <span class="font-mono font-bold text-white text-sm" id="tp-total-gross">0 VNĐ</span>
+                        </div>
+                        <div class="bg-[#0e0e0e] p-2.5 rounded border border-[#252525]">
+                            <span class="text-gray-400 block text-[10px] uppercase font-bold">Thuế TNCN Khấu Trừ (10%):</span>
+                            <span class="font-mono font-bold text-red-400 text-sm" id="tp-total-tax">-0 VNĐ</span>
+                        </div>
+                        <div class="bg-[#0e0e0e] p-2.5 rounded border border-[#252525]">
+                            <span class="text-gray-400 block text-[10px] uppercase font-bold">Tổng Thực Chi Trả:</span>
+                            <span class="font-mono font-bold text-emerald-400 text-sm" id="tp-total-net">0 VNĐ</span>
+                        </div>
+                    </div>
+
+                    <!-- Bảng danh sách chi tiết ITM Payouts -->
+                    <div class="max-h-40 overflow-y-auto border border-[#222] rounded">
+                        <table class="w-full text-left text-[11px] text-gray-300">
+                            <thead class="bg-[#1a1a1a] text-[#d4af37] sticky top-0 border-b border-[#222]">
+                                <tr>
+                                    <th class="p-2 text-center w-12">Hạng</th>
+                                    <th class="p-2">Hội Viên ITM</th>
+                                    <th class="p-2 text-right">Thưởng Gốc</th>
+                                    <th class="p-2 text-right">Thuế TNCN</th>
+                                    <th class="p-2 text-right">Thực Nhận</th>
+                                    <th class="p-2 text-center">PTTT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tp-payout-rows" class="divide-y divide-[#1e1e1e]"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="mt-4 pt-3 border-t border-[#222] flex justify-between items-center">
+                <button class="btn-gold px-6 py-2.5 rounded uppercase tracking-widest text-xs font-bold shadow-lg flex items-center gap-2" onclick="printTourProfitReceipt()">
+                    <i class="fa-solid fa-print"></i> IN BÁO CÁO TÀI CHÍNH (80MM)
+                </button>
+                <button class="bg-[#222] border border-[#444] text-gray-300 px-6 py-2 rounded font-bold uppercase text-xs hover:bg-[#333] transition" onclick="closeTourProfitModal()">ĐÓNG</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHUNG IN BÁO CÁO TÀI CHÍNH GIẢI ĐẤU 80MM (CHUẨN ESC-POS) -->
+    <div id="tour-profit-receipt-print" class="hidden">
+        <div style="width: 80mm; font-family: 'Courier New', Courier, monospace; color: black; background: white; padding: 12px; margin: 0 auto;">
+            <div style="text-align: center; margin-bottom: 8px;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px;">♠️ ACE POKER CLUB ♠️</h2>
+                <div style="font-size: 13px; font-weight: bold; margin-top: 4px; text-transform: uppercase;">BÁO CÁO TÀI CHÍNH GIẢI ĐẤU</div>
+                <div style="display: inline-block; background: #000; color: #fff; padding: 2px 10px; font-size: 11px; font-weight: bold; margin-top: 5px; border-radius: 3px;">TOURNAMENT P&L</div>
+            </div>
+            <div style="border-top: 2px dashed black; margin: 8px 0;"></div>
+            <div style="font-size: 11px; line-height: 1.7;">
+                <div><b>GIẢI ĐẤU:</b> <span id="tpr-tour-name">TOURNAMENT</span></div>
+                <div><b>THỜI GIAN:</b> <span id="tpr-time">...</span></div>
+                <div><b>TỔNG ENTRIES:</b> <span id="tpr-entries">0</span></div>
+                <div><b>MỨC PHÍ BUY-IN:</b> <span id="tpr-fee">0 VNĐ</span></div>
+            </div>
+            <div style="border-top: 1px dashed black; margin: 8px 0;"></div>
+            <div style="font-size: 11px; line-height: 1.8;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>1. Tổng doanh thu vé (Gross):</span>
+                    <b id="tpr-gross">0 VNĐ</b>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>2. Quỹ Payout VĐV (85%):</span>
+                    <b id="tpr-fund-prize">0 VNĐ</b>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>3. Club Rake (12%):</span>
+                    <b id="tpr-fund-rake">0 VNĐ</b>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>4. Quỹ Tip Nhân Sự (3%):</span>
+                    <b id="tpr-fund-staff">0 VNĐ</b>
+                </div>
+                <div style="border-top: 1px dotted #888; margin: 4px 0;"></div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>* Thực chi Payout trao thưởng:</span>
+                    <b id="tpr-payout-gross">0 VNĐ</b>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>* Thuế TNCN đã khấu trừ:</span>
+                    <b id="tpr-tax-tncn">-0 VNĐ</b>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>* Thực lĩnh VĐV đã chi:</span>
+                    <b id="tpr-payout-net">0 VNĐ</b>
+                </div>
+                <div style="border-top: 1px dashed black; margin: 6px 0;"></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; background: #f0f0f0; padding: 4px 6px; border: 1px solid black;">
+                    <b>LỢI NHUẬN RÒNG CLB:</b>
+                    <b id="tpr-net-profit" style="font-size: 14px;">0 VNĐ</b>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 25px; text-align: center; font-size: 11px;">
+                <div style="width: 45%;">
+                    <b>XÁC NHẬN TD</b><br><br><br>
+                </div>
+                <div style="width: 45%;">
+                    <b>QUẢN LÝ CLB</b><br><br><br>
                 </div>
             </div>
         </div>
@@ -636,9 +873,14 @@
                     html += `
                         <div class="text-center text-[#800020] text-4xl font-mafia font-bold my-4 tracking-widest" style="text-shadow: 0 0 15px rgba(128,0,32,0.8);">FINISHED</div>
                         <div class="text-center font-bold text-gold mb-4 border border-[#d4af37]/30 bg-[#d4af37]/10 py-3 rounded text-lg">Quỹ Payout: ${formatMoney(tour.fund.payout_pool || 0)} ₫</div>
-                        <button class="w-full py-3 btn-gold font-bold rounded uppercase tracking-widest text-xs transition flex items-center justify-center gap-2 mb-2 shadow" onclick="openPayoutModal('${tour.id}')">
-                            <i class="fa-solid fa-trophy text-black"></i> Trả Thưởng & In Phiếu Payout
-                        </button>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <button class="py-3 btn-gold font-bold rounded uppercase tracking-widest text-xs transition flex items-center justify-center gap-1.5 shadow" onclick="openPayoutModal('${tour.id}')">
+                                <i class="fa-solid fa-trophy text-black"></i> Trả Thưởng Payout
+                            </button>
+                            <button class="py-3 bg-[#141d26] border border-blue-500/60 text-blue-400 hover:bg-blue-900/30 font-bold rounded uppercase tracking-widest text-xs transition flex items-center justify-center gap-1.5 shadow" onclick="openTourProfitModal('${tour.id}')">
+                                <i class="fa-solid fa-chart-pie"></i> Báo Cáo P&L Tour
+                            </button>
+                        </div>
                         <button class="mt-auto w-full py-3 bg-[#1e1e1e] hover:bg-[#2a2a2a] text-gray-300 font-bold rounded border border-gray-700 uppercase tracking-widest text-xs transition flex items-center justify-center gap-2" onclick="if(confirm('Xác nhận ĐÓNG GIẢI, LƯU TRỮ & NHẢ BÀN?')) socket.emit('reset_tour', '${tour.id}')">
                             <i class="fa-solid fa-box-archive text-amber-400"></i> Lưu Trữ & Nhả Bàn Chơi
                         </button>
@@ -736,12 +978,15 @@
                                 ${tour.hand_for_hand ? '<span class="text-red-400 animate-pulse font-extrabold text-[9px] bg-red-900/50 px-2 py-0.5 rounded border border-red-500"><i class="fa-solid fa-hand mr-1"></i>H4H ON</span>' : ''}
                             </div>
                             
-                            <div class="grid grid-cols-2 gap-2">
-                                <button class="py-2.5 px-2 rounded text-[11px] font-bold transition shadow-md flex items-center justify-center gap-1.5 ${tour.hand_for_hand ? 'bg-red-800 border border-red-500 text-white animate-pulse' : 'bg-[#1e1e1e] border border-[#444] text-gray-300 hover:border-[#d4af37]'}" onclick="toggleHandForHand('${tour.id}')" title="Bật/Tắt chế độ chia từng ván khi sắp nổ bong bóng">
+                            <div class="grid grid-cols-3 gap-2">
+                                <button class="py-2.5 px-1 rounded text-[10px] font-bold transition shadow-md flex items-center justify-center gap-1 ${tour.hand_for_hand ? 'bg-red-800 border border-red-500 text-white animate-pulse' : 'bg-[#1e1e1e] border border-[#444] text-gray-300 hover:border-[#d4af37]'}" onclick="toggleHandForHand('${tour.id}')" title="Bật/Tắt chế độ chia từng ván khi sắp nổ bong bóng">
                                     <i class="fa-solid fa-hand"></i> ${tour.hand_for_hand ? 'TẮT H4H' : 'BẬT H4H'}
                                 </button>
-                                <button class="py-2.5 px-2 rounded text-[11px] font-bold bg-[#1e1e1e] border border-[#d4af37]/60 text-[#d4af37] hover:bg-[#d4af37]/20 transition shadow-md flex items-center justify-center gap-1.5" onclick="openPayoutModal('${tour.id}')" title="Xem bảng tỷ lệ và in phiếu lĩnh thưởng">
-                                    <i class="fa-solid fa-trophy"></i> BẢNG PAYOUT
+                                <button class="py-2.5 px-1 rounded text-[10px] font-bold bg-[#1e1e1e] border border-[#d4af37]/60 text-[#d4af37] hover:bg-[#d4af37]/20 transition shadow-md flex items-center justify-center gap-1" onclick="openPayoutModal('${tour.id}')" title="Xem bảng tỷ lệ và in phiếu lĩnh thưởng">
+                                    <i class="fa-solid fa-trophy"></i> PAYOUT
+                                </button>
+                                <button class="py-2.5 px-1 rounded text-[10px] font-bold bg-[#141d26] border border-blue-500/60 text-blue-400 hover:bg-blue-900/30 transition shadow-md flex items-center justify-center gap-1" onclick="openTourProfitModal('${tour.id}')" title="Báo cáo tài chính và lợi nhuận tour">
+                                    <i class="fa-solid fa-chart-pie"></i> P&L TOUR
                                 </button>
                             </div>
 
@@ -1014,12 +1259,47 @@
             }
         }
 
-        function onRankSelectChange() {
-            const rank = Number(document.getElementById('pm-select-rank').value);
-            const payout = currentCalculatedPayouts.find(p => p.rank === rank);
-            if (payout) {
-                document.getElementById('pm-input-amount').value = new Intl.NumberFormat('vi-VN').format(payout.amount) + ' VNĐ';
+        let currentPayoutPayMethod = 'cash';
+        let currentProfitReport = null;
+
+        function setPayoutPayMethod(method) {
+            currentPayoutPayMethod = method;
+            const btnCash = document.getElementById('pm-btn-cash');
+            const btnBank = document.getElementById('pm-btn-banking');
+            if (method === 'cash') {
+                btnCash.className = "p-2 rounded border-2 border-[#d4af37] bg-[#d4af37]/20 text-[#d4af37] font-bold text-xs uppercase flex items-center justify-center gap-1.5 transition";
+                btnBank.className = "p-2 rounded border-2 border-[#333] bg-[#111] text-gray-400 font-bold text-xs uppercase flex items-center justify-center gap-1.5 transition hover:border-[#555]";
+            } else {
+                btnBank.className = "p-2 rounded border-2 border-blue-500 bg-blue-900/30 text-blue-400 font-bold text-xs uppercase flex items-center justify-center gap-1.5 transition";
+                btnCash.className = "p-2 rounded border-2 border-[#333] bg-[#111] text-gray-400 font-bold text-xs uppercase flex items-center justify-center gap-1.5 transition hover:border-[#555]";
             }
+        }
+
+        function calculatePayoutAmounts() {
+            const rank = Number(document.getElementById('pm-select-rank')?.value);
+            const payout = currentCalculatedPayouts.find(p => p.rank === rank);
+            if (!payout) return;
+
+            const gross = Number(payout.amount) || 0;
+            const applyTax = document.getElementById('pm-chk-tax')?.checked;
+            let tax = 0;
+            if (applyTax && gross > 10000000) {
+                tax = Math.round((gross - 10000000) * 0.1);
+            }
+            const net = Math.max(0, gross - tax);
+
+            const amtInput = document.getElementById('pm-input-amount');
+            if (amtInput) amtInput.value = formatMoney(gross);
+
+            const taxEl = document.getElementById('pm-tax-amount');
+            if (taxEl) taxEl.innerText = tax > 0 ? ('-' + formatMoney(tax)) : '0 VNĐ (Miễn thuế)';
+
+            const netEl = document.getElementById('pm-net-amount');
+            if (netEl) netEl.innerText = formatMoney(net);
+        }
+
+        function onRankSelectChange() {
+            calculatePayoutAmounts();
         }
 
         function onPlayerSelectChange() {
@@ -1028,6 +1308,41 @@
             if (selectedOpt && selectedOpt.dataset.phone) {
                 document.getElementById('pm-input-phone').value = selectedOpt.dataset.phone;
             }
+        }
+
+        function printPayoutReceiptSlip(pItem, label) {
+            if (!pItem || !currentPayoutTour) return;
+            document.getElementById('pr-ticket-id').innerText = pItem.ticket_id || 'PO-000000';
+            document.getElementById('pr-tour-name').innerText = currentPayoutTour.name;
+            document.getElementById('pr-time').innerText = pItem.time_formatted || new Date().toLocaleString('vi-VN');
+            document.getElementById('pr-name').innerText = pItem.name || '---';
+            document.getElementById('pr-phone').innerText = pItem.phone || '---';
+            document.getElementById('pr-rank').innerText = `HẠNG ${pItem.rank} (${label || ''})`;
+
+            const gross = Number(pItem.amount) || 0;
+            const tax = Number(pItem.tax_tncn) || 0;
+            const net = (pItem.net_amount !== undefined) ? Number(pItem.net_amount) : (gross - tax);
+
+            document.getElementById('pr-gross-amount').innerText = formatMoney(gross);
+            const taxRow = document.getElementById('pr-tax-row');
+            if (tax > 0) {
+                taxRow.style.display = 'flex';
+                document.getElementById('pr-tax-amount').innerText = '-' + formatMoney(tax);
+            } else {
+                taxRow.style.display = 'none';
+            }
+            document.getElementById('pr-amount').innerText = formatMoney(net);
+            document.getElementById('pr-pay-method').innerText = `PTTT: ${pItem.payment_method === 'banking' ? 'CHUYỂN KHOẢN (BANKING)' : 'TIỀN MẶT'}`;
+
+            document.getElementById('payout-receipt-print')?.classList.add('print-active');
+            document.getElementById('tour-profit-receipt-print')?.classList.remove('print-active');
+
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    document.getElementById('payout-receipt-print')?.classList.remove('print-active');
+                }, 500);
+            }, 300);
         }
 
         function quickPrintPayoutRow(rank) {
@@ -1052,24 +1367,23 @@
                 name = inputName.trim();
             }
 
+            const gross = Number(payout.amount) || 0;
+            const tax = (gross > 10000000) ? Math.round((gross - 10000000) * 0.1) : 0;
+            const net = Math.max(0, gross - tax);
+
             socket.emit('record_payout', {
                 tour_id: currentPayoutTour.id,
                 rank,
                 phone,
                 name,
-                amount: payout.amount
+                amount: gross,
+                tax_tncn: tax,
+                net_amount: net,
+                payment_method: currentPayoutPayMethod
             }, (res) => {
                 if (res && res.success) {
                     const pItem = res.payout;
-                    document.getElementById('pr-ticket-id').innerText = pItem.ticket_id;
-                    document.getElementById('pr-tour-name').innerText = currentPayoutTour.name;
-                    document.getElementById('pr-time').innerText = pItem.time_formatted;
-                    document.getElementById('pr-name').innerText = pItem.name;
-                    document.getElementById('pr-phone').innerText = pItem.phone || '---';
-                    document.getElementById('pr-rank').innerText = `HẠNG ${pItem.rank} (${payout.label || ''})`;
-                    document.getElementById('pr-amount').innerText = new Intl.NumberFormat('vi-VN').format(pItem.amount) + ' VNĐ';
-
-                    window.print();
+                    printPayoutReceiptSlip(pItem, payout.label);
 
                     // Cập nhật mảng payouts cục bộ và render lại bảng
                     currentPayoutTour.payouts = currentPayoutTour.payouts || [];
@@ -1094,28 +1408,27 @@
 
             const name = (selectedOpt && selectedOpt.dataset.name) ? selectedOpt.dataset.name : (playerSelect.value || 'Khách Vô Danh');
             const phone = document.getElementById('pm-input-phone').value.trim();
-            const amount = payout ? payout.amount : 0;
+            const gross = payout ? Number(payout.amount) : 0;
 
-            if (!rank || amount <= 0) return alert("Vui lòng chọn thứ hạng hợp lệ!");
+            if (!rank || gross <= 0) return alert("Vui lòng chọn thứ hạng hợp lệ!");
+
+            const applyTax = document.getElementById('pm-chk-tax')?.checked;
+            const tax = (applyTax && gross > 10000000) ? Math.round((gross - 10000000) * 0.1) : 0;
+            const net = Math.max(0, gross - tax);
 
             socket.emit('record_payout', {
                 tour_id: currentPayoutTour.id,
                 rank,
                 phone,
                 name,
-                amount
+                amount: gross,
+                tax_tncn: tax,
+                net_amount: net,
+                payment_method: currentPayoutPayMethod
             }, (res) => {
-                if (res.success) {
+                if (res && res.success) {
                     const pItem = res.payout;
-                    document.getElementById('pr-ticket-id').innerText = pItem.ticket_id;
-                    document.getElementById('pr-tour-name').innerText = currentPayoutTour.name;
-                    document.getElementById('pr-time').innerText = pItem.time_formatted;
-                    document.getElementById('pr-name').innerText = pItem.name;
-                    document.getElementById('pr-phone').innerText = pItem.phone || '---';
-                    document.getElementById('pr-rank').innerText = `HẠNG ${pItem.rank} (${payout ? payout.label : ''})`;
-                    document.getElementById('pr-amount').innerText = new Intl.NumberFormat('vi-VN').format(pItem.amount) + ' VNĐ';
-
-                    window.print();
+                    printPayoutReceiptSlip(pItem, payout ? payout.label : '');
 
                     // Cập nhật lại modal ngay lập tức
                     currentPayoutTour.payouts = currentPayoutTour.payouts || [];
@@ -1126,9 +1439,99 @@
                     openPayoutModal(currentPayoutTour.id);
                     alert(res.message);
                 } else {
-                    alert("LỖI GHI NHẬN PAYOUT: " + res.message);
+                    alert("LỖI GHI NHẬN PAYOUT: " + (res?.message || 'Không xác định'));
                 }
             });
+        }
+
+        // =========================================================
+        // BÁO CÁO TÀI CHÍNH & LỢI NHUẬN GIẢI ĐẤU (TOURNAMENT P&L)
+        // =========================================================
+        function openTourProfitModal(tourId) {
+            socket.emit('get_tour_profit_report', tourId, (res) => {
+                if (!res || !res.success || !res.report) {
+                    return alert((res && res.message) || 'Không thể lấy báo cáo tài chính giải đấu!');
+                }
+                const rep = res.report;
+                currentProfitReport = rep;
+
+                document.getElementById('tp-tour-subtitle').innerText = `${rep.tour_name} [${(rep.status || '').toUpperCase()}]`;
+                document.getElementById('tp-kpi-entries').innerText = rep.entries;
+                document.getElementById('tp-kpi-fee').innerText = formatMoney(rep.buyin_fee);
+                document.getElementById('tp-kpi-gross').innerText = formatMoney(rep.gross_revenue);
+                document.getElementById('tp-kpi-profit').innerText = formatMoney(rep.club_net_profit);
+
+                document.getElementById('tp-fund-prize').innerText = formatMoney(rep.net_prize_pool);
+                document.getElementById('tp-fund-rake').innerText = formatMoney(rep.club_rake);
+                document.getElementById('tp-fund-staff').innerText = formatMoney(rep.staff_tip_pool);
+
+                document.getElementById('tp-payout-count').innerText = `${rep.payouts_count} VĐV ITM`;
+                document.getElementById('tp-total-gross').innerText = formatMoney(rep.total_payout_gross);
+                document.getElementById('tp-total-tax').innerText = '-' + formatMoney(rep.total_tax_tncn);
+                document.getElementById('tp-total-net').innerText = formatMoney(rep.total_payout_net);
+
+                // Render danh sách ITM Payouts
+                const rowsEl = document.getElementById('tp-payout-rows');
+                const payouts = rep.payouts || [];
+                if (payouts.length === 0) {
+                    rowsEl.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500 italic">Chưa có phiếu trả thưởng nào được ghi nhận cho giải này</td></tr>`;
+                } else {
+                    rowsEl.innerHTML = payouts.map(p => {
+                        const methodText = p.payment_method === 'banking' ? '<span class="text-blue-400 font-bold">QR</span>' : '<span class="text-emerald-400 font-bold">Tiền Mặt</span>';
+                        return `
+                            <tr class="hover:bg-[#181818] transition">
+                                <td class="p-2 text-center font-bold text-[#d4af37]">${p.rank === 1 ? '🏆 1' : p.rank}</td>
+                                <td class="p-2">
+                                    <div class="font-bold text-gray-200">${p.name || 'Khách'}</div>
+                                    <div class="text-[9px] text-gray-500 font-mono">${p.phone || ''} (${p.ticket_id || ''})</div>
+                                </td>
+                                <td class="p-2 text-right font-mono font-bold text-gray-300">${formatMoney(p.amount)}</td>
+                                <td class="p-2 text-right font-mono font-bold text-red-400">${p.tax_tncn ? ('-' + formatMoney(p.tax_tncn)) : '0đ'}</td>
+                                <td class="p-2 text-right font-mono font-bold text-emerald-400">${formatMoney(p.net_amount || p.amount)}</td>
+                                <td class="p-2 text-center text-[10px]">${methodText}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                document.getElementById('modal-tour-profit').classList.remove('hidden');
+                document.getElementById('modal-tour-profit').classList.add('flex');
+            });
+        }
+
+        function closeTourProfitModal() {
+            document.getElementById('modal-tour-profit').classList.add('hidden');
+            document.getElementById('modal-tour-profit').classList.remove('flex');
+        }
+
+        function printTourProfitReceipt() {
+            if (!currentProfitReport) return;
+            const rep = currentProfitReport;
+
+            document.getElementById('tpr-tour-name').innerText = rep.tour_name || 'TOURNAMENT';
+            document.getElementById('tpr-time').innerText = new Date().toLocaleString('vi-VN');
+            document.getElementById('tpr-entries').innerText = rep.entries;
+            document.getElementById('tpr-fee').innerText = formatMoney(rep.buyin_fee);
+
+            document.getElementById('tpr-gross').innerText = formatMoney(rep.gross_revenue);
+            document.getElementById('tpr-fund-prize').innerText = formatMoney(rep.net_prize_pool);
+            document.getElementById('tpr-fund-rake').innerText = formatMoney(rep.club_rake);
+            document.getElementById('tpr-fund-staff').innerText = formatMoney(rep.staff_tip_pool);
+
+            document.getElementById('tpr-payout-gross').innerText = formatMoney(rep.total_payout_gross);
+            document.getElementById('tpr-tax-tncn').innerText = '-' + formatMoney(rep.total_tax_tncn);
+            document.getElementById('tpr-payout-net').innerText = formatMoney(rep.total_payout_net);
+            document.getElementById('tpr-net-profit').innerText = formatMoney(rep.club_net_profit);
+
+            document.getElementById('payout-receipt-print')?.classList.remove('print-active');
+            document.getElementById('tour-profit-receipt-print')?.classList.add('print-active');
+
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    document.getElementById('tour-profit-receipt-print')?.classList.remove('print-active');
+                }, 500);
+            }, 300);
         }
 
         // --- WEB AUDIO API SYNTHESIZER (CHUÔNG BÁO CASINO) ---

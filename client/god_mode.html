@@ -97,12 +97,18 @@
             <h1 class="text-4xl font-mafia text-[#d4af37] tracking-widest drop-shadow-lg neon-glow">
                 <i class="fa-solid fa-chess-king mr-3"></i>GOD MODE
             </h1>
-            <div class="flex gap-4 my-2">
-                <a href="./hr_management.html" class="px-6 py-2 bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold rounded uppercase text-sm tracking-widest transition-colors shadow-lg">
-                    <i class="fa-solid fa-users mr-2"></i> HR & Lương
+            <div class="flex flex-wrap gap-3 my-2">
+                <a href="./hr_management.html" class="px-5 py-2 bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold rounded uppercase text-xs tracking-widest transition-colors shadow-lg flex items-center gap-1.5">
+                    <i class="fa-solid fa-users"></i> HR & Lương
                 </a>
-                <a href="./index.html" class="px-6 py-2 bg-[#222] hover:bg-[#333] text-gray-300 font-bold rounded uppercase text-sm tracking-widest transition-colors">
-                    <i class="fa-solid fa-arrow-left mr-2"></i> Rời God Mode
+                <a href="./cashier.html" class="px-5 py-2 bg-[#1a1a1a] hover:bg-[#252525] border border-[#d4af37]/50 text-[#d4af37] font-bold rounded uppercase text-xs tracking-widest transition-colors shadow-lg flex items-center gap-1.5">
+                    <i class="fa-solid fa-cash-register"></i> Két Thu Ngân
+                </a>
+                <a href="./td_dashboard.html" class="px-5 py-2 bg-[#1a1a1a] hover:bg-[#252525] border border-blue-500/50 text-blue-400 font-bold rounded uppercase text-xs tracking-widest transition-colors shadow-lg flex items-center gap-1.5">
+                    <i class="fa-solid fa-trophy"></i> TD & P&L Tour
+                </a>
+                <a href="./index.html" class="px-5 py-2 bg-[#222] hover:bg-[#333] text-gray-300 font-bold rounded uppercase text-xs tracking-widest transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-left"></i> Rời God Mode
                 </a>
             </div>
             <p class="text-gray-500 text-[10px] mt-2 uppercase tracking-[0.3em] font-bold">Mafia Casino Syndicate v2.0</p>
@@ -117,25 +123,35 @@
     <main class="flex-1 overflow-y-auto p-6 space-y-6">
 
         <!-- SECTION 1: TỔNG QUAN TÀI CHÍNH -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="glass-panel rounded-xl p-6 border-l-4 border-[#2ecc71] flex items-center justify-between">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="glass-panel rounded-xl p-5 border-l-4 border-[#2ecc71] flex items-center justify-between">
                 <div>
-                    <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center"><i class="fa-solid fa-vault text-[#2ecc71] mr-2"></i>Két Thực Thu (Net)</h3>
-                    <div class="digital-font text-4xl text-[#2ecc71] font-bold" id="val-net" style="text-shadow: 0 0 10px rgba(46, 204, 113, 0.4);">0 ₫</div>
+                    <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1.5 flex items-center"><i class="fa-solid fa-vault text-[#2ecc71] mr-1.5"></i>Két Thực Thu (Net)</h3>
+                    <div class="digital-font text-3xl text-[#2ecc71] font-bold" id="val-net" style="text-shadow: 0 0 10px rgba(46, 204, 113, 0.4);">0 ₫</div>
                 </div>
             </div>
 
-            <div class="glass-panel rounded-xl p-6 border-l-4 border-[#800020] flex items-center justify-between">
+            <div class="glass-panel rounded-xl p-5 border-l-4 border-[#800020] flex items-center justify-between">
                 <div>
-                    <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center"><i class="fa-solid fa-book-skull text-[#800020] mr-2"></i>Sổ Ghi Nợ (Debt)</h3>
-                    <div class="digital-font text-4xl text-[#e74c3c] font-bold" id="val-debt" style="text-shadow: 0 0 10px rgba(128, 0, 32, 0.8);">0 ₫</div>
+                    <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1.5 flex items-center"><i class="fa-solid fa-book-skull text-[#800020] mr-1.5"></i>Sổ Ghi Nợ (Debt)</h3>
+                    <div class="digital-font text-3xl text-[#e74c3c] font-bold" id="val-debt" style="text-shadow: 0 0 10px rgba(128, 0, 32, 0.8);">0 ₫</div>
                 </div>
             </div>
 
-            <div class="glass-panel rounded-xl p-6 border-l-4 border-[#d4af37] flex items-center justify-between">
+            <div class="glass-panel rounded-xl p-5 border-l-4 border-[#d4af37] flex items-center justify-between">
                 <div>
-                    <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2 flex items-center"><i class="fa-solid fa-coins text-[#d4af37] mr-2"></i>Rake Sòng (15%)</h3>
-                    <div class="digital-font text-4xl text-[#d4af37] font-bold neon-glow" id="val-rake">0 ₫</div>
+                    <h3 class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1.5 flex items-center"><i class="fa-solid fa-coins text-[#d4af37] mr-1.5"></i>Rake Sòng CLB</h3>
+                    <div class="digital-font text-3xl text-[#d4af37] font-bold neon-glow" id="val-rake">0 ₫</div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-xl p-5 border-l-4 border-blue-500 flex items-center justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <h3 class="text-gray-400 text-[10px] font-bold uppercase tracking-widest flex items-center"><i class="fa-solid fa-cash-register text-blue-400 mr-1.5"></i>Két Ca Trực Hiện Tại</h3>
+                        <span id="shift-live-badge" class="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-red-900/60 text-red-400 border border-red-500/50">CHƯA MỞ CA</span>
+                    </div>
+                    <div class="digital-font text-3xl text-blue-400 font-bold" id="val-shift-cash">0 ₫</div>
                 </div>
             </div>
         </div>
@@ -227,9 +243,22 @@
         }
 
         socket.on('update_god_mode', (data) => {
-            const { financial, staff, all_tours } = data;
+            const { financial, staff, all_tours, current_shift } = data;
 
             calculateTotalFinances(all_tours);
+
+            const shiftBadge = document.getElementById('shift-live-badge');
+            const shiftCashEl = document.getElementById('val-shift-cash');
+            if (current_shift && current_shift.status === 'open') {
+                const expected = (Number(current_shift.opening_cash) || 0) + (Number(current_shift.cash_in) || 0) - (Number(current_shift.cash_out) || 0);
+                shiftCashEl.innerText = formatMoney(expected);
+                shiftBadge.innerText = current_shift.id;
+                shiftBadge.className = "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-emerald-950/60 text-emerald-400 border border-emerald-500/50";
+            } else {
+                shiftCashEl.innerText = "0 ₫";
+                shiftBadge.innerText = "CHƯA MỞ CA";
+                shiftBadge.className = "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-red-900/60 text-red-400 border border-red-500/50";
+            }
 
             const staffListDiv = document.getElementById('staff-list');
             staffListDiv.innerHTML = '';
