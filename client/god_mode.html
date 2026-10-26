@@ -165,12 +165,127 @@
             </div>
 
             <div class="lg:w-[60%] glass-panel rounded-xl p-6 flex flex-col">
-                <h2 class="font-mafia text-lg text-[#d4af37] border-b border-[#333] pb-4 mb-4 uppercase tracking-widest"><i class="fa-solid fa-trophy mr-2"></i> Lịch Sử Giải Đấu</h2>
+                <div class="flex flex-wrap justify-between items-center border-b border-[#333] pb-4 mb-4 gap-2">
+                    <h2 class="font-mafia text-lg text-[#d4af37] uppercase tracking-widest flex items-center">
+                        <i class="fa-solid fa-trophy mr-2"></i> Lịch Sử Giải Đấu
+                    </h2>
+                    <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider" id="tour-filter-bar">
+                        <button onclick="setTourFilter('all')" id="tf-all" class="px-2.5 py-1 rounded bg-[#d4af37] text-black transition">Tất Cả (0)</button>
+                        <button onclick="setTourFilter('running')" id="tf-running" class="px-2.5 py-1 rounded bg-[#1c1c1c] text-gray-400 hover:text-white transition">Đang Chạy (0)</button>
+                        <button onclick="setTourFilter('finished')" id="tf-finished" class="px-2.5 py-1 rounded bg-[#1c1c1c] text-gray-400 hover:text-white transition">Hoàn Tất (0)</button>
+                        <button onclick="setTourFilter('archived')" id="tf-archived" class="px-2.5 py-1 rounded bg-[#1c1c1c] text-gray-400 hover:text-white transition">Lưu Trữ (0)</button>
+                    </div>
+                </div>
                 <div class="overflow-y-auto pr-2 space-y-4 flex-1" id="tour-list"></div>
             </div>
 
         </div>
     </main>
+
+    <!-- MODAL BÁO CÁO P&L GIẢI ĐẤU DÀNH CHO GOD/CHỦ SÒNG -->
+    <div id="modal-god-tour-profit" class="fixed inset-0 z-50 bg-black/90 hidden items-center justify-center backdrop-blur-md p-4">
+        <div class="bg-[#111] border border-[#d4af37]/50 rounded-xl p-6 w-full max-w-3xl shadow-[0_0_50px_rgba(212,175,55,0.3)] flex flex-col max-h-[92vh] overflow-hidden">
+            <div class="flex justify-between items-center border-b border-[#333] pb-4 mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-blue-900/40 border border-blue-500/60 flex items-center justify-center text-blue-400">
+                        <i class="fa-solid fa-chart-pie text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-mafia text-xl text-gold tracking-wider uppercase">BÁO CÁO TÀI CHÍNH & LỢI NHUẬN TOUR</h3>
+                        <p class="text-[11px] text-gray-400 font-sans" id="gtp-tour-subtitle">Chi tiết doanh thu, phân bổ quỹ và lợi nhuận ròng của CLB</p>
+                    </div>
+                </div>
+                <button class="text-gray-400 hover:text-white text-xl p-1" onclick="closeGodTourProfit()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto space-y-4 pr-1">
+                <div class="grid grid-cols-4 gap-3">
+                    <div class="bg-[#161616] border border-[#333] p-3 rounded-lg text-center">
+                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tổng Entries:</div>
+                        <div class="text-lg font-mono font-bold text-white mt-1" id="gtp-entries">0</div>
+                    </div>
+                    <div class="bg-[#161616] border border-[#333] p-3 rounded-lg text-center">
+                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Mức Phí:</div>
+                        <div class="text-base font-mono font-bold text-emerald-400 mt-1" id="gtp-fee">0 VNĐ</div>
+                    </div>
+                    <div class="bg-[#161616] border border-[#333] p-3 rounded-lg text-center">
+                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Doanh Thu Vé:</div>
+                        <div class="text-base font-mono font-bold text-emerald-400 mt-1" id="gtp-gross">0 VNĐ</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-[#1f1905] to-[#141414] border-2 border-[#d4af37] p-3 rounded-lg text-center shadow-[0_0_15px_rgba(212,175,55,0.2)]">
+                        <div class="text-[10px] text-[#d4af37] font-extrabold uppercase tracking-wider">Lợi Nhuận CLB:</div>
+                        <div class="text-lg font-mono font-extrabold text-[#d4af37] mt-0.5" id="gtp-profit">0 VNĐ</div>
+                    </div>
+                </div>
+
+                <div class="bg-[#141414] border border-[#333] p-4 rounded-lg">
+                    <div class="text-xs font-bold text-[#d4af37] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <i class="fa-solid fa-scale-balanced"></i> Phân Bổ Quỹ Chuẩn TDA / Bee Poker
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-[#0e0e0e] border border-[#2a2a2a] p-3 rounded-lg">
+                            <div class="flex justify-between items-center text-[11px] mb-1">
+                                <span class="text-gray-300 font-bold">Quỹ Thưởng VĐV (85%):</span>
+                            </div>
+                            <div class="text-base font-mono font-bold text-emerald-400" id="gtp-fund-prize">0 VNĐ</div>
+                        </div>
+                        <div class="bg-[#0e0e0e] border border-[#2a2a2a] p-3 rounded-lg">
+                            <div class="flex justify-between items-center text-[11px] mb-1">
+                                <span class="text-gray-300 font-bold">Club Rake (12%):</span>
+                            </div>
+                            <div class="text-base font-mono font-bold text-[#d4af37]" id="gtp-fund-rake">0 VNĐ</div>
+                        </div>
+                        <div class="bg-[#0e0e0e] border border-[#2a2a2a] p-3 rounded-lg">
+                            <div class="flex justify-between items-center text-[11px] mb-1">
+                                <span class="text-gray-300 font-bold">Quỹ Tip Staff (3%):</span>
+                            </div>
+                            <div class="text-base font-mono font-bold text-blue-400" id="gtp-fund-staff">0 VNĐ</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-[#141414] border border-[#333] p-4 rounded-lg">
+                    <div class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-3 flex items-center justify-between">
+                        <span><i class="fa-solid fa-receipt mr-1.5"></i> Chi Trả Thưởng Thực Tế & Thuế TNCN</span>
+                        <span class="text-[10px] text-gray-400 font-mono" id="gtp-payout-count">0 ITM</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 mb-3 text-xs">
+                        <div class="bg-[#0e0e0e] p-2.5 rounded border border-[#252525]">
+                            <span class="text-gray-400 block text-[10px] uppercase font-bold">Thưởng Gốc:</span>
+                            <span class="font-mono font-bold text-white text-sm" id="gtp-total-gross">0 VNĐ</span>
+                        </div>
+                        <div class="bg-[#0e0e0e] p-2.5 rounded border border-[#252525]">
+                            <span class="text-gray-400 block text-[10px] uppercase font-bold">Thuế TNCN (10%):</span>
+                            <span class="font-mono font-bold text-red-400 text-sm" id="gtp-total-tax">-0 VNĐ</span>
+                        </div>
+                        <div class="bg-[#0e0e0e] p-2.5 rounded border border-[#252525]">
+                            <span class="text-gray-400 block text-[10px] uppercase font-bold">Thực Chi Trả:</span>
+                            <span class="font-mono font-bold text-emerald-400 text-sm" id="gtp-total-net">0 VNĐ</span>
+                        </div>
+                    </div>
+                    <div class="max-h-40 overflow-y-auto border border-[#222] rounded">
+                        <table class="w-full text-left text-[11px] text-gray-300">
+                            <thead class="bg-[#1a1a1a] text-[#d4af37] sticky top-0 border-b border-[#222]">
+                                <tr>
+                                    <th class="p-2 text-center w-12">Hạng</th>
+                                    <th class="p-2">Hội Viên ITM</th>
+                                    <th class="p-2 text-right">Thưởng Gốc</th>
+                                    <th class="p-2 text-right">Thuế TNCN</th>
+                                    <th class="p-2 text-right">Thực Lĩnh</th>
+                                    <th class="p-2 text-center">PTTT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gtp-payout-rows" class="divide-y divide-[#1e1e1e]"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-[#222] flex justify-end">
+                <button class="bg-[#222] border border-[#444] text-gray-300 px-6 py-2 rounded font-bold uppercase text-xs hover:bg-[#333] transition" onclick="closeGodTourProfit()">ĐÓNG</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
@@ -199,42 +314,64 @@
         
         
 
+        let godAllTours = [];
+        let currentTourFilter = 'all';
+
         socket.on('connect', () => {
             socket.emit('request_initial_data');
         });
 
         function formatMoney(amount) {
-            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(amount) || 0);
         }
 
+        function setTourFilter(filter) {
+            currentTourFilter = filter;
+            const btnAll = document.getElementById('tf-all');
+            const btnRunning = document.getElementById('tf-running');
+            const btnFinished = document.getElementById('tf-finished');
+            const btnArchived = document.getElementById('tf-archived');
+
+            [btnAll, btnRunning, btnFinished, btnArchived].forEach(b => {
+                if (b) b.className = "px-2.5 py-1 rounded bg-[#1c1c1c] text-gray-400 hover:text-white transition cursor-pointer";
+            });
+
+            const activeBtn = document.getElementById('tf-' + filter);
+            if (activeBtn) activeBtn.className = "px-2.5 py-1 rounded bg-[#d4af37] text-black font-bold transition cursor-pointer shadow-md";
+
+            renderTourList();
+        }
 
         function calculateTotalFinances(all_tours) {
             let totalNet = 0;
             let totalDebt = 0;
             let totalRake = 0;
 
-            all_tours.forEach(t => {
-                if (t.status === 'finished' || t.status === 'ended' || t.status === 'archived') {
-                    const paid = (t.fund && t.fund.total_paid) ? t.fund.total_paid : 0;
-                    const debt = (t.fund && t.fund.debt) ? t.fund.debt : 0;
-                    const expenses = (t.fund && t.fund.expenses) ? t.fund.expenses : 0;
-                    const prizePool = (t.fund && t.fund.payout_pool) ? t.fund.payout_pool : (paid * 0.85); // fallback
+            const tours = Array.isArray(all_tours) ? all_tours : [];
 
-                    const buyinFee = Number(t.buyin_fee) || 0;
-                    const entries = Number(t.entries) || 0;
+            tours.forEach(t => {
+                if (!t) return;
+                const status = t.status || '';
+                const fund = t.fund || {};
+                const paid = Number(fund.total_paid) || 0;
+                const debt = Number(fund.debt) || 0;
+                const expenses = Number(fund.expenses) || 0;
+                const buyinFee = Number(t.buyin_fee) || 0;
+                const entries = Number(t.entries) || 0;
 
-                    // Tính Rake theo chuẩn: (Tổng số vé * Mức phí Buy-in) - Prize Pool
-                    // Nếu buyin_fee không được setup (bằng 0), fallback: Rake = Tổng thu - Prize Pool
-                    let expectedTotal = (entries * buyinFee);
-                    if (expectedTotal === 0) expectedTotal = paid + debt;
+                let expectedTotal = (entries * buyinFee);
+                if (expectedTotal === 0) expectedTotal = paid + debt;
 
-                    let rake = expectedTotal - prizePool - expenses;
+                const prizePool = (fund.payout_pool !== undefined && fund.payout_pool !== null) 
+                    ? Number(fund.payout_pool) 
+                    : Math.round(expectedTotal * 0.85);
 
-                    // Cộng dồn
-                    totalNet += (paid - expenses);
-                    totalDebt += debt;
-                    totalRake += rake;
-                }
+                const rake = Math.max(0, expectedTotal - prizePool - expenses);
+
+                // Cộng dồn các tour đã hoặc đang thu tiền
+                totalNet += Math.max(0, paid - expenses);
+                totalDebt += debt;
+                totalRake += rake;
             });
 
             document.getElementById('val-net').innerText = formatMoney(totalNet);
@@ -242,10 +379,198 @@
             document.getElementById('val-rake').innerText = formatMoney(totalRake);
         }
 
+        function renderTourList() {
+            const tourListDiv = document.getElementById('tour-list');
+            if (!tourListDiv) return;
+
+            const tours = Array.isArray(godAllTours) ? godAllTours : [];
+
+            // Cập nhật số lượng trên các tab filter
+            const countAll = tours.length;
+            const countRunning = tours.filter(t => t.status === 'running' || t.status === 'paused' || t.status === 'pending').length;
+            const countFinished = tours.filter(t => t.status === 'finished').length;
+            const countArchived = tours.filter(t => t.status === 'archived').length;
+
+            const bAll = document.getElementById('tf-all');
+            const bRunning = document.getElementById('tf-running');
+            const bFinished = document.getElementById('tf-finished');
+            const bArchived = document.getElementById('tf-archived');
+
+            if (bAll) bAll.innerText = `Tất Cả (${countAll})`;
+            if (bRunning) bRunning.innerText = `Đang Chạy (${countRunning})`;
+            if (bFinished) bFinished.innerText = `Hoàn Tất (${countFinished})`;
+            if (bArchived) bArchived.innerText = `Lưu Trữ (${countArchived})`;
+
+            // Lọc danh sách theo filter đang chọn
+            let filtered = tours;
+            if (currentTourFilter === 'running') {
+                filtered = tours.filter(t => t.status === 'running' || t.status === 'paused' || t.status === 'pending');
+            } else if (currentTourFilter === 'finished') {
+                filtered = tours.filter(t => t.status === 'finished');
+            } else if (currentTourFilter === 'archived') {
+                filtered = tours.filter(t => t.status === 'archived');
+            }
+
+            tourListDiv.innerHTML = '';
+
+            // EMPTY STATE NẾU KHÔNG CÓ GIẢI ĐẤU
+            if (filtered.length === 0) {
+                tourListDiv.innerHTML = `
+                    <div class="p-8 text-center border border-dashed border-[#333] rounded-xl bg-[#0f0f0f] my-4">
+                        <div class="w-16 h-16 rounded-full bg-[#1a1a1a] border border-[#333] mx-auto flex items-center justify-center text-[#d4af37] text-2xl mb-3 shadow-inner">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                        <h4 class="font-mafia text-gray-200 text-base mb-1 tracking-wider uppercase">Chưa Có Giải Đấu Nào Trong Danh Mục Này</h4>
+                        <p class="text-xs text-gray-500 mb-4 max-w-md mx-auto">Hệ thống chưa ghi nhận giải đấu nào (hoặc không có giải phù hợp với bộ lọc hiện tại).</p>
+                        <a href="./td_dashboard.html" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black font-bold text-xs uppercase tracking-widest rounded-lg shadow-lg hover:brightness-110 transition">
+                            <i class="fa-solid fa-plus"></i> Đến Màn Hình TD Setup Giải Đấu
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            [...filtered].reverse().forEach(t => {
+                if (!t) return;
+                const status = t.status || 'pending';
+                const fund = t.fund || {};
+                const buyinFee = Number(t.buyin_fee) || 0;
+                const entries = Number(t.entries) || 0;
+                const totalPaid = (fund.total_paid !== undefined && fund.total_paid !== null) ? Number(fund.total_paid) : (entries * buyinFee);
+                const payoutPool = (fund.payout_pool !== undefined && fund.payout_pool !== null) ? Number(fund.payout_pool) : Math.round(totalPaid * 0.85);
+
+                let statusStyle = '';
+                let iconStr = '';
+
+                if (status === 'running') {
+                    statusStyle = 'bg-red-950/80 text-red-400 border border-red-500/80 animate-pulse';
+                    iconStr = '<i class="fa-solid fa-satellite-dish mr-1"></i>LIVE';
+                } else if (status === 'paused') {
+                    statusStyle = 'bg-amber-950/80 text-amber-300 border border-amber-500/60';
+                    iconStr = '<i class="fa-solid fa-pause mr-1"></i>PAUSED';
+                } else if (status === 'pending') {
+                    statusStyle = 'bg-blue-950/80 text-blue-300 border border-blue-500/60';
+                    iconStr = '<i class="fa-solid fa-clock mr-1"></i>PENDING';
+                } else if (status === 'finished') {
+                    statusStyle = 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/60';
+                    iconStr = '<i class="fa-solid fa-trophy mr-1"></i>FINISHED';
+                } else if (status === 'archived') {
+                    statusStyle = 'bg-[#1a1a1a] text-gray-500 border border-[#333]';
+                    iconStr = '<i class="fa-solid fa-box-archive mr-1"></i>ARCHIVED';
+                }
+
+                let poolText = formatMoney(payoutPool);
+                let poolLabel = '';
+                if (status === 'running') {
+                    poolLabel = '<div class="text-[9px] text-[#d4af37] animate-pulse mt-0.5 font-bold uppercase tracking-widest">(Live Real-time)</div>';
+                }
+
+                const tablesText = Array.isArray(t.tables) && t.tables.length > 0 
+                    ? ('Bàn ' + t.tables.join(', ')) 
+                    : (t.tables ? String(t.tables) : 'Chưa gán bàn');
+
+                const winnerName = t.winner || (t.itm_results && t.itm_results[1]) || (t.payouts && t.payouts.find(p => Number(p.rank) === 1)?.name) || null;
+                const winnerBadge = winnerName 
+                    ? `<div class="mt-2 text-xs font-bold text-amber-300 bg-amber-950/40 border border-amber-600/40 px-2.5 py-1 rounded inline-flex items-center gap-1.5"><i class="fa-solid fa-crown text-gold"></i> Quán Quân: <span class="text-white uppercase">${winnerName}</span></div>` 
+                    : '';
+
+                const opacityClass = status === 'archived' ? 'opacity-70 hover:opacity-100 transition' : '';
+
+                const item = document.createElement('div');
+                item.className = `flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-xl border border-[#2a2a2a] bg-[#141414] hover:border-[#d4af37]/60 transition shadow-md ${opacityClass}`;
+
+                item.innerHTML = `
+                    <div class="flex-1 mb-4 sm:mb-0 mr-4">
+                        <div class="flex items-center space-x-3 mb-2 flex-wrap gap-y-1">
+                            <h3 class="text-lg font-mafia text-[#d4af37] tracking-wider font-bold">${t.name || 'Giải Đấu Poker'}</h3>
+                            <span class="px-2 py-0.5 text-[9px] font-bold uppercase rounded ${statusStyle}">${iconStr}</span>
+                        </div>
+                        <div class="flex items-center space-x-4 text-[11px] text-gray-400 font-semibold uppercase tracking-wider flex-wrap gap-y-1">
+                            <span><i class="fa-solid fa-layer-group text-gray-500 mr-1"></i>${tablesText}</span>
+                            <span><i class="fa-solid fa-users text-gray-500 mr-1"></i>${entries} Entries</span>
+                            <span><i class="fa-solid fa-ticket text-gray-500 mr-1"></i>Phí: ${formatMoney(buyinFee)}</span>
+                            <span class="text-[#2ecc71]"><i class="fa-solid fa-money-bill-wave mr-1"></i>Thu: ${formatMoney(totalPaid)}</span>
+                        </div>
+                        ${winnerBadge}
+                    </div>
+                    <div class="flex flex-col sm:items-end gap-2.5 min-w-[200px]">
+                        <div class="bg-[#0a0a0a] p-3 rounded-lg border border-[#222] w-full sm:text-right">
+                            <div class="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-1">Quỹ Payout (85%):</div>
+                            <div class="digital-font text-lg text-emerald-400 font-bold ${status === 'finished' ? 'text-[#d4af37] neon-glow' : ''}">${poolText}</div>
+                            ${poolLabel}
+                        </div>
+                        <button onclick="openGodTourProfit('${t.id}')" class="w-full py-2 px-3 bg-[#16202c] hover:bg-blue-900/50 border border-blue-500/50 text-blue-400 hover:text-white rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 shadow">
+                            <i class="fa-solid fa-chart-pie"></i> Báo Cáo P&L Tour
+                        </button>
+                    </div>
+                `;
+                tourListDiv.appendChild(item);
+            });
+        }
+
+        // =========================================================
+        // BÁO CÁO TÀI CHÍNH P&L GIẢI ĐẤU DÀNH CHO GOD
+        // =========================================================
+        function openGodTourProfit(tourId) {
+            socket.emit('get_tour_profit_report', tourId, (res) => {
+                if (!res || !res.success || !res.report) {
+                    return alert((res && res.message) || 'Không thể lấy báo cáo tài chính giải đấu!');
+                }
+                const rep = res.report;
+                document.getElementById('gtp-tour-subtitle').innerText = `${rep.tour_name} [${(rep.status || '').toUpperCase()}]`;
+                document.getElementById('gtp-entries').innerText = rep.entries;
+                document.getElementById('gtp-fee').innerText = formatMoney(rep.buyin_fee);
+                document.getElementById('gtp-gross').innerText = formatMoney(rep.gross_revenue);
+                document.getElementById('gtp-profit').innerText = formatMoney(rep.club_net_profit);
+
+                document.getElementById('gtp-fund-prize').innerText = formatMoney(rep.net_prize_pool);
+                document.getElementById('gtp-fund-rake').innerText = formatMoney(rep.club_rake);
+                document.getElementById('gtp-fund-staff').innerText = formatMoney(rep.staff_tip_pool);
+
+                document.getElementById('gtp-payout-count').innerText = `${rep.payouts_count} VĐV ITM`;
+                document.getElementById('gtp-total-gross').innerText = formatMoney(rep.total_payout_gross);
+                document.getElementById('gtp-total-tax').innerText = '-' + formatMoney(rep.total_tax_tncn);
+                document.getElementById('gtp-total-net').innerText = formatMoney(rep.total_payout_net);
+
+                const rowsEl = document.getElementById('gtp-payout-rows');
+                const payouts = rep.payouts || [];
+                if (payouts.length === 0) {
+                    rowsEl.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500 italic">Chưa có thông tin trả thưởng cho giải này</td></tr>`;
+                } else {
+                    rowsEl.innerHTML = payouts.map(p => {
+                        const method = p.payment_method === 'banking' ? '<span class="text-blue-400 font-bold">QR</span>' : '<span class="text-emerald-400 font-bold">Tiền Mặt</span>';
+                        return `
+                            <tr class="hover:bg-[#181818] transition">
+                                <td class="p-2 text-center font-bold text-[#d4af37]">${p.rank === 1 ? '🏆 1' : p.rank}</td>
+                                <td class="p-2">
+                                    <div class="font-bold text-gray-200">${p.name || 'Khách'}</div>
+                                    <div class="text-[9px] text-gray-500 font-mono">${p.phone || ''}</div>
+                                </td>
+                                <td class="p-2 text-right font-mono font-bold text-gray-300">${formatMoney(p.amount)}</td>
+                                <td class="p-2 text-right font-mono font-bold text-red-400">${p.tax_tncn ? ('-' + formatMoney(p.tax_tncn)) : '0đ'}</td>
+                                <td class="p-2 text-right font-mono font-bold text-emerald-400">${formatMoney(p.net_amount || p.amount)}</td>
+                                <td class="p-2 text-center text-[10px]">${method}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                document.getElementById('modal-god-tour-profit').classList.remove('hidden');
+                document.getElementById('modal-god-tour-profit').classList.add('flex');
+            });
+        }
+
+        function closeGodTourProfit() {
+            document.getElementById('modal-god-tour-profit').classList.add('hidden');
+            document.getElementById('modal-god-tour-profit').classList.remove('flex');
+        }
+
         socket.on('update_god_mode', (data) => {
             const { financial, staff, all_tours, current_shift } = data;
 
-            calculateTotalFinances(all_tours);
+            godAllTours = Array.isArray(all_tours) ? all_tours : [];
+
+            calculateTotalFinances(godAllTours);
 
             const shiftBadge = document.getElementById('shift-live-badge');
             const shiftCashEl = document.getElementById('val-shift-cash');
@@ -262,7 +587,7 @@
 
             const staffListDiv = document.getElementById('staff-list');
             staffListDiv.innerHTML = '';
-            staff.forEach(s => {
+            (staff || []).forEach(s => {
                 let statusBadge = '';
                 let bgClass = 'bg-[#151515] border-[#333]';
                 let iconColor = 'text-gray-600';
@@ -295,65 +620,7 @@
                 staffListDiv.appendChild(item);
             });
 
-            const tourListDiv = document.getElementById('tour-list');
-            tourListDiv.innerHTML = '';
-
-            [...all_tours].reverse().forEach(t => {
-                let statusStyle = '';
-                let iconStr = '';
-
-                if (t.status === 'running') {
-                    statusStyle = 'bg-[#800020]/30 text-red-400 border-[#800020] animate-pulse';
-                    iconStr = '<i class="fa-solid fa-satellite-dish mr-1"></i>LIVE';
-                } else if (t.status === 'paused' || t.status === 'pending') {
-                    statusStyle = 'bg-[#d4af37]/20 text-[#d4af37] border-[#d4af37]/50';
-                    iconStr = t.status === 'pending' ? '<i class="fa-solid fa-clock mr-1"></i>PENDING' : '<i class="fa-solid fa-pause mr-1"></i>PAUSED';
-                } else if (t.status === 'finished') {
-                    statusStyle = 'bg-gray-800 text-gray-300 border-gray-600';
-                    iconStr = '<i class="fa-solid fa-flag-checkered mr-1"></i>FINISHED';
-                } else if (t.status === 'archived') {
-                    statusStyle = 'bg-[#111] text-gray-700 border-[#222]';
-                    iconStr = '<i class="fa-solid fa-box-archive mr-1"></i>ARCHIVED';
-                }
-
-                let poolText = '';
-                let poolLabel = '';
-
-                if (t.status === 'finished' || t.status === 'archived') {
-                    poolText = formatMoney(t.fund.payout_pool);
-                } else if (t.entries > 0) {
-                    const livePayout = t.fund.net_fund * 0.85;
-                    poolText = formatMoney(livePayout);
-                    poolLabel = '<div class="text-[9px] text-[#d4af37] animate-pulse mt-1 font-bold uppercase tracking-widest">(Live / Đang tăng...)</div>';
-                } else {
-                    poolText = 'Đang gom quỹ...';
-                }
-
-                const opacityClass = t.status === 'archived' ? 'opacity-40 grayscale' : '';
-
-                const item = document.createElement('div');
-                item.className = `flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-lg border border-[#333] bg-[#151515] ${opacityClass}`;
-
-                item.innerHTML = `
-                    <div class="flex-1 mb-4 sm:mb-0">
-                        <div class="flex items-center space-x-3 mb-3">
-                            <h3 class="text-lg font-mafia text-[#d4af37] tracking-wider">${t.name}</h3>
-                            <span class="px-2 py-1 text-[8px] font-bold uppercase rounded border ${statusStyle}">${iconStr}</span>
-                        </div>
-                        <div class="flex items-center space-x-5 text-[10px] text-gray-500 font-semibold uppercase tracking-widest">
-                            <span><i class="fa-solid fa-layer-group text-gray-600 mr-1.5"></i>${t.tables.join(', ') || 'N/A'}</span>
-                            <span><i class="fa-solid fa-users text-gray-600 mr-1.5"></i>${t.entries}</span>
-                            <span class="text-[#2ecc71]/80"><i class="fa-solid fa-money-bill-wave mr-1.5"></i>${formatMoney(t.fund.total_paid)}</span>
-                        </div>
-                    </div>
-                    <div class="sm:text-right bg-[#0a0a0a] p-3 rounded border border-[#222] min-w-[200px]">
-                        <div class="text-[8px] text-gray-600 uppercase font-bold tracking-[0.2em] mb-2">Payout Pool (Sau Rake)</div>
-                        <div class="digital-font text-lg text-gray-200 font-bold ${t.status === 'finished' ? 'text-[#d4af37] neon-glow' : ''}">${poolText}</div>
-                        ${poolLabel}
-                    </div>
-                `;
-                tourListDiv.appendChild(item);
-            });
+            renderTourList();
         });
     </script>
 </body>

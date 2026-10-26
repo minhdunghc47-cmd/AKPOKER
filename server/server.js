@@ -1,4 +1,4 @@
-// ACE POKER SERVER - v2.6.0 (Cashier Shift Balancing, 10% TNCN Payout Tax & Tournament P&L Financial Report)
+// ACE POKER SERVER - v2.6.1 (Fix God Mode tournament history & robust Firebase array parsing)
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const http = require('http');
@@ -97,6 +97,13 @@ let db = {
   current_shift: null
 };
 
+function toArray(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.filter(Boolean);
+  if (typeof val === 'object') return Object.values(val).filter(Boolean);
+  return [];
+}
+
 if (fdb) {
   function loadFromFirebase() {
     let isTimeout = false;
@@ -112,45 +119,46 @@ if (fdb) {
       clearTimeout(timeoutTimer);
       const data = snapshot.val();
       if (data) {
-        if (data.tournaments) {
-          db.tournaments = data.tournaments.map(t => ({ ...t, players: t.players || [] }));
-        }
-        if (data.tour_templates) db.tour_templates = data.tour_templates;
-        if (data.members) db.members = data.members;
-        if (data.time_logs) db.time_logs = data.time_logs;
-        if (data.staff) db.staff = data.staff;
-        if (data.payroll_history) db.payroll_history = data.payroll_history;
-        if (data.fnb_menu && Array.isArray(data.fnb_menu) && data.fnb_menu.length > 0) {
-          db.fnb_menu = data.fnb_menu;
-        } else {
-          db.fnb_menu = [...defaultFnbMenu];
-        }
-        if (data.fnb_orders && Array.isArray(data.fnb_orders)) {
-          db.fnb_orders = data.fnb_orders;
-        } else {
-          db.fnb_orders = [];
-        }
-        if (data.cashier_shifts && Array.isArray(data.cashier_shifts)) {
-          db.cashier_shifts = data.cashier_shifts;
-        } else {
-          db.cashier_shifts = [];
-        }
-        if (data.current_shift) {
-          db.current_shift = data.current_shift;
-        }
-        if (data.tables) {
-          db.tables = data.tables;
-        } else {
-          db.tournaments.forEach(t => {
-            if (t.status !== 'archived' && t.status !== 'finished') {
-              if (t.tables && Array.isArray(t.tables)) {
-                t.tables.forEach(tableId => {
-                  const tbl = db.tables.find(x => x.id === tableId);
-                  if (tbl) { tbl.is_locked = true; tbl.tour_id = t.id; }
-                });
+        try {
+          if (data.tournaments) {
+            db.tournaments = toArray(data.tournaments).map(t => ({
+              ...t,
+              players: toArray(t.players),
+              tables: toArray(t.tables),
+              fund: t.fund || { total_paid: 0, expenses: 0, debt: 0, net_fund: 0, payout_pool: 0 },
+              payouts: toArray(t.payouts),
+              itm_results: t.itm_results || {}
+            }));
+          }
+          if (data.tour_templates) db.tour_templates = toArray(data.tour_templates);
+          if (data.members) db.members = toArray(data.members);
+          if (data.time_logs) db.time_logs = toArray(data.time_logs);
+          if (data.staff) db.staff = toArray(data.staff);
+          if (data.payroll_history) db.payroll_history = toArray(data.payroll_history);
+          if (data.fnb_menu && toArray(data.fnb_menu).length > 0) {
+            db.fnb_menu = toArray(data.fnb_menu);
+          } else {
+            db.fnb_menu = [...defaultFnbMenu];
+          }
+          if (data.fnb_orders) db.fnb_orders = toArray(data.fnb_orders);
+          if (data.cashier_shifts) db.cashier_shifts = toArray(data.cashier_shifts);
+          if (data.current_shift) db.current_shift = data.current_shift;
+          if (data.tables) {
+            db.tables = toArray(data.tables);
+          } else {
+            db.tournaments.forEach(t => {
+              if (t.status !== 'archived' && t.status !== 'finished') {
+                if (t.tables && Array.isArray(t.tables)) {
+                  t.tables.forEach(tableId => {
+                    const tbl = db.tables.find(x => x.id === tableId);
+                    if (tbl) { tbl.is_locked = true; tbl.tour_id = t.id; }
+                  });
+                }
               }
-            }
-          });
+            });
+          }
+        } catch (err) {
+          console.error('[FIREBASE] Lỗi parse dữ liệu từ Firebase:', err);
         }
       }
       isFirebaseLoaded = true;
@@ -204,7 +212,7 @@ function sendTargetedState(sock, activeTours) {
       sock.emit('update_god_mode', {
           financial: db.financial || { net_cash: 0, total_debt: 0, total_rake: 0 },
           staff: staffList,
-          all_tours: tTours,
+          all_tours: db.tournaments || [],
           current_shift: db.current_shift
       });
     }
