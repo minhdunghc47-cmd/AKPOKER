@@ -112,12 +112,35 @@
     </script>
 
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="flex flex-col lg:flex-row min-h-screen lg:h-screen lg:overflow-hidden bg-[#0a0a0a] text-white">
+    <!-- MOBILE HEADER & TAB SWITCHER -->
+    <header class="lg:hidden bg-[#111] border-b border-[#d4af37]/40 p-3 flex items-center justify-between sticky top-0 z-40 shrink-0">
+        <div class="flex items-center gap-2">
+            <a href="./index.html" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-gray-400 hover:text-white text-xs">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <span class="font-mafia text-[#d4af37] font-bold text-base tracking-wider">CASINO TD</span>
+        </div>
+        <div class="flex gap-1 bg-[#181818] p-1 rounded-xl border border-[#333]">
+            <button id="td-tab-live" onclick="setTdMobileTab('live')" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition flex items-center gap-1 bg-[#d4af37] text-black shadow">
+                <i class="fa-solid fa-desktop"></i> <span>Điều Hành</span>
+            </button>
+            <button id="td-tab-create" onclick="setTdMobileTab('create')" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition flex items-center gap-1 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-plus"></i> <span>Tạo Giải</span>
+            </button>
+        </div>
+    </header>
+
     <!-- LEFT PANEL: CREATE TOUR -->
-    <div class="w-[500px] border-r border-[#d4af37]/40 p-6 overflow-y-auto flex flex-col gap-5 bg-[#161616] relative z-10 shadow-[5px_0_15px_rgba(0,0,0,0.8)]">
-        <h2 class="text-3xl font-mafia text-gold text-center tracking-wider border-b border-[#d4af37]/30 pb-4 drop-shadow-md">
-            <i class="fa-solid fa-crown mr-2"></i>CASINO TD
-        </h2>
+    <div id="td-panel-create" class="w-full lg:w-[480px] xl:w-[500px] border-b lg:border-b-0 lg:border-r border-[#d4af37]/40 p-4 sm:p-6 overflow-y-auto hidden lg:flex flex-col gap-4 bg-[#161616] relative z-10 shadow-[5px_0_15px_rgba(0,0,0,0.8)]">
+        <div class="flex justify-between items-center border-b border-[#d4af37]/30 pb-3">
+            <h2 class="text-2xl font-mafia text-gold tracking-wider drop-shadow-md">
+                <i class="fa-solid fa-crown mr-2"></i>CASINO TD
+            </h2>
+            <a href="./index.html" class="hidden lg:flex px-3 py-1.5 rounded bg-[#1a1a1a] border border-[#333] text-gray-400 hover:text-white text-xs font-bold uppercase tracking-wider items-center gap-1">
+                <i class="fa-solid fa-arrow-left"></i> SẢNH
+            </a>
+        </div>
 
         <div>
             <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Mẫu Giải Đấu (Preset)</label>
@@ -130,47 +153,53 @@
             </select>
         </div>
 
-        <div class="flex gap-4">
-            <div class="flex-1">
-                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Tên Giải Đấu</label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="sm:col-span-2">
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-1.5 uppercase tracking-widest">Tên Giải Đấu</label>
                 <input type="text" id="tour-name" class="input-mafia text-sm font-bold" placeholder="VD: Mafia High Roller">
             </div>
-            <div class="w-1/3">
-                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Start Stack</label>
-                <input type="number" id="starting-stack" class="input-mafia text-sm font-bold text-emerald-400 mb-4" value="50000" step="1000">
-                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Mức Phí Buy-in (VNĐ)</label>
+            <div>
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-1.5 uppercase tracking-widest">Start Stack</label>
+                <input type="number" id="starting-stack" class="input-mafia text-sm font-bold text-emerald-400" value="50000" step="1000">
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-1.5 uppercase tracking-widest">Mức Phí Buy-in (VNĐ)</label>
                 <input type="number" id="buy-in-fee" class="input-mafia text-sm font-bold text-emerald-400" value="5000000" step="100000">
             </div>
             <div>
-                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Thời gian bắt đầu dự kiến</label>
-                <input type="datetime-local" id="scheduled-start" class="input-mafia text-sm font-bold text-gray-200 mb-4 w-full bg-[#111]">
-                <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Số người tối thiểu để chia bài</label>
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-1.5 uppercase tracking-widest">Thời gian bắt đầu dự kiến</label>
+                <input type="datetime-local" id="scheduled-start" class="input-mafia text-sm font-bold text-gray-200 w-full bg-[#111]">
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-[#d4af37] mb-1.5 uppercase tracking-widest">Số người tối thiểu chia bài</label>
                 <input type="number" id="min-players" class="input-mafia text-sm font-bold text-yellow-400 w-full" value="6" min="2" max="10">
             </div>
         </div>
 
-
-        <div id="blinds-preview-container" class="flex flex-col gap-3 flex-1 mt-4">
-            <button class="bg-[#1a1a1a] border border-[#d4af37] text-[#d4af37] py-4 rounded font-bold uppercase hover:bg-[#222] transition text-sm flex items-center justify-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.5)]" onclick="openBlindsModal()">
+        <div id="blinds-preview-container" class="flex flex-col gap-2.5 mt-2">
+            <button class="bg-[#1a1a1a] border border-[#d4af37] text-[#d4af37] py-3.5 rounded-lg font-bold uppercase hover:bg-[#222] transition text-xs sm:text-sm flex items-center justify-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.5)] active:scale-95" onclick="openBlindsModal()">
                 <i class="fa-solid fa-gear"></i> CẤU HÌNH BLINDS CHI TIẾT
             </button>
-            <button class="bg-[#2a1738] border border-[#9d4edd] text-[#e0aaff] py-3 rounded font-bold uppercase hover:bg-[#3c096c] transition text-xs flex items-center justify-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.5)]" onclick="saveTemplate()">
+            <button class="bg-[#2a1738] border border-[#9d4edd] text-[#e0aaff] py-2.5 rounded-lg font-bold uppercase hover:bg-[#3c096c] transition text-xs flex items-center justify-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.5)] active:scale-95" onclick="saveTemplate()">
                 <i class="fa-solid fa-floppy-disk"></i> LƯU LÀM MẪU MỚI
             </button>
         </div>
 
         <div>
-            <label class="block text-[11px] font-bold text-[#d4af37] mb-3 uppercase tracking-widest mt-2">Cấp Phát Bàn</label>
+            <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest mt-1">Cấp Phát Bàn Chơi</label>
             <div class="grid grid-cols-4 gap-2" id="tables-grid"></div>
         </div>
 
-        <button class="btn-gold py-4 w-full uppercase tracking-widest text-sm shadow-lg mt-2" onclick="createTour()">KÍCH HOẠT GIẢI</button>
+        <button class="btn-gold py-3.5 w-full uppercase tracking-widest text-xs sm:text-sm shadow-lg mt-1 active:scale-95" onclick="createTour()">KÍCH HOẠT GIẢI</button>
     </div>
 
     <!-- RIGHT PANEL: MINI TV -->
-    <div class="flex-1 p-8 overflow-y-auto bg-[#050505]">
-        <h2 class="text-2xl font-mafia text-gray-500 mb-8 tracking-widest uppercase border-b border-gray-800 pb-3"><i class="fa-solid fa-desktop mr-2 text-[#800020]"></i> Ma Trận Điều Hành</h2>
-        <div class="grid grid-cols-1 xl:grid-cols-2 3xl:grid-cols-3 gap-8" id="tv-grid"></div>
+    <div id="td-panel-live" class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-[#050505] flex flex-col">
+        <h2 class="text-xl sm:text-2xl font-mafia text-gray-400 mb-4 sm:mb-6 tracking-widest uppercase border-b border-gray-800 pb-3 flex items-center justify-between">
+            <span><i class="fa-solid fa-desktop mr-2 text-[#800020]"></i> Ma Trận Điều Hành</span>
+            <span class="text-xs text-gray-500 font-sans normal-case font-normal hidden sm:inline">Thời gian thực</span>
+        </h2>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6" id="tv-grid"></div>
     </div>
 
 
@@ -590,6 +619,27 @@
             auth: { token: sessionStorage.getItem('acepoker_session_token') || role, role: role }
         });
 
+        // Mobile Tab Switcher
+        let tdMobileTab = 'live';
+        function setTdMobileTab(tab) {
+            tdMobileTab = tab;
+            const btnLive = document.getElementById('td-tab-live');
+            const btnCreate = document.getElementById('td-tab-create');
+            const panelLive = document.getElementById('td-panel-live');
+            const panelCreate = document.getElementById('td-panel-create');
+            if (tab === 'live') {
+                if (btnLive) btnLive.className = 'px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition flex items-center gap-1 bg-[#d4af37] text-black shadow';
+                if (btnCreate) btnCreate.className = 'px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition flex items-center gap-1 text-gray-400 hover:text-white';
+                if (panelLive) { panelLive.classList.remove('hidden'); panelLive.classList.add('flex'); }
+                if (panelCreate) { panelCreate.classList.add('hidden'); panelCreate.classList.remove('flex'); }
+            } else {
+                if (btnCreate) btnCreate.className = 'px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition flex items-center gap-1 bg-[#d4af37] text-black shadow';
+                if (btnLive) btnLive.className = 'px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition flex items-center gap-1 text-gray-400 hover:text-white';
+                if (panelCreate) { panelCreate.classList.remove('hidden'); panelCreate.classList.add('flex'); }
+                if (panelLive) { panelLive.classList.add('hidden'); panelLive.classList.remove('flex'); }
+            }
+        }
+
         
         
 
@@ -945,14 +995,14 @@
                             <div class="font-mafia text-2xl text-[#d4af37] font-bold uppercase tracking-widest drop-shadow-md">${blindText}</div>
                             <div class="text-[11px] text-gray-500 uppercase tracking-widest mt-1 mb-5 font-bold">NEXT: ${nextBlindText}</div>
 
-                            <div class="flex items-center justify-center gap-5 mb-2">
-                                <button class="bg-[#1a1a1a] border border-[#444] text-gray-400 w-12 h-12 rounded-full font-bold hover:bg-[#333] hover:text-white transition shadow-md flex items-center justify-center text-sm" onclick="socket.emit('adjust_time', '${tour.id}', -60)" title="-1 Phút">-1M</button>
+                            <div class="flex items-center justify-center gap-2 sm:gap-5 mb-2">
+                                <button class="bg-[#1a1a1a] border border-[#444] text-gray-400 w-10 sm:w-12 h-10 sm:h-12 rounded-full font-bold hover:bg-[#333] hover:text-white transition shadow-md flex items-center justify-center text-xs sm:text-sm active:scale-95" onclick="socket.emit('adjust_time', '${tour.id}', -60)" title="-1 Phút">-1M</button>
 
-                                <div class="font-digital text-7xl font-bold ${isBreak ? 'text-[#ff4c4c]' : 'text-emerald-400'} drop-shadow-[0_0_15px_currentColor] tracking-widest">${formatTime(tour.time_remaining)}</div>
+                                <div class="font-digital text-5xl sm:text-6xl lg:text-7xl font-bold ${isBreak ? 'text-[#ff4c4c]' : 'text-emerald-400'} drop-shadow-[0_0_15px_currentColor] tracking-widest leading-none px-2">${formatTime(tour.time_remaining)}</div>
 
-                                <div class="flex flex-col gap-2">
-                                    <button class="bg-[#1a1a1a] border border-[#444] text-gray-400 w-12 h-8 rounded text-[10px] font-bold hover:bg-[#333] hover:text-white transition shadow-md" onclick="socket.emit('adjust_time', '${tour.id}', 60)">+1M</button>
-                                    <button class="bg-[#1a1a1a] border border-[#444] text-gray-400 w-12 h-8 rounded text-[10px] font-bold hover:bg-[#333] hover:text-white transition shadow-md" onclick="socket.emit('adjust_time', '${tour.id}', 300)">+5M</button>
+                                <div class="flex flex-col gap-1.5 sm:gap-2">
+                                    <button class="bg-[#1a1a1a] border border-[#444] text-gray-400 w-10 sm:w-12 h-7 sm:h-8 rounded text-[10px] font-bold hover:bg-[#333] hover:text-white transition shadow-md active:scale-95" onclick="socket.emit('adjust_time', '${tour.id}', 60)">+1M</button>
+                                    <button class="bg-[#1a1a1a] border border-[#444] text-gray-400 w-10 sm:w-12 h-7 sm:h-8 rounded text-[10px] font-bold hover:bg-[#333] hover:text-white transition shadow-md active:scale-95" onclick="socket.emit('adjust_time', '${tour.id}', 300)">+5M</button>
                                 </div>
                             </div>
                         </div>

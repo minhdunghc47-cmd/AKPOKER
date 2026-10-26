@@ -64,31 +64,46 @@
     </script>
 
 </head>
-<body class="p-6 h-screen flex flex-col">
-    <header class="flex justify-between items-center mb-6 border-b border-[#333] pb-4">
-        <div>
-            <h1 class="text-3xl font-mafia text-[#d4af37] tracking-widest"><i class="fa-solid fa-users mr-3"></i>HR MANAGEMENT</h1>
-            <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">Phân hệ Quản Trị Nhân Sự (God Mode)</p>
+<body class="p-3 sm:p-6 min-h-screen lg:h-screen flex flex-col bg-[#0a0a0a] text-[#d1d5db]">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 sm:mb-6 border-b border-[#333] pb-3 sm:pb-4 gap-3">
+        <div class="flex items-center justify-between w-full md:w-auto">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-mafia text-[#d4af37] tracking-widest"><i class="fa-solid fa-users mr-2 sm:mr-3"></i>HR MANAGEMENT</h1>
+                <p class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-widest mt-0.5">Phân hệ Quản Trị Nhân Sự (God Mode)</p>
+            </div>
+            <a href="./index.html" class="md:hidden px-3 py-1.5 bg-[#1a1a1a] border border-[#444] text-gray-300 rounded text-xs">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
         </div>
-        <div class="flex items-center gap-3">
-            <button onclick="exportCurrentPayrollToExcel()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded uppercase text-xs tracking-wider transition-colors shadow-lg flex items-center gap-2">
-                <i class="fa-solid fa-file-excel text-sm"></i> Xuất Excel
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="exportCurrentPayrollToExcel()" class="px-3 sm:px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-lg uppercase text-[10px] sm:text-xs tracking-wider transition-colors shadow flex items-center gap-1.5 active:scale-95">
+                <i class="fa-solid fa-file-excel"></i> Xuất Excel
             </button>
-            <button onclick="openClosePayrollModal()" class="px-4 py-2 bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold rounded uppercase text-xs tracking-wider transition-colors shadow-lg flex items-center gap-2">
-                <i class="fa-solid fa-lock text-sm"></i> Chốt Kỳ Lương
+            <button onclick="openClosePayrollModal()" class="px-3 sm:px-4 py-2 bg-[#d4af37] hover:bg-[#b5952f] text-black font-bold rounded-lg uppercase text-[10px] sm:text-xs tracking-wider transition-colors shadow flex items-center gap-1.5 active:scale-95">
+                <i class="fa-solid fa-lock"></i> Chốt Lương
             </button>
-            <button onclick="openPayrollHistoryModal()" class="px-4 py-2 bg-[#2a2a2a] hover:bg-[#383838] border border-[#555] text-gray-200 font-bold rounded uppercase text-xs tracking-wider transition-colors flex items-center gap-2">
-                <i class="fa-solid fa-clock-rotate-left text-sm"></i> Lịch Sử Kỳ Lương
+            <button onclick="openPayrollHistoryModal()" class="px-3 sm:px-4 py-2 bg-[#2a2a2a] hover:bg-[#383838] border border-[#555] text-gray-200 font-bold rounded-lg uppercase text-[10px] sm:text-xs tracking-wider transition-colors flex items-center gap-1.5 active:scale-95">
+                <i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử
             </button>
-            <a href="./index.html" class="px-5 py-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#444] text-gray-300 font-bold rounded uppercase text-xs tracking-widest transition-colors flex items-center gap-2">
+            <a href="./index.html" class="hidden md:flex px-4 py-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#444] text-gray-300 font-bold rounded-lg uppercase text-xs tracking-widest transition-colors items-center gap-1.5">
                 <i class="fa-solid fa-arrow-left"></i> Về Sảnh
             </a>
         </div>
     </header>
 
-    <div class="flex gap-6 flex-1 overflow-hidden">
+    <!-- MOBILE TABS -->
+    <div class="lg:hidden flex gap-1.5 mb-3 bg-[#111] p-1 rounded-xl border border-[#333]">
+        <button id="hr-tab-form" onclick="setHrMobileTab('form')" class="flex-1 py-1.5 rounded-lg text-xs font-bold uppercase transition bg-[#d4af37] text-black shadow">
+            <i class="fa-solid fa-user-plus mr-1"></i> Bổ Nhiệm NV
+        </button>
+        <button id="hr-tab-list" onclick="setHrMobileTab('list')" class="flex-1 py-1.5 rounded-lg text-xs font-bold uppercase transition text-gray-400 hover:text-white">
+            <i class="fa-solid fa-list-check mr-1"></i> Danh Sách & Lương
+        </button>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-4 sm:gap-6 flex-1 overflow-y-auto lg:overflow-hidden">
         <!-- FORM BỔ NHIỆM -->
-        <div class="w-1/3 glass-panel p-6 rounded-lg flex flex-col gap-4 overflow-y-auto">
+        <div id="hr-panel-form" class="w-full lg:w-1/3 glass-panel p-4 sm:p-6 rounded-xl flex flex-col gap-4 overflow-y-auto">
             <div class="flex justify-between items-center mb-4 border-b border-[#333] pb-2">
                 <h2 class="text-xl font-mafia text-[#d4af37] uppercase tracking-widest"><i class="fa-solid fa-user-plus mr-2"></i>Bổ Nhiệm</h2>
                 <button onclick="resetStaffForm()" class="px-3 py-1 border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold rounded text-xs uppercase tracking-widest transition-colors">
@@ -194,9 +209,10 @@
         </div>
 
         <!-- DANH SÁCH NHÂN SỰ -->
-        <div class="w-2/3 glass-panel p-6 rounded-lg overflow-y-auto">
-            <h2 class="text-xl font-mafia text-[#d4af37] uppercase tracking-widest mb-4 border-b border-[#333] pb-2"><i class="fa-solid fa-users-viewfinder mr-2"></i>Danh Sách Nhân Sự & Bảng Lương</h2>
-            <table class="w-full text-left border-collapse">
+        <div id="hr-panel-list" class="w-full lg:w-2/3 glass-panel p-4 sm:p-6 rounded-xl overflow-y-auto hidden lg:block">
+            <h2 class="text-lg sm:text-xl font-mafia text-[#d4af37] uppercase tracking-widest mb-4 border-b border-[#333] pb-2"><i class="fa-solid fa-users-viewfinder mr-2"></i>Danh Sách Nhân Sự & Bảng Lương</h2>
+            <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[600px]">
                 <thead>
                     <tr class="text-xs uppercase tracking-widest text-gray-500 border-b border-[#333]">
                         <th class="p-3">Mã NV</th>
@@ -214,11 +230,32 @@
                     <!-- Data here -->
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
+        // Mobile Tab Switcher
+        let hrMobileTab = 'form';
+        function setHrMobileTab(tab) {
+            hrMobileTab = tab;
+            const btnForm = document.getElementById('hr-tab-form');
+            const btnList = document.getElementById('hr-tab-list');
+            const panelForm = document.getElementById('hr-panel-form');
+            const panelList = document.getElementById('hr-panel-list');
+            if (tab === 'form') {
+                if (btnForm) btnForm.className = 'flex-1 py-1.5 rounded-lg text-xs font-bold uppercase transition bg-[#d4af37] text-black shadow';
+                if (btnList) btnList.className = 'flex-1 py-1.5 rounded-lg text-xs font-bold uppercase transition text-gray-400 hover:text-white';
+                if (panelForm) { panelForm.classList.remove('hidden'); }
+                if (panelList) { panelList.classList.add('hidden'); }
+            } else {
+                if (btnList) btnList.className = 'flex-1 py-1.5 rounded-lg text-xs font-bold uppercase transition bg-[#d4af37] text-black shadow';
+                if (btnForm) btnForm.className = 'flex-1 py-1.5 rounded-lg text-xs font-bold uppercase transition text-gray-400 hover:text-white';
+                if (panelList) { panelList.classList.remove('hidden'); }
+                if (panelForm) { panelForm.classList.add('hidden'); }
+            }
+        }
         const firebaseConfig = {
             apiKey: "AIzaSyAsEfStDuNNNk6bWDxdlSNMpOjljMXUZZs",
             authDomain: "acepoker-1991.firebaseapp.com",

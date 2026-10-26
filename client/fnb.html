@@ -69,36 +69,46 @@
 <body class="min-h-screen flex flex-col pb-10">
 
     <!-- TOP HEADER -->
-    <header class="h-20 bg-gradient-to-b from-[#0a1128] to-[#050b14] border-b border-[#d4af37]/30 px-6 flex items-center justify-between shadow-xl sticky top-0 z-40">
-        <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-full bg-black border-2 border-[#d4af37] flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.5)]">
-                <i class="fa-solid fa-mug-hot text-xl text-[#d4af37]"></i>
-            </div>
-            <div>
-                <div class="font-oswald text-2xl text-white tracking-wider flex items-center gap-2">
-                    <span>ACE<span class="text-[#d4af37]"> POKER</span></span>
-                    <span class="text-xs bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37] px-2 py-0.5 rounded font-bold uppercase tracking-widest">F&B • BAR & BẾP</span>
+    <header class="min-h-16 py-2.5 bg-gradient-to-b from-[#0a1128] to-[#050b14] border-b border-[#d4af37]/30 px-3 sm:px-6 flex flex-col md:flex-row gap-3 items-center justify-between shadow-xl sticky top-0 z-40">
+        <div class="flex items-center justify-between w-full md:w-auto gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-black border-2 border-[#d4af37] flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.5)] shrink-0">
+                    <i class="fa-solid fa-mug-hot text-base text-[#d4af37]"></i>
                 </div>
-                <div class="text-[11px] text-gray-400 uppercase tracking-widest font-semibold">HỆ THỐNG GỌI NƯỚC, ĐỒ ĂN & BƯNG BÀN (KDS)</div>
+                <div>
+                    <div class="font-oswald text-xl sm:text-2xl text-white tracking-wider flex items-center gap-1.5">
+                        <span>ACE<span class="text-[#d4af37]"> POKER</span></span>
+                        <span class="text-[10px] bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider">F&B BAR/BẾP</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Mobile Right Actions -->
+            <div class="flex items-center gap-2 md:hidden">
+                <button id="btn-sound-toggle-m" onclick="toggleSound()" class="w-8 h-8 rounded-full bg-[#111827] border border-amber-500/40 text-amber-400 flex items-center justify-center text-xs">
+                    <i id="sound-icon-m" class="fa-solid fa-volume-high"></i>
+                </button>
+                <a href="./index.html" class="p-1.5 rounded-lg bg-gray-900 border border-gray-700 text-gray-300 text-xs">
+                    <i class="fa-solid fa-house"></i>
+                </a>
             </div>
         </div>
 
         <!-- CENTER TABS -->
-        <div class="flex items-center gap-2 bg-[#0c1424] p-1.5 rounded-xl border border-gray-800">
-            <button onclick="switchTab('orders')" id="tab-btn-orders" class="px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md">
-                <i class="fa-solid fa-bell-concierge"></i> ĐƠN HÀNG LIVE
-                <span id="badge-pending-orders" class="bg-red-600 text-white px-2 py-0.2 rounded-full text-[10px] font-extrabold hidden">0</span>
+        <div class="flex items-center gap-1.5 bg-[#0c1424] p-1 rounded-xl border border-gray-800 w-full md:w-auto overflow-x-auto no-scrollbar justify-center">
+            <button onclick="switchTab('orders')" id="tab-btn-orders" class="flex-1 md:flex-initial px-3 sm:px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md whitespace-nowrap active:scale-95">
+                <i class="fa-solid fa-bell-concierge"></i> <span>Đơn Live</span>
+                <span id="badge-pending-orders" class="bg-red-600 text-white px-1.5 py-0.2 rounded-full text-[9px] font-extrabold hidden">0</span>
             </button>
-            <button onclick="switchTab('pos')" id="tab-btn-pos" class="px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 text-gray-400 hover:text-white">
-                <i class="fa-solid fa-plus-circle"></i> TẠO ĐƠN TẠI BÀN / BAR
+            <button onclick="switchTab('pos')" id="tab-btn-pos" class="flex-1 md:flex-initial px-3 sm:px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 text-gray-400 hover:text-white whitespace-nowrap active:scale-95">
+                <i class="fa-solid fa-plus-circle"></i> <span>Tạo Đơn</span>
             </button>
-            <button onclick="switchTab('menu')" id="tab-btn-menu" class="px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 text-gray-400 hover:text-white">
-                <i class="fa-solid fa-utensils"></i> QUẢN LÝ THỰC ĐƠN
+            <button onclick="switchTab('menu')" id="tab-btn-menu" class="flex-1 md:flex-initial px-3 sm:px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 text-gray-400 hover:text-white whitespace-nowrap active:scale-95">
+                <i class="fa-solid fa-utensils"></i> <span>Menu</span>
             </button>
         </div>
 
-        <!-- RIGHT ACTIONS -->
-        <div class="flex items-center gap-4">
+        <!-- DESKTOP RIGHT ACTIONS -->
+        <div class="hidden md:flex items-center gap-4">
             <button id="btn-sound-toggle" onclick="toggleSound()" class="w-10 h-10 rounded-full bg-[#111827] border border-amber-500/40 text-amber-400 flex items-center justify-center hover:bg-amber-500 hover:text-black transition" title="Bật/Tắt chuông báo đơn mới">
                 <i id="sound-icon" class="fa-solid fa-volume-high"></i>
             </button>
@@ -113,50 +123,50 @@
     </header>
 
     <!-- STATS KPI BAR -->
-    <div class="px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="glass-card rounded-xl p-4 flex items-center justify-between border-l-4 border-l-amber-500">
+    <div class="px-3 sm:px-6 py-3 grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div class="glass-card rounded-xl p-3 sm:p-4 flex items-center justify-between border-l-4 border-l-amber-500">
             <div>
-                <div class="text-xs uppercase text-gray-400 font-bold tracking-wider">Đang Chuẩn Bị (Chờ)</div>
-                <div id="kpi-pending-count" class="font-teko text-4xl text-amber-400 leading-none mt-1">0</div>
+                <div class="text-[11px] sm:text-xs uppercase text-gray-400 font-bold tracking-wider">Đang Chờ Làm</div>
+                <div id="kpi-pending-count" class="font-teko text-3xl sm:text-4xl text-amber-400 leading-none mt-1">0</div>
             </div>
-            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl">
+            <div class="w-9 sm:w-12 h-9 sm:h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-base sm:text-xl shrink-0">
                 <i class="fa-solid fa-fire-burner animate-pulse"></i>
             </div>
         </div>
 
-        <div class="glass-card rounded-xl p-4 flex items-center justify-between border-l-4 border-l-blue-500">
+        <div class="glass-card rounded-xl p-3 sm:p-4 flex items-center justify-between border-l-4 border-l-blue-500">
             <div>
-                <div class="text-xs uppercase text-gray-400 font-bold tracking-wider">Đang Bưng Ra Bàn</div>
-                <div id="kpi-delivering-count" class="font-teko text-4xl text-blue-400 leading-none mt-1">0</div>
+                <div class="text-[11px] sm:text-xs uppercase text-gray-400 font-bold tracking-wider">Đang Bưng Ra</div>
+                <div id="kpi-delivering-count" class="font-teko text-3xl sm:text-4xl text-blue-400 leading-none mt-1">0</div>
             </div>
-            <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 text-xl">
+            <div class="w-9 sm:w-12 h-9 sm:h-12 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 text-base sm:text-xl shrink-0">
                 <i class="fa-solid fa-person-walking-luggage"></i>
             </div>
         </div>
 
-        <div class="glass-card rounded-xl p-4 flex items-center justify-between border-l-4 border-l-emerald-500">
+        <div class="glass-card rounded-xl p-3 sm:p-4 flex items-center justify-between border-l-4 border-l-emerald-500">
             <div>
-                <div class="text-xs uppercase text-gray-400 font-bold tracking-wider">Đã Phục Vụ Hôm Nay</div>
-                <div id="kpi-completed-count" class="font-teko text-4xl text-emerald-400 leading-none mt-1">0</div>
+                <div class="text-[11px] sm:text-xs uppercase text-gray-400 font-bold tracking-wider">Đã Phục Vụ</div>
+                <div id="kpi-completed-count" class="font-teko text-3xl sm:text-4xl text-emerald-400 leading-none mt-1">0</div>
             </div>
-            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl">
+            <div class="w-9 sm:w-12 h-9 sm:h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-base sm:text-xl shrink-0">
                 <i class="fa-solid fa-circle-check"></i>
             </div>
         </div>
 
-        <div class="glass-card rounded-xl p-4 flex items-center justify-between border-l-4 border-l-[#d4af37]">
+        <div class="glass-card rounded-xl p-3 sm:p-4 flex items-center justify-between border-l-4 border-l-[#d4af37]">
             <div>
-                <div class="text-xs uppercase text-gray-400 font-bold tracking-wider">Tổng Doanh Thu F&B</div>
-                <div id="kpi-revenue-total" class="font-teko text-3xl md:text-4xl text-[#d4af37] leading-none mt-1">0 ₫</div>
+                <div class="text-[11px] sm:text-xs uppercase text-gray-400 font-bold tracking-wider">Doanh Thu F&B</div>
+                <div id="kpi-revenue-total" class="font-teko text-2xl sm:text-3xl lg:text-4xl text-[#d4af37] leading-none mt-1">0 ₫</div>
             </div>
-            <div class="w-12 h-12 rounded-xl bg-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37] text-xl">
+            <div class="w-9 sm:w-12 h-9 sm:h-12 rounded-xl bg-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37] text-base sm:text-xl shrink-0">
                 <i class="fa-solid fa-coins"></i>
             </div>
         </div>
     </div>
 
     <!-- MAIN VIEWS CONTAINER -->
-    <main class="flex-1 px-6">
+    <main class="flex-1 px-3 sm:px-6">
 
         <!-- ============================================== -->
         <!-- VIEW 1: LIVE ORDERS STREAM (KDS & RUNNER SCREEN) -->

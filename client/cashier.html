@@ -98,14 +98,37 @@
     </script>
 
 </head>
-<body class="flex h-screen overflow-hidden">
-    <!-- LEFT PANEL -->
-    <div class="flex-1 p-8 overflow-y-auto bg-[#0a0a0a] border-r border-[#d4af37]/30">
-        <h2 class="text-2xl font-mafia text-gray-500 mb-8 tracking-widest uppercase border-b border-gray-800 pb-3"><i class="fa-solid fa-tv mr-2 text-[#800020]"></i> THEO DÕI GIẢI ĐẤU</h2>
+<body class="flex flex-col lg:flex-row min-h-screen lg:h-screen lg:overflow-hidden bg-[#0a0a0a] text-white">
+    <!-- MOBILE HEADER & TAB SWITCHER -->
+    <header class="lg:hidden bg-[#111] border-b border-[#d4af37]/40 p-3 flex items-center justify-between sticky top-0 z-40 shrink-0">
+        <div class="flex items-center gap-2">
+            <a href="./index.html" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-gray-400 hover:text-white text-xs">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <span class="font-mafia text-[#d4af37] font-bold text-base tracking-wider">POS THU NGÂN</span>
+        </div>
+        <div class="flex gap-1 bg-[#181818] p-1 rounded-xl border border-[#333]">
+            <button id="cashier-tab-pos" onclick="setCashierMobileTab('pos')" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition flex items-center gap-1 bg-[#d4af37] text-black shadow">
+                <i class="fa-solid fa-cash-register"></i> <span>Bán Vé</span>
+            </button>
+            <button id="cashier-tab-tour" onclick="setCashierMobileTab('tour')" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition flex items-center gap-1 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-tv"></i> <span>Tour & Vé</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- LEFT PANEL: TOURS & RECEIPT PREVIEW -->
+    <div id="cashier-panel-tour" class="w-full lg:flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-[#0a0a0a] border-b lg:border-b-0 lg:border-r border-[#d4af37]/30 hidden lg:block">
+        <div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-3">
+            <h2 class="text-xl sm:text-2xl font-mafia text-gray-400 tracking-widest uppercase"><i class="fa-solid fa-tv mr-2 text-[#800020]"></i> THEO DÕI GIẢI ĐẤU</h2>
+            <a href="./index.html" class="hidden lg:flex px-3 py-1.5 rounded bg-[#1a1a1a] border border-[#333] text-gray-400 hover:text-white text-xs font-bold uppercase tracking-wider items-center gap-1">
+                <i class="fa-solid fa-arrow-left"></i> SẢNH
+            </a>
+        </div>
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6" id="tv-grid"></div>
 
-        <div class="mt-12 flex flex-col items-center">
-            <h2 class="text-lg font-mafia text-[#d4af37] mb-6 tracking-widest uppercase border-b border-gray-800 pb-2 w-full text-center"><i class="fa-solid fa-receipt mr-2"></i> XEM TRƯỚC HÓA ĐƠN</h2>
+        <div class="mt-8 sm:mt-12 flex flex-col items-center">
+            <h2 class="text-base sm:text-lg font-mafia text-[#d4af37] mb-4 sm:mb-6 tracking-widest uppercase border-b border-gray-800 pb-2 w-full text-center"><i class="fa-solid fa-receipt mr-2"></i> XEM TRƯỚC HÓA ĐƠN</h2>
 
             <div id="receipt-preview" class="bg-white text-black p-4 shadow-[0_0_20px_rgba(212,175,55,0.2)] border-2 border-dashed border-gray-300 rounded" style="width: 80mm; font-family: 'Courier New', Courier, monospace;">
                 <div style="text-align: center; margin-bottom: 8px;">
@@ -151,17 +174,17 @@
         </div>
     </div>
 
-    <!-- RIGHT PANEL -->
-    <div class="w-[480px] p-8 bg-[#161616] flex flex-col shadow-[-10px_0_20px_rgba(0,0,0,0.8)] z-10 overflow-y-auto">
-        <div class="flex justify-between items-center w-full mb-8 border-b border-[#d4af37]/30 pb-5">
-            <h2 class="text-2xl font-mafia text-gold tracking-wider drop-shadow-md"><i class="fa-solid fa-cash-register mr-2"></i> POS THU NGÂN</h2>
+    <!-- RIGHT PANEL: POS THU NGÂN -->
+    <div id="cashier-panel-pos" class="w-full lg:w-[480px] xl:w-[500px] p-4 sm:p-6 lg:p-8 bg-[#161616] flex flex-col shadow-[-10px_0_20px_rgba(0,0,0,0.8)] z-10 overflow-y-auto">
+        <div class="flex justify-between items-center w-full mb-6 sm:mb-8 border-b border-[#d4af37]/30 pb-4 sm:pb-5">
+            <h2 class="text-xl sm:text-2xl font-mafia text-gold tracking-wider drop-shadow-md"><i class="fa-solid fa-cash-register mr-2"></i> POS THU NGÂN</h2>
             <div class="flex items-center gap-2">
-                <button id="btn-shift-mgmt" class="bg-[#1f1f1f] border border-[#d4af37]/50 text-[#d4af37] px-3 py-2 rounded font-bold uppercase tracking-widest text-[10px] hover:bg-[#d4af37]/20 transition shadow-md whitespace-nowrap flex items-center gap-1.5" onclick="openShiftModal()">
+                <button id="btn-shift-mgmt" class="bg-[#1f1f1f] border border-[#d4af37]/50 text-[#d4af37] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded font-bold uppercase tracking-wider text-[10px] hover:bg-[#d4af37]/20 transition shadow-md whitespace-nowrap flex items-center gap-1.5" onclick="openShiftModal()">
                     <i class="fa-solid fa-wallet"></i>
-                    <span id="shift-btn-label">CA TRỰC & KÉT TIỀN</span>
-                    <span id="shift-status-dot" class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+                    <span id="shift-btn-label">KÉT TIỀN</span>
+                    <span id="shift-status-dot" class="w-2 h-2 rounded-full bg-red-500 inline-block shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
                 </button>
-                <button class="bg-[#1f1f1f] border border-[#d4af37]/50 text-[#d4af37] px-3 py-2 rounded font-bold uppercase tracking-widest text-[10px] hover:bg-[#d4af37]/20 transition shadow-md whitespace-nowrap" onclick="openMembersModal()">
+                <button class="bg-[#1f1f1f] border border-[#d4af37]/50 text-[#d4af37] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded font-bold uppercase tracking-wider text-[10px] hover:bg-[#d4af37]/20 transition shadow-md whitespace-nowrap" onclick="openMembersModal()">
                     <i class="fa-solid fa-address-book mr-1"></i> HỘI VIÊN
                 </button>
             </div>
@@ -567,9 +590,9 @@
                 </div>
 
                 <!-- LIVE TRANSACTION LIST & CLOSING FORM -->
-                <div class="flex-1 flex gap-4 overflow-hidden min-h-[220px]">
+                <div class="flex-1 flex flex-col md:flex-row gap-4 overflow-y-auto min-h-[220px]">
                     <!-- Transactions Stream -->
-                    <div class="flex-1 bg-[#0d0d0d] border border-[#222] rounded-lg flex flex-col overflow-hidden">
+                    <div class="flex-1 bg-[#0d0d0d] border border-[#222] rounded-lg flex flex-col overflow-hidden min-h-[160px]">
                         <div class="p-2.5 bg-[#141414] border-b border-[#222] flex justify-between items-center text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                             <span><i class="fa-solid fa-list-check mr-1 text-[#d4af37]"></i> Giao Dịch Trong Ca</span>
                             <span id="shift-tx-count" class="text-[10px] font-mono text-gray-500">0 GD</span>
@@ -580,7 +603,7 @@
                     </div>
 
                     <!-- Closing & Handover Form -->
-                    <div class="w-[310px] bg-[#161616] border border-[#333] rounded-lg p-3.5 flex flex-col justify-between overflow-y-auto">
+                    <div class="w-full md:w-[310px] bg-[#161616] border border-[#333] rounded-lg p-3.5 flex flex-col justify-between overflow-y-auto shrink-0">
                         <div class="space-y-3">
                             <div class="text-xs font-bold text-amber-400 uppercase tracking-widest border-b border-[#333] pb-1.5 flex items-center gap-1.5">
                                 <i class="fa-solid fa-calculator"></i> Kiểm Đếm & Chốt Két
@@ -737,6 +760,27 @@
         const socket = io(SERVER_URL, {
             auth: { token: sessionStorage.getItem('acepoker_session_token') || role, role: role }
         });
+
+        // Mobile Tab Switcher
+        let cashierMobileTab = 'pos';
+        function setCashierMobileTab(tab) {
+            cashierMobileTab = tab;
+            const btnPos = document.getElementById('cashier-tab-pos');
+            const btnTour = document.getElementById('cashier-tab-tour');
+            const panelPos = document.getElementById('cashier-panel-pos');
+            const panelTour = document.getElementById('cashier-panel-tour');
+            if (tab === 'pos') {
+                if (btnPos) btnPos.className = 'px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition flex items-center gap-1 bg-[#d4af37] text-black shadow';
+                if (btnTour) btnTour.className = 'px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition flex items-center gap-1 text-gray-400 hover:text-white';
+                if (panelPos) { panelPos.classList.remove('hidden'); panelPos.classList.add('flex'); }
+                if (panelTour) { panelTour.classList.add('hidden'); panelTour.classList.remove('block'); }
+            } else {
+                if (btnTour) btnTour.className = 'px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition flex items-center gap-1 bg-[#d4af37] text-black shadow';
+                if (btnPos) btnPos.className = 'px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition flex items-center gap-1 text-gray-400 hover:text-white';
+                if (panelTour) { panelTour.classList.remove('hidden'); panelTour.classList.add('block'); }
+                if (panelPos) { panelPos.classList.add('hidden'); panelPos.classList.remove('flex'); }
+            }
+        }
 
         
         

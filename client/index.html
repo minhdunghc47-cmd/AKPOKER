@@ -80,70 +80,70 @@
 
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden relative">
+<body class="min-h-screen flex flex-col overflow-y-auto relative bg-black text-[#d1d5db]">
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 flex flex-col items-center justify-center p-6 space-y-12 z-10">
+    <main class="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 py-8 sm:py-12 space-y-6 sm:space-y-10 z-10 w-full max-w-7xl mx-auto">
 
-        <div class="text-center">
-            <h1 class="text-5xl md:text-6xl font-mafia text-[#d4af37] tracking-widest drop-shadow-lg neon-glow mb-4">
-                <i class="fa-solid fa-dice mr-3"></i>HỆ THỐNG QUẢN TRỊ ACEPOKER
+        <div class="text-center px-2">
+            <h1 class="text-2xl sm:text-4xl md:text-6xl font-mafia text-[#d4af37] tracking-wider sm:tracking-widest drop-shadow-lg neon-glow mb-2 sm:mb-4">
+                <i class="fa-solid fa-dice mr-2 sm:mr-3"></i>HỆ THỐNG QUẢN TRỊ ACEPOKER
             </h1>
-            <p class="text-gray-400 text-sm md:text-base uppercase tracking-[0.4em] font-bold">Sảnh Điều Hướng Trung Tâm</p>
+            <p class="text-gray-400 text-xs sm:text-sm md:text-base uppercase tracking-[0.2em] sm:tracking-[0.4em] font-bold">Sảnh Điều Hướng Trung Tâm</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full max-w-7xl">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 w-full">
 
-            <div onclick="openPinModal('./cashier.html', 'cashier')" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
-                <i class="fa-solid fa-money-bill-wave text-5xl text-[#d4af37] mb-4 group-hover:scale-110 transition-transform"></i>
-                <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-[#d4af37] transition-colors">POS Thu Ngân</h2>
-                <p class="text-gray-500 text-xs uppercase tracking-wider">Quản lý quỹ & Hội viên</p>
+            <div onclick="openPinModal('./cashier.html', 'cashier')" class="glass-panel rounded-2xl p-5 sm:p-8 flex flex-col items-center justify-center group text-center cursor-pointer active:scale-95 transition-all">
+                <i class="fa-solid fa-money-bill-wave text-3xl sm:text-5xl text-[#d4af37] mb-3 sm:mb-4 group-hover:scale-110 transition-transform"></i>
+                <h2 class="font-mafia text-xl sm:text-2xl text-gray-200 uppercase tracking-wider sm:tracking-widest mb-1 sm:mb-2 group-hover:text-[#d4af37] transition-colors">POS Thu Ngân</h2>
+                <p class="text-gray-500 text-[11px] sm:text-xs uppercase tracking-wider">Quản lý quỹ & Hội viên</p>
             </div>
 
-            <div onclick="openPinModal('./td_dashboard.html', 'td')" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
-                <i class="fa-solid fa-gamepad text-5xl text-[#d4af37] mb-4 group-hover:scale-110 transition-transform"></i>
-                <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-[#d4af37] transition-colors">TD Dashboard</h2>
-                <p class="text-gray-500 text-xs uppercase tracking-wider">Điều hành giải đấu</p>
+            <div onclick="openPinModal('./td_dashboard.html', 'td')" class="glass-panel rounded-2xl p-5 sm:p-8 flex flex-col items-center justify-center group text-center cursor-pointer active:scale-95 transition-all">
+                <i class="fa-solid fa-gamepad text-3xl sm:text-5xl text-[#d4af37] mb-3 sm:mb-4 group-hover:scale-110 transition-transform"></i>
+                <h2 class="font-mafia text-xl sm:text-2xl text-gray-200 uppercase tracking-wider sm:tracking-widest mb-1 sm:mb-2 group-hover:text-[#d4af37] transition-colors">TD Dashboard</h2>
+                <p class="text-gray-500 text-[11px] sm:text-xs uppercase tracking-wider">Điều hành giải đấu</p>
             </div>
 
-            <div onclick="openPinModal('./floor_ipad.html', 'floor')" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
-                <i class="fa-solid fa-mobile-screen-button text-5xl text-[#d4af37] mb-4 group-hover:scale-110 transition-transform"></i>
-                <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-[#d4af37] transition-colors">Floor Mobile / iPad</h2>
-                <p class="text-gray-500 text-xs uppercase tracking-wider">Quản lý bàn, Quét QR & Ghế</p>
+            <div onclick="openPinModal('./floor_ipad.html', 'floor')" class="glass-panel rounded-2xl p-5 sm:p-8 flex flex-col items-center justify-center group text-center cursor-pointer active:scale-95 transition-all">
+                <i class="fa-solid fa-mobile-screen-button text-3xl sm:text-5xl text-[#d4af37] mb-3 sm:mb-4 group-hover:scale-110 transition-transform"></i>
+                <h2 class="font-mafia text-xl sm:text-2xl text-gray-200 uppercase tracking-wider sm:tracking-widest mb-1 sm:mb-2 group-hover:text-[#d4af37] transition-colors">Floor Mobile / iPad</h2>
+                <p class="text-gray-500 text-[11px] sm:text-xs uppercase tracking-wider">Quản lý bàn, Quét QR & Ghế</p>
             </div>
 
-            <div onclick="window.location.href='./fnb.html'" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer border-amber-900/40 hover:border-amber-400">
-                <i class="fa-solid fa-mug-hot text-5xl text-amber-400 mb-4 group-hover:scale-110 transition-transform"></i>
-                <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-amber-400 transition-colors">Bếp & Bar F&B</h2>
-                <p class="text-gray-500 text-xs uppercase tracking-wider">Gọi nước, món & Bưng bàn</p>
+            <div onclick="window.location.href='./fnb.html'" class="glass-panel rounded-2xl p-5 sm:p-8 flex flex-col items-center justify-center group text-center cursor-pointer border-amber-900/40 hover:border-amber-400 active:scale-95 transition-all">
+                <i class="fa-solid fa-mug-hot text-3xl sm:text-5xl text-amber-400 mb-3 sm:mb-4 group-hover:scale-110 transition-transform"></i>
+                <h2 class="font-mafia text-xl sm:text-2xl text-gray-200 uppercase tracking-wider sm:tracking-widest mb-1 sm:mb-2 group-hover:text-amber-400 transition-colors">Bếp & Bar F&B</h2>
+                <p class="text-gray-500 text-[11px] sm:text-xs uppercase tracking-wider">Gọi nước, món & Bưng bàn</p>
             </div>
 
-            <div onclick="window.location.href='./hr_kiosk.html'" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer border-blue-900/40 hover:border-blue-500">
-                <i class="fa-solid fa-clock text-5xl text-blue-500 mb-4 group-hover:scale-110 transition-transform"></i>
-                <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-blue-500 transition-colors">Kiosk Chấm Công</h2>
-                <p class="text-gray-500 text-xs uppercase tracking-wider">Máy chấm công PIN kép</p>
+            <div onclick="window.location.href='./hr_kiosk.html'" class="glass-panel rounded-2xl p-5 sm:p-8 flex flex-col items-center justify-center group text-center cursor-pointer border-blue-900/40 hover:border-blue-500 active:scale-95 transition-all">
+                <i class="fa-solid fa-clock text-3xl sm:text-5xl text-blue-500 mb-3 sm:mb-4 group-hover:scale-110 transition-transform"></i>
+                <h2 class="font-mafia text-xl sm:text-2xl text-gray-200 uppercase tracking-wider sm:tracking-widest mb-1 sm:mb-2 group-hover:text-blue-500 transition-colors">Kiosk Chấm Công</h2>
+                <p class="text-gray-500 text-[11px] sm:text-xs uppercase tracking-wider">Máy chấm công PIN kép</p>
             </div>
 
-            <div onclick="window.location.href='./main_tv.html'" class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer border-green-900/40 hover:border-green-500">
-                <i class="fa-solid fa-tv text-5xl text-green-500 mb-4 group-hover:scale-110 transition-transform"></i>
-                <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-green-500 transition-colors">Main TV</h2>
-                <p class="text-gray-500 text-xs uppercase tracking-wider">Màn hình hiển thị sảnh</p>
+            <div onclick="window.location.href='./main_tv.html'" class="glass-panel rounded-2xl p-5 sm:p-8 flex flex-col items-center justify-center group text-center cursor-pointer border-green-900/40 hover:border-green-500 active:scale-95 transition-all">
+                <i class="fa-solid fa-tv text-3xl sm:text-5xl text-green-500 mb-3 sm:mb-4 group-hover:scale-110 transition-transform"></i>
+                <h2 class="font-mafia text-xl sm:text-2xl text-gray-200 uppercase tracking-wider sm:tracking-widest mb-1 sm:mb-2 group-hover:text-green-500 transition-colors">Main TV</h2>
+                <p class="text-gray-500 text-[11px] sm:text-xs uppercase tracking-wider">Màn hình hiển thị sảnh</p>
             </div>
 
-            <div onclick="openPinModal('./god_mode.html', 'god')" class="glass-panel border-[#800020]/40 hover:border-[#800020] rounded-2xl p-8 flex flex-col items-center justify-center group text-center cursor-pointer">
-                <i class="fa-solid fa-chess-king text-5xl text-[#800020] mb-4 group-hover:scale-110 transition-transform"></i>
-                <h2 class="font-mafia text-2xl text-gray-200 uppercase tracking-widest mb-2 group-hover:text-[#800020] transition-colors">God Mode</h2>
-                <p class="text-gray-500 text-xs uppercase tracking-wider">Tổng quan Giám Đốc sòng</p>
+            <div onclick="openPinModal('./god_mode.html', 'god')" class="glass-panel border-[#800020]/40 hover:border-[#800020] rounded-2xl p-5 sm:p-8 flex flex-col items-center justify-center group text-center cursor-pointer active:scale-95 transition-all">
+                <i class="fa-solid fa-chess-king text-3xl sm:text-5xl text-[#800020] mb-3 sm:mb-4 group-hover:scale-110 transition-transform"></i>
+                <h2 class="font-mafia text-xl sm:text-2xl text-gray-200 uppercase tracking-wider sm:tracking-widest mb-1 sm:mb-2 group-hover:text-[#800020] transition-colors">God Mode</h2>
+                <p class="text-gray-500 text-[11px] sm:text-xs uppercase tracking-wider">Tổng quan Giám Đốc sòng</p>
             </div>
 
+        </div>
+
+        <!-- STATUS FOOTER -->
+        <div class="flex items-center space-x-3 bg-[#111] px-4 py-2 rounded-full border border-[#333] shadow-lg z-20 self-center" id="status-box">
+            <div class="w-2.5 h-2.5 bg-gray-500 rounded-full" id="status-dot"></div>
+            <span class="text-gray-400 font-bold text-[10px] tracking-widest uppercase" id="status-text">Chưa Đăng Nhập</span>
         </div>
     </main>
-
-    <!-- STATUS FOOTER -->
-    <footer class="absolute bottom-6 right-8 flex items-center space-x-3 bg-[#111] px-4 py-2 rounded-full border border-[#333] shadow-lg z-20" id="status-box">
-        <div class="w-2.5 h-2.5 bg-gray-500 rounded-full" id="status-dot"></div>
-        <span class="text-gray-400 font-bold text-[10px] tracking-widest uppercase" id="status-text">Chưa Đăng Nhập</span>
-    </footer>
 
     <!-- PIN MODAL -->
     <div id="pin-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center">

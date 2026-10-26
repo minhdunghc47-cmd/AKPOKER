@@ -1,4 +1,4 @@
-// ACE POKER SERVER - v2.6.1 (Fix God Mode tournament history & robust Firebase array parsing)
+// ACE POKER SERVER - v2.7.0 (Comprehensive Mobile Responsive Optimization Across All Functions: TD, Cashier, Floor, F&B, God Mode, HR, Kiosk)
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const http = require('http');
