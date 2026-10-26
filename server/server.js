@@ -1191,6 +1191,33 @@ io.on('connection', (socket) => {
     }
   }));
 
+  socket.on('checkin_player_seat', requireRole(socket, ['god', 'td', 'floor'], (payload, callback) => {
+    const t = db.tournaments.find(t => t.id === payload.tour_id);
+    if (!t) {
+      if (callback) callback({ success: false, message: 'Không tìm thấy giải đấu!' });
+      return;
+    }
+    const p = (t.players || []).find(p => 
+      p.status === 'alive' && (
+        (payload.ticket_id && p.ticket_id === payload.ticket_id) ||
+        (payload.player_phone && p.phone === payload.player_phone) ||
+        (payload.table_id && payload.seat_id && p.table_id === Number(payload.table_id) && p.seat === Number(payload.seat_id))
+      )
+    );
+    if (!p) {
+      if (callback) callback({ success: false, message: 'Không tìm thấy thông tin VĐV trên bàn!' });
+      return;
+    }
+    p.is_checked_in = true;
+    p.checked_in_time = Date.now();
+    broadcastState();
+    if (callback) callback({ 
+      success: true, 
+      message: `Đã check-in thành công: ${p.name || 'VĐV'} tại Bàn ${p.table_id} - Ghế ${p.seat}!`,
+      player: p
+    });
+  }));
+
   socket.on('bust_out', requireRole(socket, ['god', 'td', 'floor'], (payload) => {
     const t = db.tournaments.find(t => t.id === payload.tour_id);
     if (t) {

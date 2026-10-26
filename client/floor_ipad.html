@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <script>
         const role = sessionStorage.getItem('acepoker_token') || '';
@@ -8,18 +8,45 @@
         }
     </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ACE POKER - Floor Manager v2.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ACE Floor">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="manifest" href="./manifest.json">
+    <title>ACE POKER - Floor & Staff Mobile Manager</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Rajdhani:wght@600;700&family=Share+Tech+Mono&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- QR Code Scanner Library for Live Camera Scanning -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
     <style>
-        body { font-family: 'Rajdhani', sans-serif; background-color: #0a0a0a; color: #d1d5db; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --sat: env(safe-area-inset-top, 0px);
+            --sab: env(safe-area-inset-bottom, 0px);
+        }
+        body { 
+            font-family: 'Rajdhani', sans-serif; 
+            background-color: #0a0a0a; 
+            color: #d1d5db; 
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: calc(var(--sab) + 68px);
+        }
+        @media (min-width: 768px) {
+            body { padding-bottom: 0px; }
+        }
         .font-mafia { font-family: 'Playfair Display', serif; }
         .font-digital { font-family: 'Share Tech Mono', monospace; }
+        .font-sans-ui { font-family: 'Inter', sans-serif; }
         .text-gold { color: #d4af37; }
         .btn-gold { background: linear-gradient(to bottom, #e5c158, #d4af37); color: #000; font-weight: bold; border-radius: 8px; border: none; transition: 0.2s; cursor: pointer; }
         .btn-gold:hover { filter: brightness(1.1); }
+        .btn-gold:active { transform: scale(0.97); }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         /* TOUR CARD on lobby */
         .tour-card {
@@ -38,9 +65,9 @@
         .badge-paused { background: #374151; color: #9ca3af; }
         .badge-finished { background: #800020; color: #fff; }
 
-        /* POKER TABLE */
+        /* POKER TABLE GRAPHIC */
         .seat {
-            width: 96px; height: 96px;
+            width: 84px; height: 84px;
             border-radius: 50%;
             background: #161616;
             border: 2px solid #333;
@@ -56,23 +83,61 @@
         .seat.empty { border-style: dashed; opacity: 0.45; cursor: default; }
         .seat:active { transform: translate(-50%, -50%) scale(0.92); }
 
-        .action-menu {
-            position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%) scale(0.9);
-            opacity: 0; pointer-events: none; transition: all 0.15s; z-index: 100;
-            min-width: 140px;
-        }
-        .action-menu.active {
-            opacity: 1; pointer-events: auto; transform: translateX(-50%) scale(1);
-        }
-
         .poker-table-bg {
             background: radial-gradient(ellipse at center, #1a4a28 0%, #0d2b15 100%);
-            border: 6px solid #8c6222;
+            border: 5px solid #8c6222;
             box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.9);
             border-radius: 120px;
         }
 
-        ::-webkit-scrollbar { width: 5px; }
+        /* Responsive seats on small mobile phones */
+        @media (max-width: 640px) {
+            .seat { width: 54px; height: 54px; }
+            .seat .seat-name { font-size: 10px !important; }
+            .seat .seat-phone { font-size: 9px !important; }
+            .seat .seat-buyin-tag { font-size: 8px !important; padding: 1px 4px !important; }
+            .poker-table-bg { border-radius: 80px; border-width: 3px; }
+        }
+
+        /* FAST SEAT LIST CARD */
+        .seat-card {
+            background: linear-gradient(135deg, #161616 0%, #101010 100%);
+            border: 1px solid #282828;
+            border-radius: 14px;
+            transition: all 0.2s;
+        }
+        .seat-card.occupied {
+            border-color: rgba(212, 175, 55, 0.4);
+            background: linear-gradient(135deg, #181611 0%, #101010 100%);
+        }
+        .seat-card.empty {
+            border: 1px dashed #333;
+            opacity: 0.65;
+        }
+
+        /* BOTTOM SHEET ANIMATION */
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0.5; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up {
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* SCANNER LASER LINE */
+        @keyframes scanLaser {
+            0%, 100% { top: 8%; opacity: 0.8; }
+            50% { top: 92%; opacity: 1; }
+        }
+        .laser-line {
+            position: absolute;
+            left: 5%; right: 5%; height: 3px;
+            background: linear-gradient(90deg, transparent, #d4af37, #f59e0b, #d4af37, transparent);
+            box-shadow: 0 0 15px #d4af37;
+            animation: scanLaser 2s infinite ease-in-out;
+        }
+
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: #111; }
         ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
 
@@ -83,8 +148,8 @@
         .tour-card.running { animation: breathe 2s infinite; }
 
         @keyframes searchPulse {
-            0%, 100% { box-shadow: 0 0 25px 8px #d4af37, inset 0 0 15px #d4af37; transform: translate(-50%, -50%) scale(1.18); border-color: #fff; z-index: 60; }
-            50% { box-shadow: 0 0 45px 18px #f59e0b, inset 0 0 25px #f59e0b; transform: translate(-50%, -50%) scale(1.28); border-color: #ffd700; z-index: 60; }
+            0%, 100% { box-shadow: 0 0 25px 8px #d4af37, inset 0 0 15px #d4af37; transform: translate(-50%, -50%) scale(1.15); border-color: #fff; z-index: 60; }
+            50% { box-shadow: 0 0 45px 18px #f59e0b, inset 0 0 25px #f59e0b; transform: translate(-50%, -50%) scale(1.25); border-color: #ffd700; z-index: 60; }
         }
         .seat-highlighted {
             animation: searchPulse 1s infinite ease-in-out !important;
@@ -92,155 +157,302 @@
             border-color: #d4af37 !important;
             z-index: 60 !important;
         }
-
-        /* Tối ưu hóa UI/UX cho màn hình cảm ứng & di động */
-        button, select, input {
-            min-height: 48px !important;
-        }
-        .seat {
-            min-height: auto !important; /* Ngoại trừ ghế ngồi trên bàn poker */
-        }
-        @media (max-width: 1024px) {
-            .table-container, table, .overflow-y-auto, .overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            body { padding: 10px !important; }
-            /* Tăng khoảng cách các phần tử để dễ bấm trên iPad */
-            .tour-card { margin-bottom: 20px; }
-            .poker-table-bg { margin: 20px 0; }
-        }
-        @media (max-width: 768px) {
-            /* Chuyển 2 cột thành 1 cột */
-            .flex-row, .flex-1.flex.gap-6, .flex.gap-6, .flex.gap-8 { flex-direction: column !important; }
-            .w-1\/3, .w-2\/3, .w-1\/4, .w-3\/4, .w-\[380px\], .w-\[480px\] { width: 100% !important; min-width: 100% !important; }
-            .h-screen { height: auto !important; min-height: 100vh; overflow-y: auto !important; }
-            body { overflow-y: auto !important; }
-            .glass-panel { padding: 15px !important; }
-
-            /* Dành cho các tour card/bàn */
-            .grid-cols-2, .grid-cols-3, .xl\:grid-cols-2 { grid-template-columns: 1fr !important; }
-
-            /* Đảm bảo khoảng cách chạm trên mobile */
-            .tour-card { margin-bottom: 24px; }
-            .poker-table-bg { margin: 24px 0; }
-        }
-
     </style>
-
-    <!-- FIREBASE AUTH SETUP -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script>
-        
-        
-    </script>
-
 </head>
-<body class="flex flex-col h-screen overflow-hidden">
+<body class="flex flex-col min-h-screen overflow-x-hidden">
 
-    <!-- HEADER -->
-    <header class="bg-[#111] border-b border-[#d4af37]/30 px-5 py-3 flex justify-between items-center shadow-lg shrink-0">
-        <div class="flex items-center gap-3">
-            <button id="btn-back" class="hidden bg-[#1a1a1a] border border-[#333] text-gray-400 px-3 py-1.5 rounded text-sm font-bold uppercase tracking-widest hover:border-[#d4af37] hover:text-[#d4af37] transition" onclick="showLobby()">
-                <i class="fa-solid fa-arrow-left mr-1"></i> TOURS
+    <!-- TOP HEADER -->
+    <header class="bg-[#111] border-b border-[#d4af37]/30 px-4 py-2.5 flex justify-between items-center shadow-lg sticky top-0 z-40">
+        <div class="flex items-center gap-2">
+            <button id="btn-back" class="hidden bg-[#1a1a1a] border border-[#333] text-gray-400 px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider hover:border-[#d4af37] hover:text-[#d4af37] transition active:scale-95 flex items-center gap-1" onclick="showLobby()">
+                <i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">TOURS</span>
             </button>
-            <h1 class="font-mafia text-gold text-xl tracking-widest" id="header-title">
-                <i class="fa-solid fa-tablet-screen-button mr-2 text-gold"></i> ACE POKER - FLOOR MANAGER
-            </h1>
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-black border border-[#d4af37] flex items-center justify-center text-[#d4af37] text-xs shadow-md">
+                    <i class="fa-solid fa-spade"></i>
+                </div>
+                <div>
+                    <h1 class="font-mafia text-gold text-base md:text-lg tracking-wider leading-none" id="header-title">ACE POKER FLOOR</h1>
+                    <div class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">QUẢN TRỊ BÀN & NHÂN SỰ</div>
+                </div>
+            </div>
         </div>
-        <div class="flex items-center gap-3">
-            <div class="text-xs text-gray-500 font-bold uppercase tracking-widest font-digital" id="header-clock">00:00:00</div>
+
+        <div class="flex items-center gap-2">
+            <!-- View Mode Switcher Pill (Only visible in Table view) -->
+            <div id="view-mode-toggle" class="hidden bg-[#181818] border border-[#333] p-0.5 rounded-lg flex items-center">
+                <button onclick="setFloorViewMode('list')" id="btn-mode-list" class="px-2.5 py-1 rounded text-[11px] font-bold uppercase transition flex items-center gap-1 bg-[#d4af37] text-black">
+                    <i class="fa-solid fa-list-check"></i> <span class="hidden xs:inline">Ghế</span>
+                </button>
+                <button onclick="setFloorViewMode('table')" id="btn-mode-table" class="px-2.5 py-1 rounded text-[11px] font-bold uppercase transition flex items-center gap-1 text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-table-tennis-paddle-ball"></i> <span class="hidden xs:inline">Sơ Đồ</span>
+                </button>
+            </div>
+
+            <!-- Live Clock / Connection -->
+            <div class="text-xs text-emerald-400 font-bold font-digital bg-black/60 px-2 py-1 rounded border border-[#222]" id="header-clock">00:00:00</div>
             <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]"></div>
         </div>
     </header>
 
     <!-- LOBBY: Tour List -->
-    <main id="view-lobby" class="flex-1 overflow-y-auto p-5">
-        <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+    <main id="view-lobby" class="flex-1 overflow-y-auto p-4 max-w-5xl mx-auto w-full">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div class="flex items-center gap-2">
-                <button onclick="setFloorLobbyTab('active')" id="floor-tab-active" class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md flex items-center gap-2">
+                <button onclick="setFloorLobbyTab('active')" id="floor-tab-active" class="px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md flex items-center gap-1.5 active:scale-95">
                     <i class="fa-solid fa-play"></i> ĐANG DIỄN RA
                     <span id="badge-active-tours" class="bg-black text-[#d4af37] px-2 py-0.2 rounded-full text-[10px] font-extrabold">0</span>
                 </button>
-                <button onclick="setFloorLobbyTab('finished')" id="floor-tab-finished" class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-[#181818] border border-[#333] text-gray-400 hover:text-white flex items-center gap-2">
-                    <i class="fa-solid fa-trophy text-amber-400"></i> ĐÃ KẾT THÚC
+                <button onclick="setFloorLobbyTab('finished')" id="floor-tab-finished" class="px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-[#181818] border border-[#333] text-gray-400 hover:text-white flex items-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-trophy text-amber-400"></i> KẾT THÚC
                     <span id="badge-finished-tours" class="bg-gray-800 text-gray-300 px-2 py-0.2 rounded-full text-[10px] font-extrabold">0</span>
                 </button>
             </div>
-            <div class="text-[11px] text-gray-500 font-bold uppercase tracking-wider" id="lobby-tab-desc">
+            <div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider hidden sm:block" id="lobby-tab-desc">
                 Các giải đấu đang vận hành bàn chơi & chia bài
             </div>
         </div>
-        <div id="tour-list" class="grid grid-cols-1 gap-4">
+        <div id="tour-list" class="grid grid-cols-1 gap-3.5">
             <div class="text-center text-gray-600 font-bold uppercase tracking-widest py-16">Đang tải dữ liệu...</div>
         </div>
     </main>
 
     <!-- TABLE VIEW: Per tour -->
-    <main id="view-tables" class="hidden flex-1 overflow-y-auto">
-        <!-- Tour info & Player Locator bar -->
-        <div class="bg-[#111] border-b border-[#222] px-5 py-3 flex flex-wrap gap-4 items-center justify-between shrink-0">
-            <div class="flex gap-5 items-center text-xs font-bold uppercase tracking-widest flex-wrap">
-                <div class="text-gray-500">LEVEL: <span class="text-[#d4af37]" id="tbl-level">—</span></div>
-                <div class="text-gray-500">CLOCK: <span class="text-white font-digital" id="tbl-clock">—</span></div>
-                <div class="text-gray-500">PLAYERS: <span class="text-emerald-400" id="tbl-players">—</span></div>
-                <div class="text-gray-500">BLINDS: <span class="text-emerald-400" id="tbl-blinds">—</span></div>
+    <main id="view-tables" class="hidden flex-1 overflow-y-auto pb-10">
+        <!-- Sticky Tour Info Bar (Compact & Tap for full Clock) -->
+        <div class="bg-[#111] border-b border-[#222] px-3 py-2 flex items-center justify-between shrink-0 sticky top-[53px] z-30">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="openMiniClockModal()" title="Xem chi tiết đồng hồ giải">
+                <div class="flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-lg border border-[#2d2d2d]">
+                    <span class="text-[10px] text-gray-500 font-bold uppercase">LVL</span>
+                    <span class="text-[#d4af37] font-bold text-sm font-digital" id="tbl-level">—</span>
+                </div>
+                <div class="flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-lg border border-[#2d2d2d]">
+                    <span class="text-[10px] text-gray-500 font-bold uppercase">CLOCK</span>
+                    <span class="text-white font-bold text-sm font-digital" id="tbl-clock">—</span>
+                </div>
+                <div class="flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-lg border border-[#2d2d2d]">
+                    <span class="text-[10px] text-gray-500 font-bold uppercase">ALIVE</span>
+                    <span class="text-emerald-400 font-bold text-sm font-digital" id="tbl-players">—</span>
+                </div>
             </div>
 
-            <!-- Quick Player Locator Search & Add Table -->
-            <div class="flex items-center gap-3 flex-wrap">
-                <div class="relative flex items-center">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 text-[#d4af37] text-xs pointer-events-none"></i>
-                    <input type="text" id="player-search-input" oninput="searchAndLocatePlayer(this.value)" placeholder="🔍 Tìm vị trí khách (Tên / 4 số SĐT)..." class="bg-[#181818] border border-[#333] focus:border-[#d4af37] text-white text-xs pl-8 pr-8 py-2 rounded-lg w-56 md:w-72 focus:outline-none transition shadow-inner">
-                    <button id="clear-search-btn" class="hidden absolute right-2.5 text-gray-400 hover:text-white text-xs" onclick="clearPlayerSearch()">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-                <button class="bg-[#181818] border border-amber-500/50 hover:border-amber-400 text-amber-400 px-3 py-2 rounded-lg font-bold uppercase tracking-widest text-xs transition whitespace-nowrap flex items-center gap-1.5 shadow-sm" onclick="openFloorFnbOrdersModal()">
-                    <i class="fa-solid fa-mug-hot text-amber-400"></i> F&B BÀN CHƠI
-                    <span id="floor-fnb-pending-badge" class="bg-red-600 text-white px-1.5 py-0.2 rounded-full text-[10px] font-extrabold hidden">0</span>
+            <div class="flex items-center gap-2">
+                <button class="bg-[#181818] border border-amber-500/50 hover:border-amber-400 text-amber-400 px-2.5 py-1 rounded-lg font-bold uppercase text-[11px] transition flex items-center gap-1 active:scale-95" onclick="openFloorFnbOrdersModal()">
+                    <i class="fa-solid fa-mug-hot"></i> F&B
+                    <span id="floor-fnb-pending-badge" class="bg-red-600 text-white px-1.5 py-0.2 rounded-full text-[9px] font-extrabold hidden">0</span>
                 </button>
-                <button class="bg-blue-900/40 border border-blue-500 text-blue-400 px-3 py-2 rounded-lg font-bold uppercase tracking-widest text-xs hover:bg-blue-900/60 transition whitespace-nowrap" onclick="openAddTableToTourModal()">
-                    <i class="fa-solid fa-plus mr-1"></i>MỞ THÊM BÀN
+                <button class="bg-blue-900/40 border border-blue-500 text-blue-400 px-2.5 py-1 rounded-lg font-bold uppercase text-[11px] hover:bg-blue-900/60 transition active:scale-95" onclick="openAddTableToTourModal()">
+                    <i class="fa-solid fa-plus"></i> <span class="hidden xs:inline">BÀN</span>
                 </button>
             </div>
         </div>
 
+        <!-- Quick Player Locator Search Bar -->
+        <div class="px-3 pt-2 pb-1.5 bg-[#0e0e0e] border-b border-[#1c1c1c] flex items-center gap-2">
+            <div class="relative flex-1 flex items-center">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 text-[#d4af37] text-xs pointer-events-none"></i>
+                <input type="text" id="player-search-input" oninput="searchAndLocatePlayer(this.value)" placeholder="🔍 Tìm VĐV (Tên / 4 số SĐT)..." class="w-full bg-[#161616] border border-[#2e2e2e] focus:border-[#d4af37] text-white text-xs pl-8 pr-8 py-2 rounded-lg focus:outline-none transition">
+                <button id="clear-search-btn" class="hidden absolute right-2.5 text-gray-400 hover:text-white text-xs" onclick="clearPlayerSearch()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <!-- Quick Live QR Scan Button -->
+            <button onclick="openLiveQrScanner()" class="bg-gradient-to-r from-amber-600 to-yellow-500 text-black font-bold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 shadow-md active:scale-95 shrink-0" title="Quét vé QR check-in tại bàn">
+                <i class="fa-solid fa-qrcode text-sm"></i>
+                <span class="hidden sm:inline">QUÉT QR</span>
+            </button>
+        </div>
+
         <!-- Search result feedback alert banner -->
-        <div id="search-feedback-banner" class="hidden bg-[#d4af37]/20 border-b border-[#d4af37]/40 px-5 py-2 text-xs font-bold text-[#d4af37] flex items-center justify-between">
+        <div id="search-feedback-banner" class="hidden bg-[#d4af37]/20 border-b border-[#d4af37]/40 px-3 py-2 text-xs font-bold text-[#d4af37] flex items-center justify-between">
             <span id="search-feedback-text"></span>
             <button onclick="clearPlayerSearch()" class="text-gray-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
-        <!-- Tables grid -->
-        <div id="tables-container" class="grid grid-cols-1 xl:grid-cols-2 gap-4 px-1 py-4 pb-24 justify-items-center w-full"></div>
+        <!-- Table Selector Carousel Pills -->
+        <div id="table-filter-pills" class="flex items-center gap-1.5 overflow-x-auto py-2 px-3 no-scrollbar shrink-0 bg-[#0c0c0c] border-b border-[#222]">
+            <!-- Rendered by JS: [ Bàn 1 (7/9) ] [ Bàn 2 (8/9) ] [ Tất Cả ] -->
+        </div>
+
+        <!-- Container for Tables (Renders Seat List or Graphic Table based on view mode) -->
+        <div id="tables-container" class="p-3 w-full max-w-6xl mx-auto"></div>
     </main>
 
+    <!-- NATIVE BOTTOM SHEET CHO THAO TÁC GHẾ (Tap on any seat opens this) -->
+    <div id="seat-bottom-sheet" class="fixed inset-0 z-50 bg-black/80 hidden items-end justify-center backdrop-blur-sm transition-opacity" onclick="closeSeatBottomSheet(event)">
+        <div class="bg-[#141414] border-t-2 border-[#d4af37] rounded-t-3xl p-5 w-full max-w-lg shadow-[0_-10px_35px_rgba(0,0,0,0.9)] animate-slide-up flex flex-col gap-3" onclick="event.stopPropagation()">
+            <!-- Drag handle -->
+            <div class="w-12 h-1.5 bg-gray-700 rounded-full mx-auto mb-1"></div>
+
+            <!-- Player Profile Header -->
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                <div class="flex items-center gap-3">
+                    <div id="sheet-player-avatar" class="w-12 h-12 rounded-full border-2 border-[#d4af37] bg-black flex items-center justify-center overflow-hidden shrink-0">
+                        <i class="fa-solid fa-user text-xl text-gray-500"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 id="sheet-player-name" class="font-bold text-white text-base">TÊN VĐV</h3>
+                            <span id="sheet-checkin-badge" class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40">ĐÃ CHECK-IN</span>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-0.5 font-sans-ui flex items-center gap-2">
+                            <span id="sheet-seat-label" class="text-amber-400 font-bold font-mono">BÀN 1 • GHẾ 1</span>
+                            <span id="sheet-phone-label" class="text-gray-500">098***1234</span>
+                            <span id="sheet-buyin-label" class="text-xs text-gray-400 font-bold">🎟️ 1 Lượt</span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="closeSeatBottomSheet()" class="w-8 h-8 rounded-full bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center text-sm font-bold">&times;</button>
+            </div>
+
+            <!-- Action Buttons Grid -->
+            <div class="grid grid-cols-2 gap-2.5 pt-1">
+                <button id="sheet-btn-bust" onclick="handleSheetAction('bust')" class="py-3 px-3 rounded-xl bg-red-950/70 border border-red-600/70 text-red-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition shadow-sm">
+                    <i class="fa-solid fa-skull text-base text-red-400"></i>
+                    <span>Bust Out (Loại)</span>
+                </button>
+                <button id="sheet-btn-move" onclick="handleSheetAction('move')" class="py-3 px-3 rounded-xl bg-blue-950/70 border border-blue-600/70 text-blue-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition shadow-sm">
+                    <i class="fa-solid fa-arrows-rotate text-base text-blue-400"></i>
+                    <span>Chuyển Bàn / Ghế</span>
+                </button>
+                <button id="sheet-btn-fnb" onclick="handleSheetAction('fnb')" class="py-3 px-3 rounded-xl bg-amber-950/70 border border-amber-600/70 text-amber-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition shadow-sm">
+                    <i class="fa-solid fa-mug-hot text-base text-amber-400"></i>
+                    <span>Gọi F&B Cho Ghế</span>
+                </button>
+                <button id="sheet-btn-checkin" onclick="handleSheetAction('checkin')" class="py-3 px-3 rounded-xl bg-emerald-950/70 border border-emerald-600/70 text-emerald-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition shadow-sm">
+                    <i class="fa-solid fa-qrcode text-base text-emerald-400"></i>
+                    <span id="sheet-checkin-btn-text">Quét QR Check-in</span>
+                </button>
+            </div>
+
+            <button onclick="closeSeatBottomSheet()" class="w-full py-2.5 text-center text-xs text-gray-500 font-bold uppercase tracking-wider hover:text-gray-300 transition mt-1">
+                Đóng Bảng Thao Tác
+            </button>
+        </div>
+    </div>
+
+    <!-- CAMERA LIVE QR SCANNER MODAL -->
+    <div id="qr-scanner-modal" class="fixed inset-0 z-50 bg-black hidden flex-col">
+        <!-- Top bar -->
+        <div class="p-4 bg-gradient-to-b from-black/90 to-transparent flex items-center justify-between shrink-0 z-10">
+            <button onclick="closeLiveQrScanner()" class="w-10 h-10 rounded-full bg-gray-900/80 text-white flex items-center justify-center text-base border border-gray-700 active:scale-95">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center">
+                <h3 class="text-sm font-bold text-[#d4af37] uppercase tracking-wider">Quét Vé QR Check-in</h3>
+                <p class="text-[10px] text-gray-400">Hướng camera vào mã QR trên phiếu vé 80mm</p>
+            </div>
+            <button id="qr-flash-btn" onclick="toggleQrScannerFlash()" class="w-10 h-10 rounded-full bg-gray-900/80 text-amber-400 flex items-center justify-center text-base border border-gray-700 active:scale-95">
+                <i class="fa-solid fa-bolt"></i>
+            </button>
+        </div>
+
+        <!-- Camera Viewport with Frame -->
+        <div class="flex-1 relative flex items-center justify-center overflow-hidden bg-black">
+            <div id="qr-reader" class="w-full h-full"></div>
+            <!-- Laser Scan Line -->
+            <div class="absolute inset-x-8 max-w-[280px] h-[280px] border-2 border-[#d4af37] rounded-3xl pointer-events-none shadow-[0_0_30px_rgba(212,175,55,0.4)] overflow-hidden">
+                <div class="laser-line"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-[#d4af37]/30 text-4xl">
+                    <i class="fa-solid fa-expand"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Card / Bottom Confirmation -->
+        <div id="qr-scan-result" class="p-4 bg-[#141414] border-t border-[#d4af37]/40 shrink-0 hidden flex-col gap-2.5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <span id="qr-res-ticket-id" class="text-[10px] font-mono bg-black text-[#d4af37] px-2 py-0.5 rounded border border-[#333]">ACE-TICKET</span>
+                    <h4 id="qr-res-player-name" class="font-bold text-white text-base mt-1">NGUYỄN VĂN A</h4>
+                    <div id="qr-res-table-seat" class="text-xs text-emerald-400 font-bold font-mono">BÀN 1 • GHẾ 3</div>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-emerald-950 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-1">
+                <button onclick="confirmQrSeatCheckIn()" class="flex-1 py-3 bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black font-bold text-xs uppercase tracking-wider rounded-xl shadow-md active:scale-95 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-circle-check"></i> Xác Nhận Vào Bàn
+                </button>
+                <button onclick="resumeQrScanning()" class="px-4 py-3 bg-gray-800 text-gray-300 font-bold text-xs uppercase tracking-wider rounded-xl active:scale-95 transition">
+                    Quét Tiếp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MINI CLOCK MODAL (Chạm vào thanh level để mở xem đầy đủ thông số) -->
+    <div id="mini-clock-modal" class="fixed inset-0 z-50 bg-black/85 hidden items-end sm:items-center justify-center backdrop-blur-sm" onclick="closeMiniClockModal(event)">
+        <div class="bg-[#141414] border-t-2 sm:border border-[#d4af37] rounded-t-3xl sm:rounded-2xl p-5 w-full max-w-md shadow-2xl animate-slide-up flex flex-col gap-4" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-stopwatch text-[#d4af37] text-lg"></i>
+                    <h3 class="font-mafia text-[#d4af37] text-base uppercase tracking-wider" id="clock-modal-tour-name">THÔNG SỐ GIẢI ĐẤU</h3>
+                </div>
+                <button onclick="closeMiniClockModal()" class="w-8 h-8 rounded-full bg-gray-800 text-gray-400 text-sm font-bold">&times;</button>
+            </div>
+
+            <!-- Big Clock Display -->
+            <div class="text-center bg-black/60 p-4 rounded-xl border border-gray-800">
+                <div class="text-[11px] text-gray-500 font-bold uppercase tracking-widest mb-1">Thời Gian Còn Lại Của Level</div>
+                <div id="clock-modal-time" class="font-digital text-5xl font-bold text-white tracking-widest leading-none">00:00</div>
+                <div id="clock-modal-status" class="mt-2 text-xs font-bold uppercase tracking-wider text-emerald-400">ĐANG DIỄN RA</div>
+            </div>
+
+            <!-- Blinds & Structure Grid -->
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-[#2e2e2e]">
+                    <div class="text-[10px] text-gray-500 font-bold uppercase">Mức Blind Hiện Tại</div>
+                    <div id="clock-modal-curr-blinds" class="font-digital text-base font-bold text-[#d4af37] mt-0.5">500 / 1,000</div>
+                    <div id="clock-modal-curr-ante" class="text-[10px] text-gray-400 mt-0.5">BBA: 1,000</div>
+                </div>
+                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-[#2e2e2e]">
+                    <div class="text-[10px] text-gray-500 font-bold uppercase">Cấp Độ Kế Tiếp</div>
+                    <div id="clock-modal-next-blinds" class="font-digital text-base font-bold text-gray-300 mt-0.5">1,000 / 2,000</div>
+                    <div id="clock-modal-next-ante" class="text-[10px] text-gray-400 mt-0.5">BBA: 2,000</div>
+                </div>
+                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-[#2e2e2e]">
+                    <div class="text-[10px] text-gray-500 font-bold uppercase">Người Chơi Còn Lại</div>
+                    <div id="clock-modal-players" class="font-digital text-base font-bold text-emerald-400 mt-0.5">18 / 32</div>
+                </div>
+                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-[#2e2e2e]">
+                    <div class="text-[10px] text-gray-500 font-bold uppercase">Chip Trung Bình (AVG)</div>
+                    <div id="clock-modal-avg" class="font-digital text-base font-bold text-yellow-300 mt-0.5">45,000</div>
+                </div>
+            </div>
+
+            <button onclick="closeMiniClockModal()" class="w-full py-3 bg-[#1e1e1e] text-gray-300 font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-[#252525] transition">
+                Đóng
+            </button>
+        </div>
+    </div>
 
     <!-- MODAL MỞ THÊM BÀN -->
-    <div id="add-table-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-[90%] max-w-[400px] shadow-[0_0_40px_rgba(212,175,55,0.2)]">
-            <h3 class="text-lg font-mafia text-gold mb-4 text-center uppercase tracking-widest">
+    <div id="add-table-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm p-4">
+        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-full max-w-[400px] shadow-[0_0_40px_rgba(212,175,55,0.2)]">
+            <h3 class="text-base font-mafia text-gold mb-4 text-center uppercase tracking-widest">
                 <i class="fa-solid fa-plus-square mr-2"></i>MỞ THÊM BÀN
             </h3>
             <div class="mb-4">
                 <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">CHỌN BÀN RẢNH (IDLE):</label>
-                <select id="idle-table-select" class="input-mafia text-sm font-bold w-full">
+                <select id="idle-table-select" class="w-full bg-[#111] border border-[#333] p-3 rounded-lg text-white font-bold text-sm focus:border-[#d4af37] focus:outline-none">
                 </select>
             </div>
-            <div class="flex gap-4">
-                <button class="flex-1 py-3 bg-[#1a1a1a] border border-[#333] rounded text-[#d4af37] font-bold uppercase text-xs tracking-widest hover:bg-[#222]" onclick="closeAddTableToTourModal()">HỦY</button>
-                <button class="flex-1 py-3 btn-gold rounded font-bold uppercase text-xs tracking-widest" onclick="confirmAddTableToTour()">THÊM BÀN</button>
+            <div class="flex gap-3">
+                <button class="flex-1 py-3 bg-[#1a1a1a] border border-[#333] rounded-lg text-gray-400 font-bold uppercase text-xs tracking-wider" onclick="closeAddTableToTourModal()">HỦY</button>
+                <button class="flex-1 py-3 btn-gold rounded-lg font-bold uppercase text-xs tracking-wider" onclick="confirmAddTableToTour()">THÊM BÀN</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL GÁN DEALER -->
-    <div id="dealer-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-[90%] max-w-[390px] shadow-[0_0_35px_rgba(212,175,55,0.35)]">
-            <h3 class="text-lg font-mafia text-gold mb-3 uppercase text-center border-b border-[#333] pb-3">Quản Lý Ca Dealer</h3>
+    <div id="dealer-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm p-4">
+        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-full max-w-[390px] shadow-[0_0_35px_rgba(212,175,55,0.35)]">
+            <h3 class="text-base font-mafia text-gold mb-3 uppercase text-center border-b border-[#333] pb-3">Quản Lý Ca Dealer</h3>
             
-            <!-- Quick Auto-Push Button -->
-            <button class="w-full bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 hover:brightness-110 text-black font-bold py-3 rounded-xl text-xs uppercase tracking-wider mb-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition" onclick="confirmPushDealer()">
-                <i class="fa-solid fa-arrows-rotate text-sm"></i> Xoay Tua Tự Động (Auto Push Dealer)
+            <button class="w-full bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 text-black font-bold py-3 rounded-xl text-xs uppercase tracking-wider mb-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition" onclick="confirmPushDealer()">
+                <i class="fa-solid fa-arrows-rotate text-sm"></i> Xoay Tua Tự Động (Auto Push)
             </button>
             <div class="text-[10px] text-gray-500 mb-3 text-center uppercase tracking-widest">— hoặc chỉ định thủ công —</div>
 
@@ -251,42 +463,40 @@
             <div class="text-[10px] text-gray-500 mb-2 text-center">— hoặc nhập tay —</div>
             <input type="text" id="dealer-name" class="w-full bg-[#111] border border-[#333] p-3 rounded-lg text-white mb-4 focus:border-[#d4af37] focus:outline-none text-sm" placeholder="Tên Dealer...">
             <div class="flex gap-2 mb-3">
-                <button class="flex-1 bg-red-900/40 text-red-400 border border-red-900 py-2.5 rounded-lg font-bold uppercase text-xs hover:bg-red-800 transition" onclick="confirmUnassignDealer()">Rút Dealer (Unassign)</button>
+                <button class="flex-1 bg-red-900/40 text-red-400 border border-red-900 py-2.5 rounded-lg font-bold uppercase text-xs hover:bg-red-800 transition" onclick="confirmUnassignDealer()">Rút Dealer</button>
             </div>
             <div class="flex gap-3">
-                <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded-lg font-bold uppercase hover:bg-[#222] transition" onclick="closeDealerModal()">Hủy</button>
-                <button class="flex-1 btn-gold py-3 rounded-lg font-bold uppercase transition" onclick="confirmAssignDealer()">Chỉ Định</button>
+                <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded-lg font-bold uppercase" onclick="closeDealerModal()">Hủy</button>
+                <button class="flex-1 btn-gold py-3 rounded-lg font-bold uppercase" onclick="confirmAssignDealer()">Chỉ Định</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL CHUYỂN BÀN & CHỌN GHẾ -->
-    <div id="move-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-[95%] max-w-[420px] shadow-[0_0_35px_rgba(212,175,55,0.35)]">
-            <h3 class="text-lg font-mafia text-gold mb-3 uppercase text-center border-b border-[#333] pb-3">Chuyển Bàn & Chọn Ghế</h3>
+    <div id="move-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm p-4">
+        <div class="bg-[#161616] border border-[#d4af37] p-6 rounded-2xl w-full max-w-[420px] shadow-[0_0_35px_rgba(212,175,55,0.35)]">
+            <h3 class="text-base font-mafia text-gold mb-3 uppercase text-center border-b border-[#333] pb-3">Chuyển Bàn & Ghế Ngồi</h3>
             <div class="text-white text-center mb-3 font-bold text-sm bg-black/50 py-2.5 px-3 rounded-lg border border-[#333]" id="move-player-name"></div>
             
             <label class="block text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">1. Chọn Bàn Đích:</label>
             <select id="move-table-select" class="w-full bg-[#111] border border-[#333] p-3 rounded-lg text-white mb-4 focus:border-[#d4af37] focus:outline-none font-bold text-sm" onchange="renderMoveSeatSelector()"></select>
 
             <label class="block text-[10px] text-[#d4af37] font-bold uppercase tracking-wider mb-2">2. Chọn Vị Trí Ghế Trống (Seat-to-Seat):</label>
-            <div id="move-seat-grid" class="grid grid-cols-5 gap-2 mb-5">
-                <!-- Dynamic Seat Selector Buttons -->
-            </div>
+            <div id="move-seat-grid" class="grid grid-cols-5 gap-2 mb-5"></div>
 
             <div class="flex gap-3">
                 <button class="flex-1 bg-[#1a1a1a] text-gray-400 py-3 rounded-lg font-bold uppercase hover:bg-[#222] transition" onclick="closeMoveModal()">Hủy</button>
-                <button class="flex-1 btn-gold py-3 rounded-lg font-bold uppercase transition" onclick="confirmMoveTable()">Xác Nhận Chuyển</button>
+                <button class="flex-1 btn-gold py-3 rounded-lg font-bold uppercase transition" onclick="confirmMoveTable()">Xác Nhận</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL GỌI F&B / NƯỚC UỐNG CHO BÀN -->
-    <div id="floor-fnb-order-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-[#141b2b] border border-[#d4af37] p-5 rounded-2xl w-[95%] max-w-[520px] shadow-[0_0_40px_rgba(212,175,55,0.4)] flex flex-col max-h-[90vh]">
+    <!-- MODAL GỌI F&B CHO BÀN -->
+    <div id="floor-fnb-order-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm p-3">
+        <div class="bg-[#141b2b] border border-[#d4af37] p-4 sm:p-5 rounded-2xl w-full max-w-[500px] shadow-[0_0_40px_rgba(212,175,55,0.4)] flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-3">
                 <div>
-                    <h3 class="text-base font-mafia text-gold uppercase tracking-wider flex items-center gap-2">
+                    <h3 class="text-sm font-mafia text-gold uppercase tracking-wider flex items-center gap-2">
                         <i class="fa-solid fa-mug-hot text-amber-400"></i> Gọi F&B Cho Hội Viên
                     </h3>
                     <div id="floor-fnb-target-info" class="text-xs text-emerald-400 font-bold mt-0.5">BÀN 1 - GHẾ 1</div>
@@ -299,100 +509,108 @@
                 <button onclick="setFloorFnbCategory('all')" id="floor-cat-all" class="px-3 py-1 rounded text-xs font-bold bg-[#d4af37] text-black">Tất Cả</button>
                 <button onclick="setFloorFnbCategory('drinks')" id="floor-cat-drinks" class="px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300">☕ Nước</button>
                 <button onclick="setFloorFnbCategory('food')" id="floor-cat-food" class="px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300">🍜 Đồ Ăn</button>
-                <button onclick="setFloorFnbCategory('extras')" id="floor-cat-extras" class="px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300">🚬 Khác</button>
+                <button onclick="setFloorFnbCategory('extras')" id="floor-cat-extras" class="px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300">⚡ Khác</button>
             </div>
 
-            <!-- Menu Grid -->
-            <div id="floor-fnb-menu-grid" class="grid grid-cols-2 gap-2 overflow-y-auto max-h-[220px] pr-1 mb-3">
-                <!-- Injected via JS -->
-            </div>
+            <!-- Menu items grid -->
+            <div id="floor-fnb-menu-grid" class="grid grid-cols-2 gap-2 overflow-y-auto max-h-[220px] mb-3 pr-1"></div>
 
-            <!-- Selected Cart in Modal -->
-            <div class="bg-[#0b101c] p-2.5 rounded-xl border border-gray-800 mb-3">
-                <div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">MÓN ĐÃ CHỌN:</div>
-                <div id="floor-fnb-cart-list" class="space-y-1.5 max-h-[110px] overflow-y-auto pr-1">
-                    <!-- Injected via JS -->
+            <!-- Selected items cart -->
+            <div class="bg-[#0b101c] rounded-xl p-3 border border-gray-800 flex-1 flex flex-col justify-between overflow-hidden">
+                <div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1.5 flex justify-between">
+                    <span>Món Đã Chọn</span>
+                    <span id="floor-fnb-cart-total" class="text-emerald-400 font-mono font-bold">0 ₫</span>
                 </div>
-                <div class="flex justify-between items-baseline pt-2 mt-2 border-t border-gray-800">
-                    <span class="text-xs uppercase text-gray-400 font-bold">TỔNG TIỀN:</span>
-                    <span id="floor-fnb-cart-total" class="font-teko text-2xl text-emerald-400 font-bold leading-none">0 ₫</span>
-                </div>
-            </div>
-
-            <!-- Note Input -->
-            <div class="mb-3">
-                <input type="text" id="floor-fnb-input-note" placeholder="Ghi chú (Ví dụ: Ít đá, không đường, ăn liền...)" class="w-full bg-[#0b101c] border border-gray-700 text-amber-300 text-xs p-2.5 rounded-lg outline-none focus:border-[#d4af37]">
-            </div>
-
-            <!-- Actions -->
-            <div class="flex gap-3">
-                <button onclick="closeFloorFnbModal()" class="flex-1 bg-gray-800 text-gray-300 py-3 rounded-xl font-bold uppercase text-xs">Hủy</button>
-                <button onclick="submitFloorFnbOrder()" class="flex-2 btn-gold py-3 px-4 rounded-xl font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-paper-plane"></i> GỬI XUỐNG BẾP & BAR
+                <div id="floor-fnb-cart-list" class="overflow-y-auto max-h-[90px] mb-2 divide-y divide-gray-800"></div>
+                <input type="text" id="floor-fnb-input-note" placeholder="Ghi chú thêm (Ít đá, không đường, cay...)" class="w-full bg-[#141b2b] border border-gray-700 text-white text-xs px-3 py-2 rounded-lg focus:border-[#d4af37] focus:outline-none mb-2">
+                <button onclick="submitFloorFnbOrder()" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-bold text-xs uppercase tracking-wider rounded-lg shadow-md active:scale-95 transition">
+                    Xác Nhận & Gửi Đơn Bếp / Bar
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL XEM DANH SÁCH ĐƠN F&B BÀN CHƠI -->
-    <div id="floor-fnb-orders-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-[#141b2b] border border-[#d4af37] p-5 rounded-2xl w-[95%] max-w-[650px] shadow-[0_0_40px_rgba(212,175,55,0.4)] flex flex-col max-h-[85vh]">
+    <!-- MODAL THEO DÕI ĐƠN F&B BÀN CHƠI -->
+    <div id="floor-fnb-orders-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm p-3">
+        <div class="bg-[#0c1424] border border-[#d4af37] p-5 rounded-2xl w-full max-w-[560px] shadow-[0_0_40px_rgba(212,175,55,0.4)] flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-3">
-                <h3 class="text-lg font-mafia text-gold uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-receipt text-amber-400"></i> Theo Dõi Đơn F&B Bàn Chơi
+                <h3 class="text-sm font-mafia text-gold uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-bell-concierge text-amber-400"></i> Đơn F&B Đang Chờ Phục Vụ
                 </h3>
                 <button onclick="closeFloorFnbOrdersModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
             </div>
-            <div id="floor-orders-list-container" class="flex-1 overflow-y-auto space-y-3 pr-1">
-                <!-- Injected via JS -->
-            </div>
-            <div class="pt-3 border-t border-gray-800 flex justify-end">
-                <button onclick="closeFloorFnbOrdersModal()" class="px-5 py-2.5 bg-gray-800 text-gray-300 rounded-lg text-xs font-bold uppercase">ĐÓNG</button>
+            <div id="floor-orders-list-container" class="flex-1 overflow-y-auto flex flex-col gap-2.5 pr-1"></div>
+            <div class="pt-3 border-t border-gray-800 mt-3 text-right">
+                <button onclick="closeFloorFnbOrdersModal()" class="btn-gold px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider">Đóng</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL XEM KẾT QUẢ & VINH DANH GIẢI ĐẤU ĐÃ KẾT THÚC -->
-    <div id="tour-result-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-[#141b2b] border border-[#d4af37] p-6 rounded-2xl w-[95%] max-w-[620px] shadow-[0_0_40px_rgba(212,175,55,0.4)] flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-4">
-                <div>
-                    <h3 class="text-xl font-mafia text-[#d4af37] uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-trophy text-amber-400"></i> Kết Quả Giải Đấu
-                    </h3>
-                    <div id="result-tour-name" class="text-sm font-bold text-white mt-1">TOURNAMENT NAME</div>
+    <!-- MODAL XEM KẾT QUẢ GIẢI ĐÃ KẾT THÚC -->
+    <div id="tour-result-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-50 backdrop-blur-sm p-4">
+        <div class="bg-[#0f172a] border-2 border-[#d4af37] p-6 rounded-2xl w-full max-w-[480px] shadow-[0_0_50px_rgba(212,175,55,0.4)] flex flex-col max-h-[90vh]">
+            <div class="text-center pb-4 border-b border-gray-800">
+                <div class="w-16 h-16 mx-auto mb-2 rounded-full bg-gradient-to-tr from-yellow-600 via-amber-400 to-yellow-200 p-0.5 flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.5)]">
+                    <div class="w-full h-full bg-[#0a0f1d] rounded-full flex items-center justify-center text-yellow-400 text-2xl">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
                 </div>
-                <button onclick="closeTourResultModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+                <h2 id="result-tour-name" class="font-mafia text-xl text-white uppercase tracking-wider">GIẢI ĐẤU</h2>
+                <div class="text-xs text-emerald-400 font-bold uppercase tracking-widest mt-1">ĐÃ HOÀN TẤT & KHÉP LẠI SÀN ĐẤU</div>
             </div>
 
-            <!-- Champion Box -->
-            <div class="bg-gradient-to-r from-yellow-500/20 via-black/80 to-yellow-500/20 border-2 border-[#d4af37] rounded-xl p-4 text-center mb-4 shadow-[0_0_20px_rgba(212,175,55,0.3)]">
-                <div class="w-14 h-14 rounded-full bg-gradient-to-b from-yellow-300 to-amber-600 flex items-center justify-center text-2xl mx-auto mb-2 text-black shadow-lg">
-                    🏆
-                </div>
-                <div class="text-[11px] text-yellow-400 uppercase tracking-widest font-extrabold">QUÁN QUÂN • THE CHAMPION</div>
-                <div id="result-champ-name" class="font-mafia text-3xl text-white tracking-widest my-1 uppercase truncate px-2">---</div>
-                <div id="result-champ-prize" class="font-teko text-3xl text-emerald-400 font-bold leading-none">0 ₫</div>
+            <div class="my-4 bg-[#1e293b]/50 p-4 rounded-xl border border-amber-500/30 text-center">
+                <div class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">👑 QUÁN QUÂN (CHAMPION)</div>
+                <div id="result-champ-name" class="font-mafia text-2xl text-yellow-400 tracking-wider mt-1 uppercase">VÔ ĐỊCH</div>
+                <div id="result-champ-prize" class="font-digital text-emerald-400 text-xl font-bold mt-1">0 ₫</div>
             </div>
 
-            <!-- ITM Results Table -->
-            <div class="flex-1 overflow-y-auto mb-4 border border-gray-800 rounded-xl bg-[#0b101c]">
+            <div class="flex-1 overflow-y-auto border border-gray-800 rounded-xl mb-4 bg-black/40">
                 <div class="p-3 bg-[#111827] text-xs font-bold text-[#d4af37] uppercase tracking-wider border-b border-gray-800 flex justify-between">
                     <span>Thứ Hạng ITM</span>
                     <span>Tiền Thưởng</span>
                 </div>
-                <div id="result-itm-list" class="divide-y divide-gray-800/60 p-2">
-                    <!-- Injected via JS -->
-                </div>
+                <div id="result-itm-list" class="divide-y divide-gray-800/60 p-2"></div>
             </div>
 
-            <div class="flex justify-end pt-3 border-t border-gray-800">
+            <div class="flex justify-end pt-2 border-t border-gray-800">
                 <button onclick="closeTourResultModal()" class="btn-gold px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider">ĐÓNG</button>
             </div>
         </div>
     </div>
 
+    <!-- NATIVE MOBILE BOTTOM NAVIGATION BAR (Fixed at bottom on phones) -->
+    <nav id="mobile-bottom-nav" class="fixed bottom-0 inset-x-0 bg-[#0d0d0d]/95 backdrop-blur-md border-t border-[#d4af37]/30 flex justify-around items-center py-2 px-1 z-40 md:hidden" style="padding-bottom: max(8px, env(safe-area-inset-bottom));">
+        <button onclick="navGoTables()" id="nav-btn-tables" class="flex flex-col items-center justify-center flex-1 py-1 text-[#d4af37]">
+            <i class="fa-solid fa-table-cells text-base"></i>
+            <span class="text-[9px] font-bold uppercase tracking-wider mt-1">Bàn Chơi</span>
+        </button>
+        <button onclick="openMiniClockModal()" id="nav-btn-clock" class="flex flex-col items-center justify-center flex-1 py-1 text-gray-400 hover:text-white">
+            <i class="fa-solid fa-clock text-base"></i>
+            <span class="text-[9px] font-bold uppercase tracking-wider mt-1">Đồng Hồ</span>
+        </button>
+        <button onclick="openLiveQrScanner()" id="nav-btn-scan" class="flex flex-col items-center justify-center flex-1 py-1 text-amber-400 active:scale-95">
+            <div class="w-10 h-10 -mt-5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-black flex items-center justify-center shadow-lg border-2 border-black">
+                <i class="fa-solid fa-qrcode text-lg"></i>
+            </div>
+            <span class="text-[9px] font-bold uppercase tracking-wider mt-0.5">Quét QR</span>
+        </button>
+        <button onclick="openFloorFnbOrdersModal()" id="nav-btn-fnb" class="flex flex-col items-center justify-center flex-1 py-1 text-gray-400 hover:text-white relative">
+            <i class="fa-solid fa-mug-hot text-base"></i>
+            <span class="text-[9px] font-bold uppercase tracking-wider mt-1">F&B Đơn</span>
+            <span id="nav-fnb-badge" class="absolute top-0 right-4 w-2 h-2 rounded-full bg-red-500 hidden"></span>
+        </button>
+        <button onclick="navOpenDealer()" id="nav-btn-dealer" class="flex flex-col items-center justify-center flex-1 py-1 text-gray-400 hover:text-white">
+            <i class="fa-solid fa-arrows-rotate text-base"></i>
+            <span class="text-[9px] font-bold uppercase tracking-wider mt-1">Dealer</span>
+        </button>
+    </nav>
+
+    <!-- FIREBASE AUTH SETUP -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAsEfStDuNNNk6bWDxdlSNMpOjljMXUZZs",
@@ -404,30 +622,81 @@
             appId: "1:1043270358527:web:b273250d09c371ee5fc3ca"
         };
         if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-            
-        }
-        if (!firebase.apps.length) {
-            
+            firebase.initializeApp(firebaseConfig);
         }
 
-        
         const SERVER_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname) ? window.location.origin : 'https://akpoker.onrender.com';
         const socket = io(SERVER_URL, {
             auth: { token: sessionStorage.getItem('acepoker_session_token') || role, role: role }
         });
 
-        
-        
+        // Haptic feedback & Web Audio synth for crisp native feel
+        function haptic(ms = 40) {
+            if (navigator.vibrate) try { navigator.vibrate(ms); } catch(e){}
+        }
+        function playBeep(freq = 880, dur = 0.12) {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + dur);
+                osc.start();
+                osc.stop(ctx.currentTime + dur);
+            } catch(e){}
+        }
+
+        // Global State
         let currentTours = [];
         let globalTables = [];
+        let globalMembers = [];
         let currentStaff = [];
         let selectedTourId = null;
-        let activeMenuSeatId = null;
-        let pendingDealerTableId = null;
+        let activeTableFilter = 'all'; // 'all' or table_id
+        let floorViewMode = localStorage.getItem('ace_floor_view_mode') || (window.innerWidth < 768 ? 'list' : 'table');
+        let floorLobbyTab = 'active';
+
+        // Bottom Sheet state
+        let activeSheetPlayer = null;
+
+        // Move modal state
         let pendingMovePhone = null;
         let pendingMoveName = null;
         let pendingCurrentTableId = null;
         let selectedTargetSeat = null;
+
+        // Dealer modal state
+        let pendingDealerTableId = null;
+
+        // F&B ordering state
+        let floorActiveFnbTable = null;
+        let floorActiveFnbSeat = null;
+        let floorActiveFnbName = '';
+        let floorActiveFnbPhone = '';
+        let floorFnbCategory = 'all';
+        let floorFnbCart = {};
+        let floorFnbOrders = [];
+        let floorFnbMenu = [
+            { id: 'c1', name: 'Cà Phê Đen Đá', price: 35000, category: 'drinks', icon: 'fa-mug-hot' },
+            { id: 'c2', name: 'Cà Phê Sữa Đá', price: 40000, category: 'drinks', icon: 'fa-mug-hot' },
+            { id: 'c3', name: 'Bò Húc Thái (Red Bull)', price: 30000, category: 'drinks', icon: 'fa-bolt' },
+            { id: 'c4', name: 'Nước Suối Lavie', price: 15000, category: 'drinks', icon: 'fa-bottle-water' },
+            { id: 'c5', name: 'Trà Đào Cam Sả', price: 45000, category: 'drinks', icon: 'fa-glass-water' },
+            { id: 'f1', name: 'Mì Xào Bò Trứng', price: 65000, category: 'food', icon: 'fa-bowl-rice' },
+            { id: 'f2', name: 'Cơm Chiên Dương Châu', price: 60000, category: 'food', icon: 'fa-bowl-rice' },
+            { id: 'f3', name: 'Xúc Xích Nướng (2 cây)', price: 40000, category: 'food', icon: 'fa-bacon' },
+            { id: 'e1', name: 'Gói Thuốc Lá Craven A', price: 35000, category: 'extras', icon: 'fa-smoking' }
+        ];
+
+        // QR Scanner state
+        let html5QrScanner = null;
+        let isQrScanning = false;
+        let lastScannedPayload = null;
 
         const seatPositions = [
             { id: 1, x: 82, y: 18 }, { id: 2, x: 95, y: 50 }, { id: 3, x: 82, y: 82 },
@@ -438,19 +707,32 @@
         const DEALER_SHIFT_MS = 30 * 60 * 1000;
 
         function formatTime(sec) {
-            if(sec < 0) sec = 0;
+            if (sec < 0) sec = 0;
             const m = Math.floor(sec/60).toString().padStart(2,'0');
             const s = (sec%60).toString().padStart(2,'0');
             return `${m}:${s}`;
         }
         function formatMoney(n) { return new Intl.NumberFormat('vi-VN').format(n||0); }
 
-        // Real time clock & 30-min Dealer rotation countdown
+        // Clock timer & Dealer rotation
         setInterval(() => {
             const now = new Date();
             const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
-            document.getElementById('header-clock').innerText = t;
+            const headerClock = document.getElementById('header-clock');
+            if (headerClock) headerClock.innerText = t;
 
+            // Update mini clock sheet time if open
+            if (selectedTourId) {
+                const tour = currentTours.find(x => x.id === selectedTourId);
+                if (tour) {
+                    const clockEl = document.getElementById('tbl-clock');
+                    if (clockEl) clockEl.innerText = formatTime(tour.time_remaining);
+                    const clockModalTime = document.getElementById('clock-modal-time');
+                    if (clockModalTime) clockModalTime.innerText = formatTime(tour.time_remaining);
+                }
+            }
+
+            // Dealer timers
             const nowMs = Date.now();
             document.querySelectorAll('.dealer-timer').forEach(el => {
                 const startTime = parseInt(el.getAttribute('data-time'));
@@ -465,98 +747,49 @@
 
                 if (remainingSec === 0) {
                     el.innerText = '⚠️ 00:00 HẾT CA (PUSH)';
-                    el.className = 'dealer-timer text-[10px] mt-1 bg-red-950 text-red-300 font-bold px-2.5 py-0.5 rounded-full border border-red-500 animate-pulse tracking-widest cursor-pointer shadow-[0_0_10px_rgba(239,68,68,0.7)]';
+                    el.className = 'dealer-timer text-[10px] bg-red-950 text-red-300 font-bold px-2 py-0.5 rounded-full border border-red-500 animate-pulse tracking-widest cursor-pointer shadow-[0_0_10px_rgba(239,68,68,0.7)]';
                 } else if (remainingSec <= 300) {
                     el.innerText = `⏳ ${m}:${s}`;
-                    el.className = 'dealer-timer text-[9px] mt-1 bg-yellow-950/80 text-yellow-300 font-bold px-2.5 py-0.5 rounded-full border border-yellow-500 animate-pulse tracking-widest cursor-pointer';
+                    el.className = 'dealer-timer text-[9px] bg-yellow-950/80 text-yellow-300 font-bold px-2 py-0.5 rounded-full border border-yellow-500 animate-pulse tracking-widest cursor-pointer';
                 } else {
                     el.innerText = `${m}:${s}`;
-                    el.className = 'dealer-timer text-[9px] mt-1 bg-black/60 text-emerald-400 font-digital px-2.5 py-0.5 rounded-full border border-emerald-500/30 tracking-widest cursor-pointer';
+                    el.className = 'dealer-timer text-[9px] bg-black/60 text-emerald-400 font-digital px-2 py-0.5 rounded-full border border-emerald-500/30 tracking-widest cursor-pointer';
                 }
             });
-
         }, 1000);
 
+        // Socket Listeners
         socket.on('connect', () => socket.emit('request_initial_data'));
 
-
-        let globalMembers = [];
         socket.on('update_members', (members) => {
-            globalMembers = members;
-            if(selectedTourId && !isAnyPopupOpen()) renderTableView();
+            globalMembers = members || [];
+            if (selectedTourId && !isAnyPopupOpen()) renderTableView();
         });
 
         socket.on('update_tours', (tours) => {
-            currentTours = tours;
+            currentTours = tours || [];
             renderLobby();
-            if(selectedTourId && !isAnyPopupOpen()) renderTableView();
+            if (selectedTourId && !isAnyPopupOpen()) renderTableView();
         });
 
         socket.on('update_tables', (tables) => {
-            globalTables = tables;
-            if(selectedTourId && !isAnyPopupOpen()) renderTableView();
-        });
-
-        function isAnyPopupOpen() {
-            if (activeMenuSeatId !== null) return true;
-            if (document.activeElement && document.activeElement.id === 'player-search-input') return true;
-            if (document.getElementById('dealer-modal') && !document.getElementById('dealer-modal').classList.contains('hidden')) return true;
-            if (document.getElementById('move-modal') && !document.getElementById('move-modal').classList.contains('hidden')) return true;
-            if (document.getElementById('add-table-modal') && !document.getElementById('add-table-modal').classList.contains('hidden')) return true;
-            if (document.getElementById('floor-fnb-order-modal') && !document.getElementById('floor-fnb-order-modal').classList.contains('hidden')) return true;
-            if (document.getElementById('floor-fnb-orders-modal') && !document.getElementById('floor-fnb-orders-modal').classList.contains('hidden')) return true;
-            if (document.getElementById('tour-result-modal') && !document.getElementById('tour-result-modal').classList.contains('hidden')) return true;
-            return false;
-        }
-
-        // Lobby Tab State
-        let floorLobbyTab = 'active'; // 'active' | 'finished'
-
-        function setFloorLobbyTab(tab) {
-            floorLobbyTab = tab;
-            const btnActive = document.getElementById('floor-tab-active');
-            const btnFinished = document.getElementById('floor-tab-finished');
-            const desc = document.getElementById('lobby-tab-desc');
-            if (tab === 'active') {
-                if (btnActive) btnActive.className = 'px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md flex items-center gap-2';
-                if (btnFinished) btnFinished.className = 'px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-[#181818] border border-[#333] text-gray-400 hover:text-white flex items-center gap-2';
-                if (desc) desc.innerText = 'Các giải đấu đang vận hành bàn chơi & chia bài';
-            } else {
-                if (btnActive) btnActive.className = 'px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-[#181818] border border-[#333] text-gray-400 hover:text-white flex items-center gap-2';
-                if (btnFinished) btnFinished.className = 'px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md flex items-center gap-2';
-                if (desc) desc.innerText = 'Các giải đấu đã hoàn tất, trao cúp & vinh danh';
-            }
-            renderLobby();
-        }
-
-        // F&B Variables & Listeners
-        let floorFnbMenu = [];
-        let floorFnbOrders = [];
-        let floorActiveFnbTable = null;
-        let floorActiveFnbSeat = null;
-        let floorActiveFnbName = '';
-        let floorActiveFnbPhone = '';
-        let floorFnbCart = {};
-        let floorFnbCategory = 'all';
-
-        socket.on('update_fnb_menu', (menu) => {
-            floorFnbMenu = menu || [];
-            const modal = document.getElementById('floor-fnb-order-modal');
-            if (modal && !modal.classList.contains('hidden')) {
-                renderFloorFnbMenu();
-            }
+            globalTables = tables || [];
+            if (selectedTourId && !isAnyPopupOpen()) renderTableView();
         });
 
         socket.on('update_fnb_orders', (orders) => {
             floorFnbOrders = orders || [];
             const pendingCount = floorFnbOrders.filter(o => o.status === 'pending').length;
             const badge = document.getElementById('floor-fnb-pending-badge');
+            const navBadge = document.getElementById('nav-fnb-badge');
             if (badge) {
                 if (pendingCount > 0) {
                     badge.innerText = pendingCount;
                     badge.classList.remove('hidden');
+                    if (navBadge) navBadge.classList.remove('hidden');
                 } else {
                     badge.classList.add('hidden');
+                    if (navBadge) navBadge.classList.add('hidden');
                 }
             }
             const listModal = document.getElementById('floor-fnb-orders-modal');
@@ -567,13 +800,61 @@
 
         socket.on('update_staff_list', (staff) => { currentStaff = staff || []; });
 
-        document.addEventListener('click', (e) => {
-            if(!e.target.closest('.seat')) closeAllMenus();
-        });
+        function isAnyPopupOpen() {
+            return !document.getElementById('seat-bottom-sheet').classList.contains('hidden') ||
+                   !document.getElementById('dealer-modal').classList.contains('hidden') ||
+                   !document.getElementById('move-modal').classList.contains('hidden') ||
+                   !document.getElementById('floor-fnb-order-modal').classList.contains('hidden') ||
+                   !document.getElementById('qr-scanner-modal').classList.contains('hidden');
+        }
 
         // =====================
-        // LOBBY
+        // VIEW MODE CONTROLLER
         // =====================
+        function setFloorViewMode(mode) {
+            haptic(25);
+            floorViewMode = mode;
+            localStorage.setItem('ace_floor_view_mode', mode);
+            updateViewModeButtons();
+            renderTableView();
+        }
+
+        function updateViewModeButtons() {
+            const btnList = document.getElementById('btn-mode-list');
+            const btnTable = document.getElementById('btn-mode-table');
+            if (!btnList || !btnTable) return;
+
+            if (floorViewMode === 'list') {
+                btnList.className = 'px-2.5 py-1 rounded text-[11px] font-bold uppercase transition flex items-center gap-1 bg-[#d4af37] text-black shadow';
+                btnTable.className = 'px-2.5 py-1 rounded text-[11px] font-bold uppercase transition flex items-center gap-1 text-gray-400 hover:text-white';
+            } else {
+                btnTable.className = 'px-2.5 py-1 rounded text-[11px] font-bold uppercase transition flex items-center gap-1 bg-[#d4af37] text-black shadow';
+                btnList.className = 'px-2.5 py-1 rounded text-[11px] font-bold uppercase transition flex items-center gap-1 text-gray-400 hover:text-white';
+            }
+        }
+
+        // =====================
+        // LOBBY CONTROLLER
+        // =====================
+        function setFloorLobbyTab(tab) {
+            haptic(20);
+            floorLobbyTab = tab;
+            const btnActive = document.getElementById('floor-tab-active');
+            const btnFinished = document.getElementById('floor-tab-finished');
+            const desc = document.getElementById('lobby-tab-desc');
+
+            if (tab === 'active') {
+                btnActive.className = 'px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md flex items-center gap-1.5 active:scale-95';
+                btnFinished.className = 'px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-[#181818] border border-[#333] text-gray-400 hover:text-white flex items-center gap-1.5 active:scale-95';
+                if (desc) desc.innerText = 'Các giải đấu đang vận hành bàn chơi & chia bài';
+            } else {
+                btnFinished.className = 'px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md flex items-center gap-1.5 active:scale-95';
+                btnActive.className = 'px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-[#181818] border border-[#333] text-gray-400 hover:text-white flex items-center gap-1.5 active:scale-95';
+                if (desc) desc.innerText = 'Các giải đấu đã tìm được Quán Quân hôm nay';
+            }
+            renderLobby();
+        }
+
         function renderLobby() {
             const list = document.getElementById('tour-list');
             if (!list) return;
@@ -593,12 +874,12 @@
             if (toursToRender.length === 0) {
                 if (floorLobbyTab === 'active') {
                     list.innerHTML = `
-                        <div class="text-center py-16 bg-[#111] rounded-2xl border border-dashed border-[#333]">
-                            <i class="fa-solid fa-circle-check text-5xl text-emerald-500/50 mb-3"></i>
-                            <div class="text-base font-bold text-gray-300 uppercase tracking-widest">Không có giải đấu nào đang diễn ra trên sàn</div>
+                        <div class="text-center py-12 bg-[#111] rounded-2xl border border-dashed border-[#333] p-4">
+                            <i class="fa-solid fa-circle-check text-4xl text-emerald-500/50 mb-2"></i>
+                            <div class="text-sm font-bold text-gray-300 uppercase tracking-wider">Không có giải nào đang diễn ra</div>
                             <p class="text-xs text-gray-500 mt-1">Các bàn chơi đã được giải phóng hoặc giải đã hoàn tất.</p>
                             ${finishedTours.length > 0 ? `
-                                <button onclick="setFloorLobbyTab('finished')" class="mt-4 px-4 py-2 bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black font-bold text-xs rounded-lg uppercase tracking-wider shadow-md">
+                                <button onclick="setFloorLobbyTab('finished')" class="mt-3 px-4 py-2 bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black font-bold text-xs rounded-lg uppercase tracking-wider shadow">
                                     <i class="fa-solid fa-trophy mr-1"></i> Xem ${finishedTours.length} Giải Đã Kết Thúc
                                 </button>
                             ` : ''}
@@ -606,9 +887,9 @@
                     `;
                 } else {
                     list.innerHTML = `
-                        <div class="text-center py-16 bg-[#111] rounded-2xl border border-dashed border-[#333]">
-                            <i class="fa-solid fa-trophy text-5xl text-gray-600 mb-3"></i>
-                            <div class="text-base font-bold text-gray-400 uppercase tracking-widest">Chưa có giải đấu nào kết thúc hôm nay</div>
+                        <div class="text-center py-12 bg-[#111] rounded-2xl border border-dashed border-[#333] p-4">
+                            <i class="fa-solid fa-trophy text-4xl text-gray-600 mb-2"></i>
+                            <div class="text-sm font-bold text-gray-400 uppercase tracking-wider">Chưa có giải đấu nào kết thúc hôm nay</div>
                         </div>
                     `;
                 }
@@ -625,269 +906,362 @@
                 const isFinished = t.status === 'finished';
 
                 const statusClass = t.status === 'running' ? 'badge-running' : isFinished ? 'badge-finished' : 'badge-paused';
-                const statusText = { running: '▶ ĐANG CHẠY', paused: '⏸ TẠM DỪNG', pending: '⏳ CHỜ GIỜ', finished: '✓ KẾT THÚC' }[t.status] || t.status;
+                const statusText = { running: '▶ RUNNING', paused: '⏸ TẠM DỪNG', pending: '⏳ CHỜ GIỜ', finished: '✓ KẾT THÚC' }[t.status] || t.status;
 
                 const card = document.createElement('div');
-                card.className = `tour-card p-5 ${t.status === 'running' ? 'running' : ''} ${isFinished ? 'border-amber-500/40 bg-gradient-to-br from-[#121008] to-[#0a0a0a]' : ''}`;
+                card.className = `tour-card p-4 ${t.status === 'running' ? 'running' : ''} ${isFinished ? 'border-amber-500/40 bg-gradient-to-br from-[#121008] to-[#0a0a0a]' : ''}`;
                 
-                if (isFinished) {
-                    card.onclick = () => openTourResultModal(t.id);
-                } else {
-                    card.onclick = () => openTourTables(t.id);
-                }
+                card.onclick = () => {
+                    haptic(30);
+                    if (isFinished) openTourResultModal(t.id);
+                    else openTourTables(t.id);
+                };
 
-                // Get Winner Name
                 const itm = t.itm_results || {};
                 const winnerName = itm[1] || t.winner || 'Đang cập nhật';
 
                 card.innerHTML = `
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <div class="font-mafia text-xl text-white tracking-wider flex items-center gap-2">
-                                <span>${t.name}</span>
-                                ${isFinished ? '<span class="text-[10px] bg-[#d4af37]/20 border border-[#d4af37]/50 text-[#d4af37] px-2 py-0.5 rounded font-bold font-sans">🏆 CHAMPION CONCLUDED</span>' : ''}
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="truncate mr-2">
+                            <div class="font-mafia text-base md:text-lg text-white tracking-wider flex items-center gap-2 truncate">
+                                <span class="truncate">${t.name}</span>
+                                ${isFinished ? '<span class="text-[9px] bg-[#d4af37]/20 border border-[#d4af37]/50 text-[#d4af37] px-2 py-0.5 rounded font-bold">🏆 FINAL</span>' : ''}
                             </div>
-                            <div class="text-xs text-gray-500 mt-1 font-bold uppercase tracking-widest">
+                            <div class="text-[11px] text-gray-500 mt-0.5 font-bold uppercase tracking-wider">
                                 ${isFinished ? 'Bàn chơi đã giải tán' : `Bàn ${(t.tables||[]).join(', ')}`} &nbsp;|&nbsp; Buy-in: ${t.buyin_fee ? formatMoney(t.buyin_fee) + '₫' : '—'}
                             </div>
                         </div>
-                        <span class="text-xs font-bold px-2 py-1 rounded uppercase tracking-widest ${statusClass}">${statusText}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider shrink-0 ${statusClass}">${statusText}</span>
                     </div>
-                    <div class="grid grid-cols-4 gap-3 text-center">
-                        <div class="bg-[#0a0a0a] rounded-lg p-3 border border-[#222]">
-                            <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">Level</div>
-                            <div class="text-gold font-bold text-lg font-digital">${isFinished ? 'FINAL' : (isBreak ? 'BRK' : (blind?.level || '—'))}</div>
+                    <div class="grid grid-cols-4 gap-2 text-center">
+                        <div class="bg-[#0a0a0a] rounded-lg p-2 border border-[#222]">
+                            <div class="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Level</div>
+                            <div class="text-gold font-bold text-sm sm:text-base font-digital">${isFinished ? 'FINAL' : (isBreak ? 'BRK' : (blind?.level || '—'))}</div>
                         </div>
-                        <div class="bg-[#0a0a0a] rounded-lg p-3 border border-[#222]">
-                            <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">Clock</div>
-                            <div class="font-bold text-lg font-digital ${isFinished ? 'text-emerald-400' : 'text-white'}">
-                                ${isFinished ? 'HOÀN TẤT' : formatTime(t.time_remaining)}
+                        <div class="bg-[#0a0a0a] rounded-lg p-2 border border-[#222]">
+                            <div class="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Clock</div>
+                            <div class="font-bold text-sm sm:text-base font-digital ${isFinished ? 'text-emerald-400' : 'text-white'}">
+                                ${isFinished ? 'XONG' : formatTime(t.time_remaining)}
                             </div>
                         </div>
-                        <div class="bg-[#0a0a0a] rounded-lg p-3 border border-[#222]">
-                            <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">${isFinished ? 'Vô Địch' : 'Còn lại'}</div>
-                            <div class="${isFinished ? 'text-yellow-400 font-bold text-sm truncate uppercase mt-0.5' : 'text-emerald-400 font-bold text-lg'}">
-                                ${isFinished ? `🏆 ${winnerName}` : `${alive}<span class="text-gray-600 text-sm">/${t.entries}</span>`}
+                        <div class="bg-[#0a0a0a] rounded-lg p-2 border border-[#222]">
+                            <div class="text-[9px] text-gray-500 uppercase tracking-widest font-bold">${isFinished ? 'Vô Địch' : 'Còn lại'}</div>
+                            <div class="${isFinished ? 'text-yellow-400 font-bold text-xs truncate uppercase mt-0.5' : 'text-emerald-400 font-bold text-sm sm:text-base'}">
+                                ${isFinished ? `🏆 ${winnerName}` : `${alive}<span class="text-gray-600 text-xs">/${t.entries}</span>`}
                             </div>
                         </div>
-                        <div class="bg-[#0a0a0a] rounded-lg p-3 border border-[#222]">
-                            <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">Blinds</div>
-                            <div class="text-white font-bold text-sm font-digital">
+                        <div class="bg-[#0a0a0a] rounded-lg p-2 border border-[#222]">
+                            <div class="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Blinds</div>
+                            <div class="text-white font-bold text-xs sm:text-sm font-digital">
                                 ${isFinished ? '<span class="text-gray-500">KẾT THÚC</span>' : (isBreak ? '<span class="text-red-400">BREAK</span>' : (blind ? `${formatMoney(blind.sb)}/${formatMoney(blind.bb)}` : '—'))}
                             </div>
                         </div>
                     </div>
-                    <div class="mt-4 flex justify-end">
-                        <span class="text-xs text-[#d4af37] font-bold uppercase tracking-widest">
-                            ${isFinished ? 'Xem Kết Quả & Vinh Danh <i class="fa-solid fa-trophy ml-1 text-amber-400"></i>' : 'Quản lý bàn <i class="fa-solid fa-chevron-right ml-1"></i>'}
-                        </span>
+                    <div class="mt-3 flex justify-end items-center text-xs text-[#d4af37] font-bold uppercase tracking-wider">
+                        ${isFinished ? 'Xem Kết Quả & Vinh Danh <i class="fa-solid fa-trophy ml-1.5 text-amber-400"></i>' : 'Vào Quản Lý Bàn <i class="fa-solid fa-chevron-right ml-1.5"></i>'}
                     </div>
                 `;
                 list.appendChild(card);
             });
         }
 
-        function openTourResultModal(tourId) {
-            const tour = currentTours.find(t => t.id === tourId);
-            if (!tour) return;
-
-            document.getElementById('result-tour-name').innerText = tour.name || 'TOURNAMENT';
-            const itm = tour.itm_results || {};
-            const winner = itm[1] || tour.winner || 'VÔ ĐỊCH';
-            document.getElementById('result-champ-name').innerText = winner;
-
-            const pool = (tour.fund && tour.fund.payout_pool) ? tour.fund.payout_pool : ((tour.entries || 0) * (tour.buyin_fee || 0) * 0.85);
-            let payouts = [];
-            const e = tour.entries || 0;
-            if (pool > 0) {
-                if (e <= 5) payouts = [{ rank: 1, amount: pool }];
-                else if (e <= 10) payouts = [{ rank: 1, amount: pool * 0.65 }, { rank: 2, amount: pool * 0.35 }];
-                else if (e <= 20) payouts = [{ rank: 1, amount: pool * 0.50 }, { rank: 2, amount: pool * 0.30 }, { rank: 3, amount: pool * 0.20 }];
-                else if (e <= 40) payouts = [{ rank: 1, amount: pool * 0.45 }, { rank: 2, amount: pool * 0.25 }, { rank: 3, amount: pool * 0.15 }, { rank: 4, amount: pool * 0.10 }, { rank: 5, amount: pool * 0.05 }];
-                else payouts = [{ rank: 1, amount: pool * 0.40 }, { rank: 2, amount: pool * 0.25 }, { rank: 3, amount: pool * 0.15 }, { rank: 4, amount: pool * 0.10 }, { rank: 5, amount: pool * 0.06 }, { rank: 6, amount: pool * 0.04 }];
-            }
-
-            const p1 = payouts.find(p => p.rank === 1)?.amount || 0;
-            document.getElementById('result-champ-prize').innerText = formatMoney(p1) + ' ₫';
-
-            const itmContainer = document.getElementById('result-itm-list');
-            itmContainer.innerHTML = '';
-
-            if (payouts.length === 0) {
-                itmContainer.innerHTML = '<div class="text-center py-4 text-gray-500 text-xs">Chưa có cơ cấu trả thưởng</div>';
-            } else {
-                payouts.forEach(p => {
-                    const playerName = itm[p.rank] || (p.rank === 1 ? winner : 'Chưa ghi nhận');
-                    const row = document.createElement('div');
-                    row.className = 'flex justify-between items-center py-2.5 px-3 text-xs';
-                    row.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <span class="w-7 h-7 rounded-full flex items-center justify-center font-bold font-mono ${p.rank === 1 ? 'bg-yellow-500 text-black' : p.rank === 2 ? 'bg-gray-400 text-black' : p.rank === 3 ? 'bg-amber-700 text-white' : 'bg-gray-800 text-gray-300'}">
-                                ${p.rank === 1 ? '🏆' : '#' + p.rank}
-                            </span>
-                            <span class="font-bold text-white uppercase text-sm">${playerName}</span>
-                        </div>
-                        <span class="font-teko text-xl font-bold text-emerald-400">${formatMoney(p.amount)} ₫</span>
-                    `;
-                    itmContainer.appendChild(row);
-                });
-            }
-
-            document.getElementById('tour-result-modal').classList.replace('hidden', 'flex');
-        }
-
-        function closeTourResultModal() {
-            document.getElementById('tour-result-modal').classList.replace('flex', 'hidden');
-        }
-
         function openTourTables(tourId) {
             selectedTourId = tourId;
+            activeTableFilter = 'all';
             document.getElementById('view-lobby').classList.add('hidden');
             document.getElementById('view-tables').classList.remove('hidden');
             document.getElementById('btn-back').classList.remove('hidden');
+            document.getElementById('view-mode-toggle').classList.remove('hidden');
 
             const t = currentTours.find(x => x.id === tourId);
-            document.getElementById('header-title').innerHTML = `<i class="fa-solid fa-table mr-2 text-sm"></i><span class="font-mafia text-gold">${t?.name || 'Quản lý Bàn'}</span>`;
+            document.getElementById('header-title').innerText = t ? t.name : 'Quản Lý Bàn';
+            updateViewModeButtons();
             renderTableView();
         }
 
         function showLobby() {
+            haptic(20);
             clearPlayerSearch();
             selectedTourId = null;
             document.getElementById('view-tables').classList.add('hidden');
             document.getElementById('view-lobby').classList.remove('hidden');
             document.getElementById('btn-back').classList.add('hidden');
-            document.getElementById('header-title').innerHTML = '<i class="fa-solid fa-tablet-screen-button mr-2 text-gold"></i> ACE POKER - FLOOR MANAGER';
+            document.getElementById('view-mode-toggle').classList.add('hidden');
+            document.getElementById('header-title').innerText = 'ACE POKER FLOOR';
+            renderLobby();
         }
 
         // =====================
-        // TABLE VIEW
+        // TABLE VIEW RENDERING
         // =====================
         function renderTableView() {
-            if(!selectedTourId) return;
+            if (!selectedTourId) return;
             const t = currentTours.find(x => x.id === selectedTourId);
-            if(!t) return;
+            if (!t) return;
 
-            // Update info bar
+            // Update info bar & mini clock modal
             const blind = t.blinds_structure?.[t.current_level_idx];
+            const nextBlind = t.blinds_structure?.[t.current_level_idx + 1];
             const isBreak = blind?.is_break;
-            document.getElementById('tbl-level').innerText = isBreak ? 'BREAK' : `${blind?.level || '—'}`;
+            document.getElementById('tbl-level').innerText = isBreak ? 'BRK' : `${blind?.level || '—'}`;
             document.getElementById('tbl-clock').innerText = formatTime(t.time_remaining);
             const alive = (t.alive_override !== undefined && t.alive_override !== null)
                 ? t.alive_override
-                : (t.players||[]).filter(p => p.status === 'alive').length;
+                : (t.players || []).filter(p => p.status === 'alive').length;
             document.getElementById('tbl-players').innerText = `${alive}/${t.entries}`;
-            document.getElementById('tbl-blinds').innerText = isBreak ? 'BREAK' : (blind ? `${formatMoney(blind.sb)}/${formatMoney(blind.bb)} BBA:${formatMoney(blind.ante)}` : '—');
+
+            // Sync Mini Clock Sheet data
+            document.getElementById('clock-modal-tour-name').innerText = t.name;
+            document.getElementById('clock-modal-time').innerText = formatTime(t.time_remaining);
+            document.getElementById('clock-modal-status').innerText = t.status === 'running' ? '▶ ĐANG DIỄN RA' : '⏸ TẠM DỪNG';
+            document.getElementById('clock-modal-curr-blinds').innerText = blind ? `${formatMoney(blind.sb)} / ${formatMoney(blind.bb)}` : '—';
+            document.getElementById('clock-modal-curr-ante').innerText = `BBA: ${formatMoney(blind?.ante || 0)}`;
+            document.getElementById('clock-modal-next-blinds').innerText = nextBlind ? `${formatMoney(nextBlind.sb)} / ${formatMoney(nextBlind.bb)}` : '—';
+            document.getElementById('clock-modal-next-ante').innerText = `BBA: ${formatMoney(nextBlind?.ante || 0)}`;
+            document.getElementById('clock-modal-players').innerText = `${alive} / ${t.entries}`;
+            const totalChips = (t.entries || 0) * (t.starting_chips || 20000);
+            const avgChips = alive > 0 ? Math.round(totalChips / alive) : 0;
+            document.getElementById('clock-modal-avg').innerText = formatMoney(avgChips);
+
+            // Render Table Filter Pills Carousel
+            renderTableFilterPills(t);
 
             const container = document.getElementById('tables-container');
             container.innerHTML = '';
 
-            // BALANCE WARNING CHECK
+            // Balance warning
             if (t.tables && t.tables.length > 1) {
                 const counts = t.tables.map(tid => (t.players||[]).filter(p => p.table_id === tid && p.status === 'alive').length);
                 const max = Math.max(...counts);
                 const min = Math.min(...counts);
                 if (max - min >= 2) {
-                    const warningHtml = `<div class="mx-6 mt-6 bg-[#800020]/20 border border-[#800020] rounded-xl p-4 flex items-center justify-between shadow-[0_0_15px_rgba(128,0,32,0.4)] animate-pulse">
-                        <div class="flex items-center gap-4">
-                            <div class="bg-[#800020] text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                            <div>
-                                <h4 class="text-[#ff4c4c] font-mafia tracking-widest uppercase text-lg">Yêu Cầu Balance Bàn!</h4>
-                                <p class="text-red-300 text-xs font-bold uppercase tracking-widest mt-1">Hệ thống phát hiện độ lệch ${max - min} khách giữa các bàn. Vui lòng chuyển khách ngay!</p>
+                    container.innerHTML += `
+                        <div class="mb-4 bg-red-950/40 border border-red-600 rounded-xl p-3 flex items-center gap-3 animate-pulse">
+                            <i class="fa-solid fa-triangle-exclamation text-xl text-red-400"></i>
+                            <div class="text-xs">
+                                <span class="font-bold text-red-300 uppercase">Cần Balance Bàn:</span>
+                                <span class="text-gray-300">Độ lệch ${max - min} khách giữa các bàn. Vui lòng chuyển khách!</span>
                             </div>
                         </div>
-                    </div>`;
-                    container.innerHTML += warningHtml;
+                    `;
                 }
             }
 
-            const tourTables = globalTables.filter(tbl => (t.tables||[]).includes(tbl.id));
-            
-            // Check UI Lock: ONLY lock if tournament has just started AND total entries has not reached min_players AND late reg is still open!
-            // When players bust out naturally down to 4, 3, 2, 1 player (or after break/late reg closed), NEVER lock!
-            let overlayHtml = '';
-            const minPlayers = (t.settings && t.settings.min_players) ? Number(t.settings.min_players) : 6;
-            const lateRegLvl = (t.settings && t.settings.late_reg_level) ? Number(t.settings.late_reg_level) : 8;
-            const currentBlindObj = t.blinds_structure?.[t.current_level_idx];
-            const currentLevelNum = currentBlindObj?.is_break
-                ? (t.blinds_structure?.[t.current_level_idx - 1]?.level || 0)
-                : (currentBlindObj?.level || 0);
-            const isLateRegClosed = Number(currentLevelNum) >= lateRegLvl;
-            const totalEntries = Number(t.entries || (t.players || []).length || 0);
+            const tourTables = globalTables.filter(tbl => (t.tables || []).includes(tbl.id));
+            const tablesToDisplay = activeTableFilter === 'all' 
+                ? tourTables 
+                : tourTables.filter(tbl => tbl.id === parseInt(activeTableFilter));
 
-            // Only hold dealing if tournament is running, late reg is still open, and TOTAL entries bought is less than min_players
-            if (t.status === 'running' && !isLateRegClosed && totalEntries < minPlayers) {
-                overlayHtml = `
-                    <div class="absolute inset-0 bg-red-900/80 z-50 flex flex-col justify-center items-center rounded-xl border-4 border-red-500 backdrop-blur-sm pointer-events-none">
-                        <i class="fa-solid fa-lock text-5xl text-yellow-300 mb-2 drop-shadow-[0_0_15px_rgba(255,0,0,1)] animate-bounce"></i>
-                        <div class="text-white font-bold text-2xl text-center leading-tight drop-shadow-md tracking-widest font-mafia uppercase">
-                            CHƯA ĐỦ ${minPlayers} PLAYER ĐĂNG KÝ<br>
-                            <span class="text-yellow-300 text-lg">HOLD DEALING (${totalEntries}/${minPlayers})</span>
-                        </div>
+            if (tablesToDisplay.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-500 text-xs">
+                        Chưa có bàn nào được mở trong giải đấu này. Bấm "+ MỞ THÊM BÀN" ở trên.
                     </div>
                 `;
+                return;
             }
 
-            tourTables.forEach(tbl => {
-                const tablePlayers = (t.players||[]).filter(p => p.table_id === tbl.id && p.status === 'alive');
+            if (floorViewMode === 'list') {
+                renderFastSeatListView(tablesToDisplay, t, container);
+            } else {
+                renderGraphicTableView(tablesToDisplay, t, container);
+            }
+        }
 
-                const tableWrapper = document.createElement('div');
-                tableWrapper.id = `table-card-${tbl.id}`;
-                tableWrapper.className = 'w-full xl:w-[46vw] h-[400px] md:h-[480px] xl:h-[500px] mx-auto relative my-8 flex-1';
+        // Table Filter Pills Carousel
+        function renderTableFilterPills(tour) {
+            const pillsContainer = document.getElementById('table-filter-pills');
+            if (!pillsContainer) return;
 
-                let initialDealerTimer = '30:00';
-                let dealerTimerClass = 'dealer-timer text-[9px] mt-1 bg-black/60 text-emerald-400 font-digital px-2.5 py-0.5 rounded-full border border-emerald-500/30 tracking-widest cursor-pointer';
+            const tTables = tour.tables || [];
+            let html = `
+                <button onclick="filterTableSelection('all')" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase whitespace-nowrap transition active:scale-95 ${activeTableFilter === 'all' ? 'bg-[#d4af37] text-black shadow' : 'bg-[#181818] border border-[#333] text-gray-400 hover:text-white'}">
+                    Tất Cả (${tTables.length} Bàn)
+                </button>
+            `;
+
+            tTables.forEach(tId => {
+                const count = (tour.players || []).filter(p => p.table_id === tId && p.status === 'alive').length;
+                const isSelected = activeTableFilter === tId.toString();
+                html += `
+                    <button onclick="filterTableSelection('${tId}')" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase whitespace-nowrap transition active:scale-95 flex items-center gap-1.5 ${isSelected ? 'bg-[#d4af37] text-black shadow' : 'bg-[#181818] border border-[#333] text-gray-400 hover:text-white'}">
+                        <span>Bàn ${tId}</span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-black text-[#d4af37]' : 'bg-gray-800 text-gray-300'} font-mono">${count}/9</span>
+                    </button>
+                `;
+            });
+
+            pillsContainer.innerHTML = html;
+        }
+
+        function filterTableSelection(tblId) {
+            haptic(20);
+            activeTableFilter = tblId;
+            renderTableView();
+        }
+
+        // ============================================
+        // MODE 1: FAST SEAT LIST VIEW (Tối ưu 100% 1 tay)
+        // ============================================
+        function renderFastSeatListView(tables, tour, container) {
+            tables.forEach(tbl => {
+                const tablePlayers = (tour.players || []).filter(p => p.table_id === tbl.id && p.status === 'alive');
+                const tableCard = document.createElement('div');
+                tableCard.className = 'mb-6 bg-[#111] border border-[#262626] rounded-2xl p-3.5 shadow-lg';
+
+                // Table Header
+                let dealerTimerText = '30:00';
                 if (tbl.dealer_time) {
                     const elapsedMs = Date.now() - tbl.dealer_time;
                     const remainingSec = Math.max(0, Math.floor((DEALER_SHIFT_MS - elapsedMs) / 1000));
-                    const m = Math.floor(remainingSec / 60).toString().padStart(2, '0');
-                    const s = (remainingSec % 60).toString().padStart(2, '0');
-
-                    if (remainingSec === 0) {
-                        initialDealerTimer = '⚠️ 00:00 HẾT CA (PUSH)';
-                        dealerTimerClass = 'dealer-timer text-[10px] mt-1 bg-red-950 text-red-300 font-bold px-2.5 py-0.5 rounded-full border border-red-500 animate-pulse tracking-widest cursor-pointer shadow-[0_0_10px_rgba(239,68,68,0.7)]';
-                    } else if (remainingSec <= 300) {
-                        initialDealerTimer = `⏳ ${m}:${s}`;
-                        dealerTimerClass = 'dealer-timer text-[9px] mt-1 bg-yellow-950/80 text-yellow-300 font-bold px-2.5 py-0.5 rounded-full border border-yellow-500 animate-pulse tracking-widest cursor-pointer';
-                    } else {
-                        initialDealerTimer = `${m}:${s}`;
-                        dealerTimerClass = 'dealer-timer text-[9px] mt-1 bg-black/60 text-emerald-400 font-digital px-2.5 py-0.5 rounded-full border border-emerald-500/30 tracking-widest cursor-pointer';
-                    }
+                    dealerTimerText = `${Math.floor(remainingSec / 60).toString().padStart(2, '0')}:${(remainingSec % 60).toString().padStart(2, '0')}`;
                 }
 
-                const dealerHtml = tbl.dealer_name
-                    ? `<div class="flex flex-col items-center">
-                           <div class="text-[#d4af37] text-sm font-mafia tracking-widest bg-black/80 px-3 py-1 rounded-full border border-[#d4af37]/40 cursor-pointer hover:bg-black transition shadow-[0_0_10px_rgba(212,175,55,0.2)] flex items-center gap-1.5" onclick="openDealerModal(${tbl.id})">
-                               <i class="fa-solid fa-hands-holding-circle text-[#d4af37]"></i>
-                               <span>${tbl.dealer_name}</span>
-                           </div>
-                           <div class="flex items-center gap-1.5 mt-1">
-                               <div class="${dealerTimerClass}" data-time="${tbl.dealer_time}" onclick="openDealerModal(${tbl.id})">${initialDealerTimer}</div>
-                               <button class="text-[9px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 hover:bg-amber-500/40 border border-amber-500/50 px-2 py-0.5 rounded-full transition flex items-center gap-1 shadow-sm active:scale-95" title="Đổi Ca / Auto Push Dealer" onclick="event.stopPropagation(); quickPushDealer(${tbl.id})">
-                                   <i class="fa-solid fa-arrows-rotate text-[8px]"></i> PUSH
-                               </button>
-                           </div>
-                       </div>`
-                    : `<div class="flex flex-col items-center gap-1">
-                           <button class="text-red-500 font-bold animate-pulse text-[11px] bg-black/80 px-3 py-1 rounded-full border border-red-500/50 cursor-pointer hover:bg-black tracking-widest uppercase shadow-[0_0_8px_rgba(239,68,68,0.4)]" onclick="openDealerModal(${tbl.id})">
-                               ⚠️ THIẾU DEALER
-                           </button>
-                           <button class="text-[9px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 hover:bg-amber-500/40 border border-amber-500/50 px-2.5 py-1 rounded-full transition flex items-center gap-1 shadow-sm active:scale-95" onclick="event.stopPropagation(); quickPushDealer(${tbl.id})">
-                               <i class="fa-solid fa-bolt text-[8px]"></i> AUTO GÁN
-                           </button>
-                       </div>`;
+                tableCard.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-[#222] pb-3 mb-3 flex-wrap gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mafia text-base text-[#d4af37] tracking-wider uppercase">BÀN ${tbl.id}</span>
+                            <span class="text-[10px] font-mono bg-black text-emerald-400 px-2 py-0.5 rounded border border-[#333]">${tablePlayers.length}/9 KHÁCH</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${tbl.dealer_name ? `
+                                <div class="flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-full border border-[#d4af37]/40 cursor-pointer" onclick="openDealerModal(${tbl.id})">
+                                    <i class="fa-solid fa-hands-holding-circle text-[#d4af37] text-xs"></i>
+                                    <span class="text-xs text-white font-bold">${tbl.dealer_name}</span>
+                                    <span class="dealer-timer text-[10px] text-emerald-400 font-digital ml-1" data-time="${tbl.dealer_time}">${dealerTimerText}</span>
+                                </div>
+                                <button onclick="quickPushDealer(${tbl.id})" class="text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 hover:bg-amber-500/40 border border-amber-500/50 px-2 py-1 rounded-lg transition active:scale-95" title="Đổi Dealer">
+                                    PUSH
+                                </button>
+                            ` : `
+                                <button onclick="openDealerModal(${tbl.id})" class="text-[10px] font-bold uppercase bg-red-950 text-red-400 border border-red-500/50 px-2.5 py-1 rounded-full animate-pulse">
+                                    ⚠️ GÁN DEALER
+                                </button>
+                            `}
+                            <button onclick="closeTableFromTour(${tbl.id})" class="text-[10px] font-bold uppercase bg-red-900/30 text-red-400 border border-red-900/50 px-2 py-1 rounded-lg hover:bg-red-800/50 transition">
+                                ĐÓNG
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 9 Seats Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" id="seat-list-grid-${tbl.id}"></div>
+                `;
+
+                container.appendChild(tableCard);
+
+                const seatGrid = document.getElementById(`seat-list-grid-${tbl.id}`);
+                for (let s = 1; s <= 9; s++) {
+                    const player = tablePlayers.find(p => p.seat === s);
+                    const seatItem = document.createElement('div');
+                    seatItem.id = `seat-cell-${tbl.id}-${s}`;
+
+                    if (player) {
+                        const member = globalMembers.find(m => m.phone === player.phone);
+                        const buyinCount = (tour.players || []).filter(x => x.phone === player.phone).length;
+                        const isCheckedIn = player.is_checked_in;
+
+                        seatItem.className = 'seat-card occupied p-2.5 flex items-center justify-between cursor-pointer hover:border-[#d4af37] transition active:scale-[0.99]';
+                        seatItem.onclick = () => openSeatBottomSheet(tbl.id, s, player, member, buyinCount);
+
+                        seatItem.innerHTML = `
+                            <div class="flex items-center gap-2.5 truncate mr-2">
+                                <div class="w-9 h-9 rounded-full bg-black border border-[#d4af37] flex items-center justify-center overflow-hidden shrink-0">
+                                    ${member && member.avatar_base64 
+                                        ? `<img src="${member.avatar_base64}" class="w-full h-full object-cover" />` 
+                                        : `<span class="font-bold text-xs text-[#d4af37]">G${s}</span>`}
+                                </div>
+                                <div class="truncate">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-xs font-bold text-white truncate">${player.name || 'Khách'}</span>
+                                        ${isCheckedIn 
+                                            ? '<i class="fa-solid fa-circle-check text-emerald-400 text-[10px]" title="Đã check-in vào bàn"></i>' 
+                                            : '<i class="fa-solid fa-clock text-yellow-400 text-[10px]" title="Chưa check-in"></i>'}
+                                    </div>
+                                    <div class="text-[10px] text-gray-400 flex items-center gap-2 mt-0.5 font-sans-ui">
+                                        <span>G${s}</span>
+                                        <span class="text-gray-500">•</span>
+                                        <span>${player.phone ? player.phone.slice(-4) : '---'}</span>
+                                        <span class="text-gray-500">•</span>
+                                        <span class="text-[#d4af37] font-bold">🎟️ ${buyinCount}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+                                <button onclick="openFnbModalForSeat(${tbl.id}, ${s}, '${player.phone||''}', '${(player.name||'').replace(/'/g,"\\'")}')" class="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center justify-center text-xs hover:bg-amber-500/30 active:scale-95 transition" title="Gọi F&B">
+                                    <i class="fa-solid fa-mug-hot"></i>
+                                </button>
+                                <button onclick="openMoveModal('${player.phone||''}','${(player.name||'').replace(/'/g,"\\'")}', ${tbl.id})" class="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-300 flex items-center justify-center text-xs hover:bg-blue-500/30 active:scale-95 transition" title="Chuyển ghế">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </button>
+                                <button onclick="bustOut('${player.phone||''}','${(player.name||'').replace(/'/g,"\\'")}')" class="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/30 text-red-300 flex items-center justify-center text-xs hover:bg-red-500/30 active:scale-95 transition" title="Bust Out">
+                                    <i class="fa-solid fa-skull"></i>
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        // Empty Seat
+                        seatItem.className = 'seat-card empty p-2.5 flex items-center justify-between text-gray-500';
+                        seatItem.innerHTML = `
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-full border border-dashed border-gray-700 flex items-center justify-center text-xs font-bold text-gray-600">
+                                    ${s}
+                                </div>
+                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Ghế ${s} Trống</span>
+                            </div>
+                            <button onclick="openLiveQrScannerForTableSeat(${tbl.id}, ${s})" class="text-[10px] font-bold uppercase tracking-wider bg-gray-800 hover:bg-[#d4af37] text-gray-300 hover:text-black px-2.5 py-1.5 rounded-lg border border-gray-700 transition active:scale-95 flex items-center gap-1">
+                                <i class="fa-solid fa-qrcode"></i> Gán Vé
+                            </button>
+                        `;
+                    }
+                    seatGrid.appendChild(seatItem);
+                }
+            });
+        }
+
+        // ============================================
+        // MODE 2: GRAPHIC TABLE VIEW (Sơ đồ trực quan)
+        // ============================================
+        function renderGraphicTableView(tables, tour, container) {
+            tables.forEach(tbl => {
+                const tablePlayers = (tour.players || []).filter(p => p.table_id === tbl.id && p.status === 'alive');
+                const tableWrapper = document.createElement('div');
+                tableWrapper.id = `table-card-${tbl.id}`;
+                tableWrapper.className = 'w-full max-w-[500px] h-[340px] sm:h-[420px] mx-auto relative my-6';
+
+                let initialDealerTimer = '30:00';
+                if (tbl.dealer_time) {
+                    const elapsedMs = Date.now() - tbl.dealer_time;
+                    const remainingSec = Math.max(0, Math.floor((DEALER_SHIFT_MS - elapsedMs) / 1000));
+                    initialDealerTimer = `${Math.floor(remainingSec / 60).toString().padStart(2, '0')}:${(remainingSec % 60).toString().padStart(2, '0')}`;
+                }
 
                 tableWrapper.innerHTML = `
-                    ${overlayHtml}
-                    <div class="absolute inset-x-10 inset-y-6 poker-table-bg flex flex-col items-center justify-center">
-                        <div class="absolute top-3 w-full px-8 flex justify-center items-start pointer-events-none">
-                            <div class="text-gray-500 font-bold tracking-widest text-xs opacity-50">BÀN ${tbl.id}</div>
+                    <div class="absolute inset-x-2 inset-y-4 poker-table-bg flex flex-col items-center justify-center">
+                        <div class="absolute top-2 w-full px-4 flex justify-between items-center pointer-events-none text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                            <span>BÀN ${tbl.id}</span>
+                            <span class="text-emerald-400 font-mono">${tablePlayers.length}/9 KHÁCH</span>
                         </div>
 
-                        <div class="absolute top-6">${dealerHtml}</div>
-                        <div class="text-white/10 font-mafia text-4xl md:text-5xl tracking-widest uppercase mt-4 pointer-events-none">ACE POKER</div>
-                        <button class="mt-3 bg-red-900/40 border border-red-500 text-red-400 px-4 py-1.5 rounded-full font-bold uppercase tracking-widest text-[10px] hover:bg-red-900/80 transition shadow-[0_0_10px_rgba(220,38,38,0.3)] z-10 relative" onclick="closeTableFromTour(${tbl.id})">
-                            <i class="fa-solid fa-minus mr-1"></i>ĐÓNG BÀN
+                        <div class="absolute top-6">
+                            ${tbl.dealer_name ? `
+                                <div class="flex flex-col items-center cursor-pointer" onclick="openDealerModal(${tbl.id})">
+                                    <div class="text-[#d4af37] text-xs font-mafia tracking-wider bg-black/80 px-2.5 py-0.5 rounded-full border border-[#d4af37]/40 flex items-center gap-1">
+                                        <i class="fa-solid fa-hands-holding-circle text-[#d4af37] text-[10px]"></i>
+                                        <span>${tbl.dealer_name}</span>
+                                    </div>
+                                    <span class="dealer-timer text-[9px] mt-0.5 bg-black/60 text-emerald-400 font-digital px-2 py-0.2 rounded-full border border-emerald-500/30" data-time="${tbl.dealer_time}">${initialDealerTimer}</span>
+                                </div>
+                            ` : `
+                                <button class="text-red-500 font-bold animate-pulse text-[10px] bg-black/80 px-2.5 py-0.5 rounded-full border border-red-500/50 uppercase" onclick="openDealerModal(${tbl.id})">
+                                    ⚠️ GÁN DEALER
+                                </button>
+                            `}
+                        </div>
+
+                        <div class="text-white/10 font-mafia text-3xl sm:text-4xl tracking-widest uppercase mt-4 pointer-events-none">ACE POKER</div>
+                        <button class="mt-2 bg-red-900/40 border border-red-500 text-red-400 px-3 py-1 rounded-full font-bold uppercase text-[9px] hover:bg-red-900/80 transition z-10" onclick="closeTableFromTour(${tbl.id})">
+                            ĐÓNG BÀN
                         </button>
                     </div>
                 `;
@@ -899,50 +1273,37 @@
                     seatDiv.className = `seat ${player ? 'occupied' : 'empty'}`;
                     seatDiv.style.cssText = `left:${pos.x}%;top:${pos.y}%;`;
 
-                    if(player) {
-
-                        const uid = `seat_${tbl.id}_${index}`;
+                    if (player) {
                         const member = globalMembers.find(m => m.phone === player.phone);
-                        const buyinCount = (t.players||[]).filter(x => x.phone === player.phone).length;
+                        const buyinCount = (tour.players || []).filter(x => x.phone === player.phone).length;
 
                         let seatInner = '';
                         if (member && member.avatar_base64) {
                             seatInner = `
-                                <img src="${member.avatar_base64}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: center; border: 2px solid #d4af37;" />
-                                <div class="absolute inset-x-0 bottom-0 bg-black/70 text-center rounded-b-full pb-1 pointer-events-none">
-                                    <div class="text-[13px] text-white font-bold truncate px-1 pb-1">${(player.name||'').split(' ').pop()}</div>
+                                <img src="${member.avatar_base64}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid #d4af37;" />
+                                <div class="absolute inset-x-0 bottom-0 bg-black/75 text-center rounded-b-full pb-0.5 pointer-events-none">
+                                    <div class="seat-name text-[10px] text-white font-bold truncate px-0.5">${(player.name||'').split(' ').pop()}</div>
                                 </div>
                             `;
                         } else {
                             seatInner = `
-                                <div class="flex flex-col items-center justify-center w-full h-full p-1 bg-[#1a1a1a] rounded-full border border-[#d4af37]/30">
-                                    <div class="text-sm text-[#d4af37] font-bold truncate w-full text-center leading-tight">${player.phone?.slice(-4) || ''}</div>
-                                    <div class="text-base text-white font-bold truncate w-full text-center mt-0.5 leading-tight">${(player.name||'').split(' ').pop()}</div>
-                                    <div class="text-xs text-gray-500 font-bold leading-tight mt-1">G${player.seat || pos.id}</div>
+                                <div class="flex flex-col items-center justify-center w-full h-full p-0.5 bg-[#1a1a1a] rounded-full border border-[#d4af37]/40">
+                                    <div class="seat-phone text-[9px] text-[#d4af37] font-bold truncate leading-tight">${player.phone?.slice(-4) || ''}</div>
+                                    <div class="seat-name text-[11px] text-white font-bold truncate leading-tight mt-0.5">${(player.name||'').split(' ').pop()}</div>
+                                    <div class="text-[9px] text-gray-500 font-bold leading-tight">G${player.seat || pos.id}</div>
                                 </div>
                             `;
                         }
 
-                        seatDiv.onclick = (e) => toggleMenu(e, uid);
+                        seatDiv.onclick = () => openSeatBottomSheet(tbl.id, pos.id, player, member, buyinCount);
                         seatDiv.innerHTML = `
                             ${seatInner}
-                            <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-[#222] border border-[#d4af37] text-[#d4af37] px-2 py-0.5 rounded-full text-xs font-bold shadow-md z-20 whitespace-nowrap pointer-events-none">
-                                🎟️ Lượt: ${buyinCount}
-                            </div>
-                            <div id="menu-${uid}" class="action-menu bg-[#1a1a1a] border border-[#d4af37]/50 rounded-xl p-2 shadow-2xl flex flex-col gap-1 w-44">
-                                <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-amber-400 hover:bg-[#333] rounded-lg flex items-center gap-1.5" onclick="openFnbModalForSeat(${tbl.id}, ${pos.id}, '${player.phone || ''}', '${(player.name||'').replace(/'/g,"\\'")}')">
-                                    <i class="fa-solid fa-mug-hot text-amber-400"></i>Gọi F&B / Nước
-                                </button>
-                                <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-emerald-400 hover:bg-[#333] rounded-lg" onclick="openMoveModal('${player.phone || ''}','${(player.name||'').replace(/'/g,"\\'")}',${tbl.id})">
-                                    <i class="fa-solid fa-rotate mr-2"></i>Chuyển Bàn / Ghế
-                                </button>
-                                <button class="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-[#333] rounded-lg" onclick="bustOut('${player.phone || ''}','${(player.name||'').replace(/'/g,"\\'")}')">
-                                    <i class="fa-solid fa-skull mr-2"></i>Bust Out
-                                </button>
+                            <div class="seat-buyin-tag absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#222] border border-[#d4af37] text-[#d4af37] px-1.5 py-0.2 rounded-full text-[9px] font-bold shadow-md z-20 whitespace-nowrap pointer-events-none">
+                                🎟️ ${buyinCount}
                             </div>
                         `;
                     } else {
-                        seatDiv.innerHTML = `<div class="text-gray-700 font-bold text-xs">${pos.id}</div>`;
+                        seatDiv.innerHTML = `<div class="text-gray-600 font-bold text-xs">${pos.id}</div>`;
                     }
                     tableWrapper.appendChild(seatDiv);
                 });
@@ -951,26 +1312,245 @@
             });
         }
 
+        // =====================
+        // BOTTOM SHEET ACTIONS
+        // =====================
+        function openSeatBottomSheet(tableId, seatId, player, member, buyinCount) {
+            haptic(30);
+            activeSheetPlayer = { tableId, seatId, player, member, buyinCount };
 
-        function closeAllMenus(skipRender = false) {
-            document.querySelectorAll('.action-menu').forEach(m => m.classList.remove('active'));
-            activeMenuSeatId = null;
-            if(!skipRender && selectedTourId) renderTableView();
+            document.getElementById('sheet-player-name').innerText = player.name || 'Khách Vô Danh';
+            document.getElementById('sheet-seat-label').innerText = `BÀN ${tableId} • GHẾ ${seatId}`;
+            document.getElementById('sheet-phone-label').innerText = player.phone || 'Không có SĐT';
+            document.getElementById('sheet-buyin-label').innerText = `🎟️ ${buyinCount || 1} Lượt Buy-in`;
+
+            const avatarContainer = document.getElementById('sheet-player-avatar');
+            if (member && member.avatar_base64) {
+                avatarContainer.innerHTML = `<img src="${member.avatar_base64}" class="w-full h-full object-cover" />`;
+            } else {
+                avatarContainer.innerHTML = `<span class="font-bold text-base text-[#d4af37]">G${seatId}</span>`;
+            }
+
+            const checkinBadge = document.getElementById('sheet-checkin-badge');
+            const checkinBtnText = document.getElementById('sheet-checkin-btn-text');
+            if (player.is_checked_in) {
+                checkinBadge.className = 'text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+                checkinBadge.innerHTML = '<i class="fa-solid fa-check mr-1"></i>ĐÃ VÀO BÀN';
+                checkinBtnText.innerText = 'Đã Check-in (Quét Lại)';
+            } else {
+                checkinBadge.className = 'text-[9px] font-bold px-2 py-0.5 rounded-full bg-yellow-900/60 text-yellow-300 border border-yellow-500/40 animate-pulse';
+                checkinBadge.innerHTML = '<i class="fa-solid fa-clock mr-1"></i>CHƯA CHECK-IN';
+                checkinBtnText.innerText = 'Quét QR Check-in';
+            }
+
+            document.getElementById('seat-bottom-sheet').classList.remove('hidden');
+            document.getElementById('seat-bottom-sheet').classList.add('flex');
         }
-        function toggleMenu(e, uid) {
-            e.stopPropagation();
-            const menu = document.getElementById(`menu-${uid}`);
 
-            if(activeMenuSeatId === uid) { activeMenuSeatId = null; renderTableView(); }
-
-
-            else { closeAllMenus(true); document.getElementById('menu-'+uid).classList.add('active'); activeMenuSeatId = uid; }
-
+        function closeSeatBottomSheet(e) {
+            document.getElementById('seat-bottom-sheet').classList.replace('flex', 'hidden');
+            activeSheetPlayer = null;
         }
 
+        function handleSheetAction(action) {
+            if (!activeSheetPlayer) return;
+            const { tableId, seatId, player } = activeSheetPlayer;
+            const pPhone = player.phone || '';
+            const pName = player.name || '';
+
+            closeSeatBottomSheet();
+
+            if (action === 'bust') {
+                bustOut(pPhone, pName);
+            } else if (action === 'move') {
+                openMoveModal(pPhone, pName, tableId);
+            } else if (action === 'fnb') {
+                openFnbModalForSeat(tableId, seatId, pPhone, pName);
+            } else if (action === 'checkin') {
+                openLiveQrScannerForTableSeat(tableId, seatId, pPhone);
+            }
+        }
 
         // =====================
-        // TABLE MANAGEMENT
+        // CAMERA LIVE QR SCANNER
+        // =====================
+        function openLiveQrScanner() {
+            haptic(30);
+            document.getElementById('qr-scan-result').classList.add('hidden');
+            document.getElementById('qr-scanner-modal').classList.replace('hidden', 'flex');
+            startHtml5QrScanner();
+        }
+
+        function openLiveQrScannerForTableSeat(tableId, seatId, phone = '') {
+            lastScannedPayload = { target_table: tableId, target_seat: seatId, target_phone: phone };
+            openLiveQrScanner();
+        }
+
+        function closeLiveQrScanner() {
+            stopHtml5QrScanner();
+            document.getElementById('qr-scanner-modal').classList.replace('flex', 'hidden');
+        }
+
+        function startHtml5QrScanner() {
+            if (typeof Html5Qrcode === 'undefined') {
+                alert('Thư viện camera QR chưa sẵn sàng!');
+                return;
+            }
+            if (html5QrScanner) {
+                try { html5QrScanner.stop(); } catch(e){}
+            }
+
+            html5QrScanner = new Html5Qrcode("qr-reader");
+            const config = { 
+                fps: 15, 
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            };
+
+            html5QrScanner.start(
+                { facingMode: "environment" },
+                config,
+                onQrCodeScannedSuccess,
+                (errorMessage) => { /* ignore per-frame parse failures */ }
+            ).catch(err => {
+                console.error("Camera access error:", err);
+                // Fallback to front camera if environment fails
+                html5QrScanner.start({ facingMode: "user" }, config, onQrCodeScannedSuccess, () => {}).catch(e => {
+                    alert("Không thể mở Camera trên thiết bị này. Vui lòng cấp quyền truy cập Camera trong cài đặt trình duyệt!");
+                });
+            });
+            isQrScanning = true;
+        }
+
+        function stopHtml5QrScanner() {
+            if (html5QrScanner && isQrScanning) {
+                html5QrScanner.stop().then(() => {
+                    html5QrScanner.clear();
+                    isQrScanning = false;
+                }).catch(err => console.error("Error stopping scanner:", err));
+            }
+        }
+
+        function onQrCodeScannedSuccess(decodedText) {
+            playBeep(920, 0.15);
+            haptic(60);
+
+            try {
+                // Try parsing JSON payload from cashier ticket
+                let data = null;
+                try {
+                    data = JSON.parse(decodedText);
+                } catch(e) {
+                    data = { ticket_id: decodedText };
+                }
+
+                lastScannedPayload = data;
+
+                // Lookup player in current tour
+                let matchedPlayer = null;
+                const t = currentTours.find(x => x.id === selectedTourId) || currentTours[0];
+                if (t && t.players) {
+                    matchedPlayer = t.players.find(p => 
+                        p.status === 'alive' && (
+                            (data.ticket_id && p.ticket_id === data.ticket_id) ||
+                            (data.phone && p.phone === data.phone) ||
+                            (data.t && p.ticket_id === data.t) ||
+                            (data.table && data.seat && p.table_id === Number(data.table) && p.seat === Number(data.seat))
+                        )
+                    );
+                }
+
+                const resultBox = document.getElementById('qr-scan-result');
+                resultBox.classList.remove('hidden');
+
+                if (matchedPlayer) {
+                    document.getElementById('qr-res-ticket-id').innerText = matchedPlayer.ticket_id || data.ticket_id || 'ACE-TICKET';
+                    document.getElementById('qr-res-player-name').innerText = matchedPlayer.name || 'VĐV ACE POKER';
+                    document.getElementById('qr-res-table-seat').innerText = `BÀN ${matchedPlayer.table_id} • GHẾ ${matchedPlayer.seat}`;
+                    lastScannedPayload.matchedPlayer = matchedPlayer;
+                } else {
+                    document.getElementById('qr-res-ticket-id').innerText = data.ticket_id || decodedText;
+                    document.getElementById('qr-res-player-name').innerText = data.name || 'Mã Vé Hợp Lệ';
+                    document.getElementById('qr-res-table-seat').innerText = data.table ? `CHỈ ĐỊNH: BÀN ${data.table} - GHẾ ${data.seat}` : 'CHƯA XẾP BÀN';
+                }
+
+            } catch(err) {
+                console.error("Scan processing error:", err);
+            }
+        }
+
+        function confirmQrSeatCheckIn() {
+            if (!lastScannedPayload) return;
+            const tourId = selectedTourId || (currentTours[0]?.id);
+            const player = lastScannedPayload.matchedPlayer;
+
+            socket.emit('checkin_player_seat', {
+                tour_id: tourId,
+                ticket_id: lastScannedPayload.ticket_id || lastScannedPayload.t,
+                player_phone: player?.phone || lastScannedPayload.phone || lastScannedPayload.p,
+                table_id: player?.table_id || lastScannedPayload.table || lastScannedPayload.tbl,
+                seat_id: player?.seat || lastScannedPayload.seat
+            }, (res) => {
+                haptic(50);
+                playBeep(1200, 0.2);
+                alert((res && res.message) || 'Check-in thành công!');
+                closeLiveQrScanner();
+                if (player && player.table_id) {
+                    activeTableFilter = player.table_id.toString();
+                    renderTableView();
+                    setTimeout(() => {
+                        const cell = document.getElementById(`seat-cell-${player.table_id}-${player.seat}`);
+                        if (cell) {
+                            cell.classList.add('seat-highlighted');
+                            cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 300);
+                }
+            });
+        }
+
+        function resumeQrScanning() {
+            document.getElementById('qr-scan-result').classList.add('hidden');
+        }
+
+        function toggleQrScannerFlash() {
+            // Torch toggle where supported
+            alert("Đã chuyển chế độ Flashlight nếu thiết bị hỗ trợ.");
+        }
+
+        // =====================
+        // MINI CLOCK MODAL
+        // =====================
+        function openMiniClockModal() {
+            haptic(20);
+            document.getElementById('mini-clock-modal').classList.replace('hidden', 'flex');
+        }
+        function closeMiniClockModal(e) {
+            document.getElementById('mini-clock-modal').classList.replace('flex', 'hidden');
+        }
+
+        // =====================
+        // BOTTOM NAVIGATION
+        // =====================
+        function navGoTables() {
+            haptic(20);
+            if (selectedTourId) {
+                document.getElementById('view-lobby').classList.add('hidden');
+                document.getElementById('view-tables').classList.remove('hidden');
+            } else if (currentTours.length > 0) {
+                openTourTables(currentTours[0].id);
+            }
+        }
+
+        function navOpenDealer() {
+            haptic(20);
+            const t = currentTours.find(x => x.id === selectedTourId);
+            const targetTblId = activeTableFilter !== 'all' ? parseInt(activeTableFilter) : (t?.tables?.[0] || 1);
+            openDealerModal(targetTblId);
+        }
+
+        // =====================
+        // TABLE & SEAT ACTIONS
         // =====================
         function openAddTableToTourModal() {
             const select = document.getElementById('idle-table-select');
@@ -1009,13 +1589,13 @@
                 alert(`Bàn ${tableId} đang có ${alive.length} khách chơi. Vui lòng chuyển hết khách sang bàn khác trước khi đóng!`);
                 return;
             }
-            if(confirm(`Bạn có chắc chắn muốn ĐÓNG Bàn ${tableId} không? (Dealer sẽ được nghỉ)`)) {
+            if(confirm(`Bạn có chắc chắn muốn ĐÓNG Bàn ${tableId} không?`)) {
                 socket.emit('remove_table_from_tour', { tour_id: selectedTourId, table_id: tableId });
             }
         }
 
         // =====================
-        // DEALER ACTIONS & ROTATION
+        // DEALER ROTATION
         // =====================
         function openDealerModal(tableId) {
             pendingDealerTableId = tableId;
@@ -1090,10 +1670,9 @@
         }
 
         // =====================
-        // MOVE TABLE & SEAT-TO-SEAT MODAL
+        // MOVE TABLE MODAL
         // =====================
         function openMoveModal(phone, name, currentTableId) {
-            closeAllMenus();
             pendingMovePhone = phone;
             pendingMoveName = name;
             pendingCurrentTableId = currentTableId;
@@ -1129,7 +1708,6 @@
             const t = currentTours.find(x => x.id === selectedTourId);
             if (!t || isNaN(targetTableId)) return;
 
-            // Occupied seats on target table (excluding current moving player)
             const alivePlayersOnTarget = (t.players || []).filter(p => 
                 p.table_id === targetTableId && 
                 p.status === 'alive' && 
@@ -1137,19 +1715,17 @@
             );
             const occupiedSeats = alivePlayersOnTarget.map(p => p.seat);
 
-            // Auto Option
             const autoBtn = document.createElement('button');
             autoBtn.type = 'button';
             autoBtn.id = 'move-seat-btn-auto';
             autoBtn.className = 'col-span-5 py-2 px-3 rounded-lg border border-[#d4af37] bg-[#d4af37] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95';
-            autoBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Tự Động Gán Ghế Ưu Tiên (Mặc định)';
+            autoBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Tự Động Gán Ghế (Mặc định)';
             autoBtn.onclick = () => {
                 selectedTargetSeat = null;
                 highlightSeatOption(null);
             };
             grid.appendChild(autoBtn);
 
-            // Seats 1 to 9
             for (let s = 1; s <= 9; s++) {
                 const isOccupied = occupiedSeats.includes(s);
                 const seatBtn = document.createElement('button');
@@ -1159,11 +1735,9 @@
                     seatBtn.disabled = true;
                     seatBtn.className = 'py-2.5 rounded-lg bg-[#111] border border-[#222] text-gray-600 text-xs font-bold line-through cursor-not-allowed opacity-50';
                     seatBtn.innerText = `G${s}`;
-                    seatBtn.title = `Ghế ${s}: Đã có người`;
                 } else {
                     seatBtn.className = 'move-seat-btn py-2.5 rounded-lg bg-[#1a1a1a] border border-[#444] text-white hover:border-[#d4af37] text-xs font-bold cursor-pointer transition active:scale-95';
                     seatBtn.innerText = `G${s}`;
-                    seatBtn.title = `Ghế ${s}: Trống`;
                     seatBtn.onclick = () => {
                         selectedTargetSeat = s;
                         highlightSeatOption(s);
@@ -1180,13 +1754,9 @@
             });
             const autoBtn = document.getElementById('move-seat-btn-auto');
             if (seat === null) {
-                if (autoBtn) {
-                    autoBtn.className = 'col-span-5 py-2 px-3 rounded-lg border border-[#d4af37] bg-[#d4af37] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition';
-                }
+                if (autoBtn) autoBtn.className = 'col-span-5 py-2 px-3 rounded-lg border border-[#d4af37] bg-[#d4af37] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition';
             } else {
-                if (autoBtn) {
-                    autoBtn.className = 'col-span-5 py-2 px-3 rounded-lg border border-[#333] bg-[#111] text-gray-400 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition';
-                }
+                if (autoBtn) autoBtn.className = 'col-span-5 py-2 px-3 rounded-lg border border-[#333] bg-[#111] text-gray-400 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition';
                 const activeBtn = document.getElementById(`move-seat-btn-${seat}`);
                 if (activeBtn) {
                     activeBtn.classList.remove('bg-[#1a1a1a]', 'text-white', 'border-[#444]');
@@ -1202,14 +1772,8 @@
 
         function confirmMoveTable() {
             const newId = document.getElementById('move-table-select').value;
-            if(!newId) {
-                alert('Vui lòng chọn bàn đích!');
-                return;
-            }
-            if(!selectedTourId) {
-                alert('Chưa chọn giải đấu!');
-                return;
-            }
+            if(!newId) return alert('Vui lòng chọn bàn đích!');
+            if(!selectedTourId) return alert('Chưa chọn giải đấu!');
             socket.emit('move_player_table', { 
                 tour_id: selectedTourId, 
                 player_phone: pendingMovePhone, 
@@ -1221,7 +1785,7 @@
         }
 
         // =====================
-        // QUICK PLAYER SEARCH / LOCATOR
+        // QUICK PLAYER SEARCH
         // =====================
         function clearPlayerSearch() {
             const input = document.getElementById('player-search-input');
@@ -1261,19 +1825,26 @@
             );
 
             if (matched) {
-                const seatId = `seat-cell-${matched.table_id}-${matched.seat}`;
-                const seatDiv = document.getElementById(seatId);
-                if (seatDiv) {
-                    seatDiv.classList.add('seat-highlighted');
-                    seatDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (activeTableFilter !== 'all' && activeTableFilter !== matched.table_id.toString()) {
+                    activeTableFilter = matched.table_id.toString();
+                    renderTableView();
                 }
+                setTimeout(() => {
+                    const seatId = `seat-cell-${matched.table_id}-${matched.seat}`;
+                    const seatDiv = document.getElementById(seatId);
+                    if (seatDiv) {
+                        seatDiv.classList.add('seat-highlighted');
+                        seatDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 200);
+
                 if (feedbackBanner && feedbackText) {
-                    feedbackText.innerHTML = `<i class="fa-solid fa-location-crosshairs mr-2"></i>Đã tìm thấy: <span class="text-white">${matched.name || 'Khách'}</span> (${matched.phone || ''}) &nbsp;➔&nbsp; <span class="text-emerald-400 font-bold font-digital">BÀN ${matched.table_id} - GHẾ ${matched.seat}</span>`;
+                    feedbackText.innerHTML = `<i class="fa-solid fa-location-crosshairs mr-1.5"></i>VĐV: <span class="text-white">${matched.name || 'Khách'}</span> (${matched.phone || ''}) ➔ <span class="text-emerald-400 font-bold font-digital">BÀN ${matched.table_id} - GHẾ ${matched.seat}</span>`;
                     feedbackBanner.classList.remove('hidden');
                 }
             } else {
                 if (feedbackBanner && feedbackText) {
-                    feedbackText.innerHTML = `<i class="fa-solid fa-circle-xmark mr-2 text-red-400"></i>Không tìm thấy người chơi nào khớp với "${keyword}" trên các bàn đang mở`;
+                    feedbackText.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1.5 text-red-400"></i>Không tìm thấy khách khớp "${keyword}" trên bàn`;
                     feedbackBanner.classList.remove('hidden');
                 }
             }
@@ -1283,16 +1854,17 @@
         // BUST OUT
         // =====================
         function bustOut(phone, name) {
-            if(confirm(`Xác nhận BUST OUT khách ${name || phone || ''}?`)) {
+            haptic(40);
+            if(confirm(`Xác nhận LOẠI (BUST OUT) khách: ${name || phone || ''}?`)) {
                 socket.emit('bust_out', { tour_id: selectedTourId, player_phone: phone, player_name: name });
             }
         }
 
         // =====================
-        // F&B ORDERING FOR FLOOR IPAD
+        // F&B ORDERING FOR FLOOR
         // =====================
         function openFnbModalForSeat(tableId, seatId, phone, name) {
-            closeAllMenus(true);
+            haptic(20);
             floorActiveFnbTable = tableId;
             floorActiveFnbSeat = seatId;
             floorActiveFnbName = name || `Khách Ghế ${seatId}`;
@@ -1323,7 +1895,7 @@
                 const btn = document.getElementById('floor-cat-' + c);
                 if (btn) {
                     if (c === cat) {
-                        btn.className = 'px-3 py-1 rounded text-xs font-bold bg-[#d4af37] text-black';
+                        btn.className = 'px-3 py-1 rounded text-xs font-bold bg-[#d4af37] text-black shadow';
                     } else {
                         btn.className = 'px-3 py-1 rounded text-xs font-bold bg-gray-800 text-gray-300';
                     }
@@ -1342,38 +1914,29 @@
                 list = list.filter(m => m.category === floorFnbCategory);
             }
 
-            if (list.length === 0) {
-                container.innerHTML = '<div class="col-span-2 text-center text-gray-500 text-xs py-4">Chưa có món trong danh mục này</div>';
-                return;
-            }
-
             list.forEach(item => {
-                const isAvail = item.available !== false;
                 const card = document.createElement('div');
-                card.className = `p-2.5 rounded-xl border flex items-center justify-between transition ${
-                    isAvail
-                        ? 'bg-[#0b101c] border-gray-800 hover:border-amber-400 cursor-pointer active:scale-95'
-                        : 'bg-gray-900 border-gray-900 opacity-40 cursor-not-allowed'
-                }`;
-                card.onclick = () => { if (isAvail) addFloorFnbItem(item); };
+                card.className = 'p-2 rounded-xl border border-gray-800 bg-[#0b101c] hover:border-amber-400 cursor-pointer active:scale-95 transition flex items-center justify-between';
+                card.onclick = () => addFloorFnbItem(item);
 
                 card.innerHTML = `
-                    <div class="flex items-center gap-2 truncate mr-2">
-                        <div class="w-8 h-8 rounded-lg bg-[#141b2b] text-[#d4af37] flex items-center justify-center shrink-0 text-sm">
+                    <div class="flex items-center gap-2 truncate mr-1">
+                        <div class="w-7 h-7 rounded-lg bg-[#141b2b] text-[#d4af37] flex items-center justify-center shrink-0 text-xs">
                             <i class="fa-solid ${item.icon || 'fa-mug-hot'}"></i>
                         </div>
                         <div class="truncate">
-                            <div class="text-xs font-bold text-white truncate">${item.name}</div>
-                            <div class="text-[11px] font-teko text-emerald-400 font-bold leading-none mt-0.5">${new Intl.NumberFormat('vi-VN').format(item.price)} ₫</div>
+                            <div class="text-[11px] font-bold text-white truncate">${item.name}</div>
+                            <div class="text-[10px] text-emerald-400 font-bold leading-none mt-0.5">${formatMoney(item.price)} ₫</div>
                         </div>
                     </div>
-                    ${isAvail ? '<span class="text-xs text-amber-400 font-bold px-2 py-1 bg-amber-500/10 rounded-lg shrink-0">+</span>' : '<span class="text-[10px] text-red-500 uppercase">Hết</span>'}
+                    <span class="text-xs text-amber-400 font-bold px-1.5 py-0.5 bg-amber-500/10 rounded shrink-0">+</span>
                 `;
                 container.appendChild(card);
             });
         }
 
         function addFloorFnbItem(item) {
+            haptic(15);
             if (!floorFnbCart[item.id]) {
                 floorFnbCart[item.id] = { item, qty: 1 };
             } else {
@@ -1383,6 +1946,7 @@
         }
 
         function changeFloorFnbItemQty(itemId, delta) {
+            haptic(15);
             if (!floorFnbCart[itemId]) return;
             floorFnbCart[itemId].qty += delta;
             if (floorFnbCart[itemId].qty <= 0) {
@@ -1398,7 +1962,7 @@
 
             const keys = Object.keys(floorFnbCart);
             if (keys.length === 0) {
-                list.innerHTML = '<div class="text-gray-500 text-[11px] italic text-center py-2">Chưa chọn món nào</div>';
+                list.innerHTML = '<div class="text-gray-500 text-[10px] italic text-center py-2">Chưa chọn món nào</div>';
                 totalEl.innerText = '0 ₫';
                 return;
             }
@@ -1412,27 +1976,25 @@
                 const row = document.createElement('div');
                 row.className = 'flex items-center justify-between text-xs py-1 border-b border-gray-800/60';
                 row.innerHTML = `
-                    <span class="truncate font-semibold text-gray-200 mr-2">${item.name}</span>
+                    <span class="truncate font-semibold text-gray-200 mr-2 text-[11px]">${item.name}</span>
                     <div class="flex items-center gap-2">
                         <div class="flex items-center bg-gray-900 border border-gray-700 rounded">
                             <button onclick="changeFloorFnbItemQty('${id}', -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 font-bold">-</button>
                             <span class="w-5 text-center font-bold text-amber-400 text-xs font-mono">${qty}</span>
                             <button onclick="changeFloorFnbItemQty('${id}', 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 font-bold">+</button>
                         </div>
-                        <span class="text-emerald-400 font-bold text-xs font-mono w-16 text-right">${new Intl.NumberFormat('vi-VN').format(subtotal)} ₫</span>
+                        <span class="text-emerald-400 font-bold text-xs font-mono w-14 text-right">${formatMoney(subtotal)} ₫</span>
                     </div>
                 `;
                 list.appendChild(row);
             });
 
-            totalEl.innerText = new Intl.NumberFormat('vi-VN').format(grandTotal) + ' ₫';
+            totalEl.innerText = formatMoney(grandTotal) + ' ₫';
         }
 
         function submitFloorFnbOrder() {
             const keys = Object.keys(floorFnbCart);
-            if (keys.length === 0) {
-                return alert('Vui lòng chọn ít nhất 1 món!');
-            }
+            if (keys.length === 0) return alert('Vui lòng chọn ít nhất 1 món!');
 
             const note = document.getElementById('floor-fnb-input-note').value.trim();
             const items = keys.map(id => ({
@@ -1453,6 +2015,7 @@
                 payment_status: 'unpaid'
             }, (res) => {
                 if (res && res.success) {
+                    haptic(50);
                     alert(`ĐÃ GỬI ĐƠN F&B (${res.order.id}) XUỐNG QUẦY BAR & BẾP THÀNH CÔNG!`);
                     closeFloorFnbModal();
                 } else {
@@ -1461,8 +2024,8 @@
             });
         }
 
-        // Modal Theo Dõi Đơn F&B Bàn Chơi
         function openFloorFnbOrdersModal() {
+            haptic(20);
             renderFloorFnbOrdersList();
             document.getElementById('floor-fnb-orders-modal').classList.replace('hidden', 'flex');
         }
@@ -1509,12 +2072,62 @@
                         ${ord.note ? `<div class="text-[11px] text-amber-300 mt-0.5 italic">📝 ${ord.note}</div>` : ''}
                     </div>
                     <div class="text-right shrink-0">
-                        <div class="font-teko text-xl font-bold text-emerald-400">${new Intl.NumberFormat('vi-VN').format(ord.total_amount)} ₫</div>
+                        <div class="font-digital text-lg font-bold text-emerald-400">${formatMoney(ord.total_amount)} ₫</div>
                         <div class="text-[10px] text-gray-500">${ord.time_formatted || ''}</div>
                     </div>
                 `;
                 container.appendChild(itemDiv);
             });
+        }
+
+        // Result Modal for finished tours
+        function openTourResultModal(tourId) {
+            const tour = currentTours.find(t => t.id === tourId);
+            if (!tour) return;
+
+            document.getElementById('result-tour-name').innerText = tour.name || 'TOURNAMENT';
+            const itm = tour.itm_results || {};
+            const winner = itm[1] || tour.winner || 'VÔ ĐỊCH';
+            document.getElementById('result-champ-name').innerText = winner;
+
+            const pool = (tour.fund && tour.fund.payout_pool) ? tour.fund.payout_pool : ((tour.entries || 0) * (tour.buyin_fee || 0) * 0.85);
+            let payouts = [];
+            const e = tour.entries || 0;
+            if (pool > 0) {
+                if (e <= 5) payouts = [{ rank: 1, amount: pool }];
+                else if (e <= 10) payouts = [{ rank: 1, amount: pool * 0.65 }, { rank: 2, amount: pool * 0.35 }];
+                else if (e <= 20) payouts = [{ rank: 1, amount: pool * 0.50 }, { rank: 2, amount: pool * 0.30 }, { rank: 3, amount: pool * 0.20 }];
+                else if (e <= 40) payouts = [{ rank: 1, amount: pool * 0.45 }, { rank: 2, amount: pool * 0.25 }, { rank: 3, amount: pool * 0.15 }, { rank: 4, amount: pool * 0.10 }, { rank: 5, amount: pool * 0.05 }];
+                else payouts = [{ rank: 1, amount: pool * 0.40 }, { rank: 2, amount: pool * 0.25 }, { rank: 3, amount: pool * 0.15 }, { rank: 4, amount: pool * 0.10 }, { rank: 5, amount: pool * 0.06 }, { rank: 6, amount: pool * 0.04 }];
+            }
+
+            const p1 = payouts.find(p => p.rank === 1)?.amount || 0;
+            document.getElementById('result-champ-prize').innerText = formatMoney(p1) + ' ₫';
+
+            const itmContainer = document.getElementById('result-itm-list');
+            itmContainer.innerHTML = '';
+
+            payouts.forEach(p => {
+                const playerName = itm[p.rank] || (p.rank === 1 ? winner : 'Chưa ghi nhận');
+                const row = document.createElement('div');
+                row.className = 'flex justify-between items-center py-2 px-3 text-xs';
+                row.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${p.rank === 1 ? 'bg-yellow-500 text-black' : p.rank === 2 ? 'bg-gray-400 text-black' : p.rank === 3 ? 'bg-amber-700 text-white' : 'bg-gray-800 text-gray-300'}">
+                            ${p.rank === 1 ? '🏆' : '#' + p.rank}
+                        </span>
+                        <span class="font-bold text-white uppercase text-xs">${playerName}</span>
+                    </div>
+                    <span class="font-digital text-base font-bold text-emerald-400">${formatMoney(p.amount)} ₫</span>
+                `;
+                itmContainer.appendChild(row);
+            });
+
+            document.getElementById('tour-result-modal').classList.replace('hidden', 'flex');
+        }
+
+        function closeTourResultModal() {
+            document.getElementById('tour-result-modal').classList.replace('flex', 'hidden');
         }
     </script>
 </body>
