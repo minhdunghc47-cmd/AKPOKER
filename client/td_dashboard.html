@@ -634,9 +634,14 @@
 
                 if (isFinished) {
                     html += `
-                        <div class="text-center text-[#800020] text-4xl font-mafia font-bold my-8 tracking-widest" style="text-shadow: 0 0 15px rgba(128,0,32,0.8);">FINISHED</div>
-                        <div class="text-center font-bold text-gold mb-8 border border-[#d4af37]/30 bg-[#d4af37]/10 py-4 rounded text-xl">Payout: ${formatMoney(tour.fund.payout_pool || 0)} ₫</div>
-                        <button class="mt-auto w-full py-4 bg-[#222] text-gray-400 font-bold rounded border border-[#444] hover:bg-[#333] uppercase tracking-widest text-xs transition" onclick="if(confirm('Xác nhận RESET & NHẢ BÀN?')) socket.emit('reset_tour', '${tour.id}')">🔄 Reset & Nhả Bàn</button>
+                        <div class="text-center text-[#800020] text-4xl font-mafia font-bold my-4 tracking-widest" style="text-shadow: 0 0 15px rgba(128,0,32,0.8);">FINISHED</div>
+                        <div class="text-center font-bold text-gold mb-4 border border-[#d4af37]/30 bg-[#d4af37]/10 py-3 rounded text-lg">Quỹ Payout: ${formatMoney(tour.fund.payout_pool || 0)} ₫</div>
+                        <button class="w-full py-3 btn-gold font-bold rounded uppercase tracking-widest text-xs transition flex items-center justify-center gap-2 mb-2 shadow" onclick="openPayoutModal('${tour.id}')">
+                            <i class="fa-solid fa-trophy text-black"></i> Trả Thưởng & In Phiếu Payout
+                        </button>
+                        <button class="mt-auto w-full py-3 bg-[#1e1e1e] hover:bg-[#2a2a2a] text-gray-300 font-bold rounded border border-gray-700 uppercase tracking-widest text-xs transition flex items-center justify-center gap-2" onclick="if(confirm('Xác nhận ĐÓNG GIẢI, LƯU TRỮ & NHẢ BÀN?')) socket.emit('reset_tour', '${tour.id}')">
+                            <i class="fa-solid fa-box-archive text-amber-400"></i> Lưu Trữ & Nhả Bàn Chơi
+                        </button>
                     `;
                 } else {
                     const blind = tour.blinds_structure[tour.current_level_idx];

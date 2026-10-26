@@ -154,7 +154,21 @@
 
     <!-- LOBBY: Tour List -->
     <main id="view-lobby" class="flex-1 overflow-y-auto p-5">
-        <div class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-4">Chọn giải đấu để quản lý bàn</div>
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div class="flex items-center gap-2">
+                <button onclick="setFloorLobbyTab('active')" id="floor-tab-active" class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md flex items-center gap-2">
+                    <i class="fa-solid fa-play"></i> ĐANG DIỄN RA
+                    <span id="badge-active-tours" class="bg-black text-[#d4af37] px-2 py-0.2 rounded-full text-[10px] font-extrabold">0</span>
+                </button>
+                <button onclick="setFloorLobbyTab('finished')" id="floor-tab-finished" class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-[#181818] border border-[#333] text-gray-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-400"></i> ĐÃ KẾT THÚC
+                    <span id="badge-finished-tours" class="bg-gray-800 text-gray-300 px-2 py-0.2 rounded-full text-[10px] font-extrabold">0</span>
+                </button>
+            </div>
+            <div class="text-[11px] text-gray-500 font-bold uppercase tracking-wider" id="lobby-tab-desc">
+                Các giải đấu đang vận hành bàn chơi & chia bài
+            </div>
+        </div>
         <div id="tour-list" class="grid grid-cols-1 gap-4">
             <div class="text-center text-gray-600 font-bold uppercase tracking-widest py-16">Đang tải dữ liệu...</div>
         </div>
@@ -338,6 +352,46 @@
         </div>
     </div>
 
+    <!-- MODAL XEM KẾT QUẢ & VINH DANH GIẢI ĐẤU ĐÃ KẾT THÚC -->
+    <div id="tour-result-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-[#141b2b] border border-[#d4af37] p-6 rounded-2xl w-[95%] max-w-[620px] shadow-[0_0_40px_rgba(212,175,55,0.4)] flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-4">
+                <div>
+                    <h3 class="text-xl font-mafia text-[#d4af37] uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-amber-400"></i> Kết Quả Giải Đấu
+                    </h3>
+                    <div id="result-tour-name" class="text-sm font-bold text-white mt-1">TOURNAMENT NAME</div>
+                </div>
+                <button onclick="closeTourResultModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+
+            <!-- Champion Box -->
+            <div class="bg-gradient-to-r from-yellow-500/20 via-black/80 to-yellow-500/20 border-2 border-[#d4af37] rounded-xl p-4 text-center mb-4 shadow-[0_0_20px_rgba(212,175,55,0.3)]">
+                <div class="w-14 h-14 rounded-full bg-gradient-to-b from-yellow-300 to-amber-600 flex items-center justify-center text-2xl mx-auto mb-2 text-black shadow-lg">
+                    🏆
+                </div>
+                <div class="text-[11px] text-yellow-400 uppercase tracking-widest font-extrabold">QUÁN QUÂN • THE CHAMPION</div>
+                <div id="result-champ-name" class="font-mafia text-3xl text-white tracking-widest my-1 uppercase truncate px-2">---</div>
+                <div id="result-champ-prize" class="font-teko text-3xl text-emerald-400 font-bold leading-none">0 ₫</div>
+            </div>
+
+            <!-- ITM Results Table -->
+            <div class="flex-1 overflow-y-auto mb-4 border border-gray-800 rounded-xl bg-[#0b101c]">
+                <div class="p-3 bg-[#111827] text-xs font-bold text-[#d4af37] uppercase tracking-wider border-b border-gray-800 flex justify-between">
+                    <span>Thứ Hạng ITM</span>
+                    <span>Tiền Thưởng</span>
+                </div>
+                <div id="result-itm-list" class="divide-y divide-gray-800/60 p-2">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-3 border-t border-gray-800">
+                <button onclick="closeTourResultModal()" class="btn-gold px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider">ĐÓNG</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
         const firebaseConfig = {
@@ -451,7 +505,28 @@
             if (document.getElementById('add-table-modal') && !document.getElementById('add-table-modal').classList.contains('hidden')) return true;
             if (document.getElementById('floor-fnb-order-modal') && !document.getElementById('floor-fnb-order-modal').classList.contains('hidden')) return true;
             if (document.getElementById('floor-fnb-orders-modal') && !document.getElementById('floor-fnb-orders-modal').classList.contains('hidden')) return true;
+            if (document.getElementById('tour-result-modal') && !document.getElementById('tour-result-modal').classList.contains('hidden')) return true;
             return false;
+        }
+
+        // Lobby Tab State
+        let floorLobbyTab = 'active'; // 'active' | 'finished'
+
+        function setFloorLobbyTab(tab) {
+            floorLobbyTab = tab;
+            const btnActive = document.getElementById('floor-tab-active');
+            const btnFinished = document.getElementById('floor-tab-finished');
+            const desc = document.getElementById('lobby-tab-desc');
+            if (tab === 'active') {
+                if (btnActive) btnActive.className = 'px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md flex items-center gap-2';
+                if (btnFinished) btnFinished.className = 'px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-[#181818] border border-[#333] text-gray-400 hover:text-white flex items-center gap-2';
+                if (desc) desc.innerText = 'Các giải đấu đang vận hành bàn chơi & chia bài';
+            } else {
+                if (btnActive) btnActive.className = 'px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-[#181818] border border-[#333] text-gray-400 hover:text-white flex items-center gap-2';
+                if (btnFinished) btnFinished.className = 'px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black shadow-md flex items-center gap-2';
+                if (desc) desc.innerText = 'Các giải đấu đã hoàn tất, trao cúp & vinh danh';
+            }
+            renderLobby();
         }
 
         // F&B Variables & Listeners
@@ -501,30 +576,79 @@
         // =====================
         function renderLobby() {
             const list = document.getElementById('tour-list');
-            const active = currentTours.filter(t => t.status !== 'archived');
-            if(active.length === 0) {
-                list.innerHTML = '<div class="text-center text-gray-600 font-bold uppercase tracking-widest py-16">Chưa có giải đấu nào đang hoạt động</div>';
+            if (!list) return;
+
+            const nonArchived = currentTours.filter(t => t.status !== 'archived');
+            const activeTours = nonArchived.filter(t => ['running', 'paused', 'pending'].includes(t.status));
+            const finishedTours = nonArchived.filter(t => t.status === 'finished');
+
+            const badgeActive = document.getElementById('badge-active-tours');
+            if (badgeActive) badgeActive.innerText = activeTours.length;
+
+            const badgeFinished = document.getElementById('badge-finished-tours');
+            if (badgeFinished) badgeFinished.innerText = finishedTours.length;
+
+            const toursToRender = floorLobbyTab === 'active' ? activeTours : finishedTours;
+
+            if (toursToRender.length === 0) {
+                if (floorLobbyTab === 'active') {
+                    list.innerHTML = `
+                        <div class="text-center py-16 bg-[#111] rounded-2xl border border-dashed border-[#333]">
+                            <i class="fa-solid fa-circle-check text-5xl text-emerald-500/50 mb-3"></i>
+                            <div class="text-base font-bold text-gray-300 uppercase tracking-widest">Không có giải đấu nào đang diễn ra trên sàn</div>
+                            <p class="text-xs text-gray-500 mt-1">Các bàn chơi đã được giải phóng hoặc giải đã hoàn tất.</p>
+                            ${finishedTours.length > 0 ? `
+                                <button onclick="setFloorLobbyTab('finished')" class="mt-4 px-4 py-2 bg-gradient-to-r from-[#d4af37] to-[#aa801e] text-black font-bold text-xs rounded-lg uppercase tracking-wider shadow-md">
+                                    <i class="fa-solid fa-trophy mr-1"></i> Xem ${finishedTours.length} Giải Đã Kết Thúc
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    list.innerHTML = `
+                        <div class="text-center py-16 bg-[#111] rounded-2xl border border-dashed border-[#333]">
+                            <i class="fa-solid fa-trophy text-5xl text-gray-600 mb-3"></i>
+                            <div class="text-base font-bold text-gray-400 uppercase tracking-widest">Chưa có giải đấu nào kết thúc hôm nay</div>
+                        </div>
+                    `;
+                }
                 return;
             }
+
             list.innerHTML = '';
-            active.forEach(t => {
+            toursToRender.forEach(t => {
                 const alive = (t.alive_override !== undefined && t.alive_override !== null)
                     ? t.alive_override
                     : (t.players || []).filter(p => p.status === 'alive').length;
                 const blind = t.blinds_structure?.[t.current_level_idx];
                 const isBreak = blind?.is_break;
-                const statusClass = t.status === 'running' ? 'badge-running' : t.status === 'finished' ? 'badge-finished' : 'badge-paused';
+                const isFinished = t.status === 'finished';
+
+                const statusClass = t.status === 'running' ? 'badge-running' : isFinished ? 'badge-finished' : 'badge-paused';
                 const statusText = { running: '▶ ĐANG CHẠY', paused: '⏸ TẠM DỪNG', pending: '⏳ CHỜ GIỜ', finished: '✓ KẾT THÚC' }[t.status] || t.status;
 
                 const card = document.createElement('div');
-                card.className = `tour-card p-5 ${t.status === 'running' ? 'running' : ''}`;
-                card.onclick = () => openTourTables(t.id);
+                card.className = `tour-card p-5 ${t.status === 'running' ? 'running' : ''} ${isFinished ? 'border-amber-500/40 bg-gradient-to-br from-[#121008] to-[#0a0a0a]' : ''}`;
+                
+                if (isFinished) {
+                    card.onclick = () => openTourResultModal(t.id);
+                } else {
+                    card.onclick = () => openTourTables(t.id);
+                }
+
+                // Get Winner Name
+                const itm = t.itm_results || {};
+                const winnerName = itm[1] || t.winner || 'Đang cập nhật';
+
                 card.innerHTML = `
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <div class="font-mafia text-xl text-white tracking-wider">${t.name}</div>
+                            <div class="font-mafia text-xl text-white tracking-wider flex items-center gap-2">
+                                <span>${t.name}</span>
+                                ${isFinished ? '<span class="text-[10px] bg-[#d4af37]/20 border border-[#d4af37]/50 text-[#d4af37] px-2 py-0.5 rounded font-bold font-sans">🏆 CHAMPION CONCLUDED</span>' : ''}
+                            </div>
                             <div class="text-xs text-gray-500 mt-1 font-bold uppercase tracking-widest">
-                                Bàn ${(t.tables||[]).join(', ')} &nbsp;|&nbsp; Buy-in: ${t.buyin_fee ? formatMoney(t.buyin_fee) + '₫' : '—'}
+                                ${isFinished ? 'Bàn chơi đã giải tán' : `Bàn ${(t.tables||[]).join(', ')}`} &nbsp;|&nbsp; Buy-in: ${t.buyin_fee ? formatMoney(t.buyin_fee) + '₫' : '—'}
                             </div>
                         </div>
                         <span class="text-xs font-bold px-2 py-1 rounded uppercase tracking-widest ${statusClass}">${statusText}</span>
@@ -532,31 +656,88 @@
                     <div class="grid grid-cols-4 gap-3 text-center">
                         <div class="bg-[#0a0a0a] rounded-lg p-3 border border-[#222]">
                             <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">Level</div>
-                            <div class="text-gold font-bold text-lg font-digital">${isBreak ? 'BRK' : (blind?.level || '—')}</div>
+                            <div class="text-gold font-bold text-lg font-digital">${isFinished ? 'FINAL' : (isBreak ? 'BRK' : (blind?.level || '—'))}</div>
                         </div>
                         <div class="bg-[#0a0a0a] rounded-lg p-3 border border-[#222]">
                             <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">Clock</div>
-                            <div class="text-white font-bold text-lg font-digital">${formatTime(t.time_remaining)}</div>
+                            <div class="font-bold text-lg font-digital ${isFinished ? 'text-emerald-400' : 'text-white'}">
+                                ${isFinished ? 'HOÀN TẤT' : formatTime(t.time_remaining)}
+                            </div>
                         </div>
                         <div class="bg-[#0a0a0a] rounded-lg p-3 border border-[#222]">
-                            <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">Còn lại</div>
-                            <div class="text-emerald-400 font-bold text-lg">${alive}<span class="text-gray-600 text-sm">/${t.entries}</span></div>
+                            <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">${isFinished ? 'Vô Địch' : 'Còn lại'}</div>
+                            <div class="${isFinished ? 'text-yellow-400 font-bold text-sm truncate uppercase mt-0.5' : 'text-emerald-400 font-bold text-lg'}">
+                                ${isFinished ? `🏆 ${winnerName}` : `${alive}<span class="text-gray-600 text-sm">/${t.entries}</span>`}
+                            </div>
                         </div>
                         <div class="bg-[#0a0a0a] rounded-lg p-3 border border-[#222]">
                             <div class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-1">Blinds</div>
                             <div class="text-white font-bold text-sm font-digital">
-                                ${isBreak ? '<span class="text-red-400">BREAK</span>' : (blind ? `${formatMoney(blind.sb)}/${formatMoney(blind.bb)}` : '—')}
+                                ${isFinished ? '<span class="text-gray-500">KẾT THÚC</span>' : (isBreak ? '<span class="text-red-400">BREAK</span>' : (blind ? `${formatMoney(blind.sb)}/${formatMoney(blind.bb)}` : '—'))}
                             </div>
                         </div>
                     </div>
                     <div class="mt-4 flex justify-end">
                         <span class="text-xs text-[#d4af37] font-bold uppercase tracking-widest">
-                            Quản lý bàn <i class="fa-solid fa-chevron-right ml-1"></i>
+                            ${isFinished ? 'Xem Kết Quả & Vinh Danh <i class="fa-solid fa-trophy ml-1 text-amber-400"></i>' : 'Quản lý bàn <i class="fa-solid fa-chevron-right ml-1"></i>'}
                         </span>
                     </div>
                 `;
                 list.appendChild(card);
             });
+        }
+
+        function openTourResultModal(tourId) {
+            const tour = currentTours.find(t => t.id === tourId);
+            if (!tour) return;
+
+            document.getElementById('result-tour-name').innerText = tour.name || 'TOURNAMENT';
+            const itm = tour.itm_results || {};
+            const winner = itm[1] || tour.winner || 'VÔ ĐỊCH';
+            document.getElementById('result-champ-name').innerText = winner;
+
+            const pool = (tour.fund && tour.fund.payout_pool) ? tour.fund.payout_pool : ((tour.entries || 0) * (tour.buyin_fee || 0) * 0.85);
+            let payouts = [];
+            const e = tour.entries || 0;
+            if (pool > 0) {
+                if (e <= 5) payouts = [{ rank: 1, amount: pool }];
+                else if (e <= 10) payouts = [{ rank: 1, amount: pool * 0.65 }, { rank: 2, amount: pool * 0.35 }];
+                else if (e <= 20) payouts = [{ rank: 1, amount: pool * 0.50 }, { rank: 2, amount: pool * 0.30 }, { rank: 3, amount: pool * 0.20 }];
+                else if (e <= 40) payouts = [{ rank: 1, amount: pool * 0.45 }, { rank: 2, amount: pool * 0.25 }, { rank: 3, amount: pool * 0.15 }, { rank: 4, amount: pool * 0.10 }, { rank: 5, amount: pool * 0.05 }];
+                else payouts = [{ rank: 1, amount: pool * 0.40 }, { rank: 2, amount: pool * 0.25 }, { rank: 3, amount: pool * 0.15 }, { rank: 4, amount: pool * 0.10 }, { rank: 5, amount: pool * 0.06 }, { rank: 6, amount: pool * 0.04 }];
+            }
+
+            const p1 = payouts.find(p => p.rank === 1)?.amount || 0;
+            document.getElementById('result-champ-prize').innerText = formatMoney(p1) + ' ₫';
+
+            const itmContainer = document.getElementById('result-itm-list');
+            itmContainer.innerHTML = '';
+
+            if (payouts.length === 0) {
+                itmContainer.innerHTML = '<div class="text-center py-4 text-gray-500 text-xs">Chưa có cơ cấu trả thưởng</div>';
+            } else {
+                payouts.forEach(p => {
+                    const playerName = itm[p.rank] || (p.rank === 1 ? winner : 'Chưa ghi nhận');
+                    const row = document.createElement('div');
+                    row.className = 'flex justify-between items-center py-2.5 px-3 text-xs';
+                    row.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <span class="w-7 h-7 rounded-full flex items-center justify-center font-bold font-mono ${p.rank === 1 ? 'bg-yellow-500 text-black' : p.rank === 2 ? 'bg-gray-400 text-black' : p.rank === 3 ? 'bg-amber-700 text-white' : 'bg-gray-800 text-gray-300'}">
+                                ${p.rank === 1 ? '🏆' : '#' + p.rank}
+                            </span>
+                            <span class="font-bold text-white uppercase text-sm">${playerName}</span>
+                        </div>
+                        <span class="font-teko text-xl font-bold text-emerald-400">${formatMoney(p.amount)} ₫</span>
+                    `;
+                    itmContainer.appendChild(row);
+                });
+            }
+
+            document.getElementById('tour-result-modal').classList.replace('hidden', 'flex');
+        }
+
+        function closeTourResultModal() {
+            document.getElementById('tour-result-modal').classList.replace('flex', 'hidden');
         }
 
         function openTourTables(tourId) {

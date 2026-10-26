@@ -1,4 +1,4 @@
-// ACE POKER SERVER - v2.5.0 (Full F&B Kitchen & Table Ordering System)
+// ACE POKER SERVER - v2.5.1 (Auto-release finished tours & Floor lobby separation)
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const http = require('http');
@@ -1156,6 +1156,30 @@ io.on('connection', (socket) => {
             if (winner) {
                 winner.rank = 1;
                 t.itm_results[1] = winner.name || winner.phone;
+                t.winner = winner.name || winner.phone;
+            }
+            t.status = 'finished';
+            t.time_remaining = 0;
+            // Xóa dealer và giải phóng bàn chơi
+            if (t.tables && Array.isArray(t.tables)) {
+                t.tables.forEach(tableId => {
+                    const tbl = db.tables.find(x => x.id === tableId);
+                    if (tbl) {
+                        const staff = db.staff.find(s => s.name === tbl.dealer_name);
+                        if (staff && staff.status === 'busy') {
+                            staff.status = 'waiting';
+                            if (staff.session_start) {
+                                staff.total_dealing_ms = (staff.total_dealing_ms || 0) + (Date.now() - staff.session_start);
+                                staff.session_start = null;
+                            }
+                        }
+                        tbl.dealer_name = null;
+                        tbl.dealer_time = null;
+                        tbl.is_locked = false;
+                        tbl.tour_id = null;
+                    }
+                });
+                t.dealer_assigned = false;
             }
         }
 
@@ -1388,13 +1412,14 @@ io.on('connection', (socket) => {
     const t = db.tournaments.find(t => t.id === tourId);
     if (t && (t.status === 'running' || t.status === 'paused')) {
       t.status = 'finished';
+      t.time_remaining = 0;
       t.fund.payout_pool = t.fund.total_paid * 0.85;
 
-      // Xóa dealer khỏi các bàn của giải này
+      // Xóa dealer khỏi các bàn của giải này và giải phóng bàn
       if (t.tables && Array.isArray(t.tables)) {
         t.tables.forEach(tableId => {
           const tbl = db.tables.find(x => x.id === tableId);
-          if (tbl && tbl.dealer_name) {
+          if (tbl) {
              const staff = db.staff.find(s => s.name === tbl.dealer_name);
              if (staff && staff.status === 'busy') {
                 staff.status = 'waiting';
@@ -1402,9 +1427,11 @@ io.on('connection', (socket) => {
                     staff.total_dealing_ms = (staff.total_dealing_ms || 0) + (Date.now() - staff.session_start);
                     staff.session_start = null;
                 }
-            }
+             }
              tbl.dealer_name = null;
              tbl.dealer_time = null;
+             tbl.is_locked = false;
+             tbl.tour_id = null;
           }
         });
         t.dealer_assigned = false;
