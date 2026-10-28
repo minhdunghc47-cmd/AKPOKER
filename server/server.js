@@ -1,4 +1,4 @@
-// ACE POKER SERVER - v2.7.0 (Comprehensive Mobile Responsive Optimization Across All Functions: TD, Cashier, Floor, F&B, God Mode, HR, Kiosk)
+// ACE POKER SERVER - v2.8.0 (TD Bulk Level Duration Quick Setter & 3-Tab Tournament Architecture: Clock, Freezeout/Re-entry Players & Payout ITM)
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const http = require('http');
