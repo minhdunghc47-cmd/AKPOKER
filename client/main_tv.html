@@ -935,7 +935,7 @@
             const alivePlayers = (tour.players || []).filter(p => p.table_id === tblId && p.status === 'alive');
             
             let seatsHtml = '';
-            for (let s = 1; s <= 9; s++) {
+            for (let s = 1; s <= 10; s++) {
                 const player = alivePlayers.find(p => Number(p.seat) === s);
                 if (player) {
                     seatsHtml += `
@@ -962,7 +962,7 @@
                         <i class="fa-solid fa-poker-chip text-amber-400"></i> BÀN SỐ ${tblId}
                     </span>
                     <span class="text-[10px] font-bold bg-[#1a1a1a] text-emerald-400 px-2 py-0.5 rounded border border-[#333]">
-                        ${alivePlayers.length} / 9 Ghế
+                        ${alivePlayers.length} / 10 Ghế
                     </span>
                 </div>
                 <div class="grid grid-cols-2 gap-1.5">

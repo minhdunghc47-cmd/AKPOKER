@@ -1,4 +1,4 @@
-// ACE POKER SERVER - v2.8.0 (TD Bulk Level Duration Quick Setter & 3-Tab Tournament Architecture: Clock, Freezeout/Re-entry Players & Payout ITM)
+// ACE POKER SERVER - v2.9.0 (Full 10-Max Table Architecture: 10 Seats per Table across Server, Floor iPad, Main TV & TD Dashboard)
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const http = require('http');
@@ -80,7 +80,7 @@ const defaultFnbMenu = [
   { id: 'fnb_12', name: 'Bật Lửa / Kẹo Cao Su Cool Air', category: 'extras', price: 10000, icon: 'fa-candy-cane', available: true }
 ];
 
-const PREFERRED_SEAT_ORDER = [1, 3, 5, 7, 9, 2, 4, 6, 8];
+const PREFERRED_SEAT_ORDER = [1, 3, 5, 7, 9, 2, 4, 6, 8, 10];
 let db = {
   tournaments: [],
   tour_templates: [],
@@ -822,8 +822,8 @@ io.on('connection', (socket) => {
       }
     }
 
-    if (minPlayers >= 9) {
-      if (callback) callback({ success: false, message: "Hệ thống báo: TẤT CẢ CÁC BÀN ĐÃ ĐẦY (9/9)! Hãy yêu cầu Floor mở thêm bàn mới trước khi Thu ngân có thể bán vé!"});
+    if (minPlayers >= 10) {
+      if (callback) callback({ success: false, message: "Hệ thống báo: TẤT CẢ CÁC BÀN ĐÃ ĐẦY (10/10)! Hãy yêu cầu Floor mở thêm bàn mới trước khi Thu ngân có thể bán vé!"});
       return;
     }
 
@@ -831,7 +831,7 @@ io.on('connection', (socket) => {
     let candidateTables = [];
     for (let tableId of t.tables) {
       const alivePlayers = t.players.filter(p => p.table_id === tableId && p.status === 'alive');
-      if (alivePlayers.length === minPlayers && alivePlayers.length < 9) {
+      if (alivePlayers.length === minPlayers && alivePlayers.length < 10) {
         candidateTables.push(tableId);
       }
     }
@@ -841,7 +841,7 @@ io.on('connection', (socket) => {
 
     const aliveOnTable = t.players.filter(p => p.table_id === assigned_table && p.status === 'alive');
     const occupiedSeats = aliveOnTable.map(p => p.seat);
-    const emptySeats = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(s => !occupiedSeats.includes(s));
+    const emptySeats = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter(s => !occupiedSeats.includes(s));
 
     if (emptySeats.length === 0) {
       if (callback) callback({ success: false, message: `Bàn ${assigned_table} đã đầy ghế!` });
@@ -1323,12 +1323,12 @@ io.on('connection', (socket) => {
     source.players.forEach(p => {
       // Chọn bàn có ít người nhất để cân bằng bàn
       remainingTables.sort((a, b) => a.count - b.count);
-      const targetTable = remainingTables.find(tbl => tbl.count < 9);
+      const targetTable = remainingTables.find(tbl => tbl.count < 10);
       if (targetTable) {
         const occupied = t.players
           .filter(pl => pl.table_id === targetTable.tableId && pl.status === 'alive')
           .map(pl => pl.seat);
-        const emptySeats = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(s => !occupied.includes(s));
+        const emptySeats = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter(s => !occupied.includes(s));
         const newSeat = emptySeats[Math.floor(Math.random() * emptySeats.length)];
 
         p.table_id = targetTable.tableId;
@@ -1372,10 +1372,10 @@ io.on('connection', (socket) => {
     if (!t) return callback && callback({ success: false, message: 'Không tìm thấy giải đấu!' });
 
     const alivePlayers = t.players.filter(p => p.status === 'alive');
-    if (alivePlayers.length > 9) {
+    if (alivePlayers.length > 10) {
       return callback && callback({ 
         success: false, 
-        message: `Giải đấu hiện còn ${alivePlayers.length} người chơi (nhiều hơn 9 người)! Cần tối đa 9 người để bốc thăm Bàn Chung Kết.` 
+        message: `Giải đấu hiện còn ${alivePlayers.length} người chơi (nhiều hơn 10 người)! Cần tối đa 10 người để bốc thăm Bàn Chung Kết.` 
       });
     }
     if (alivePlayers.length === 0) {
@@ -1417,8 +1417,8 @@ io.on('connection', (socket) => {
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
-    // Bốc thăm ghế từ 1 đến số lượng người
-    const seats = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    // Bốc thăm ghế từ 1 đến số lượng người (chuẩn 10 ghế)
+    const seats = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     shuffled.forEach((p, idx) => {
       p.table_id = finalTableId;
       p.seat = seats[idx];

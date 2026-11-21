@@ -1311,7 +1311,7 @@
                                     <button class="py-2.5 px-2 rounded text-[11px] font-bold bg-[#1e1e1e] border border-[#444] text-gray-300 hover:border-blue-400 hover:text-white transition shadow-md flex items-center justify-center gap-1.5 ${(!tour.tables || tour.tables.length <= 1) ? 'opacity-35 cursor-not-allowed' : ''}" onclick="mergeTables('${tour.id}')" ${(!tour.tables || tour.tables.length <= 1) ? 'disabled' : ''} title="Tự động dời người chơi từ bàn ít người nhất sang các bàn còn lại">
                                         <i class="fa-solid fa-compress"></i> GỘP BÀN (${tour.tables ? tour.tables.length : 0})
                                     </button>
-                                    <button class="py-2.5 px-2 rounded text-[11px] font-bold bg-[#1e1e1e] border border-amber-500/50 text-amber-400 hover:bg-amber-900/30 transition shadow-md flex items-center justify-center gap-1.5 ${(alivePlayers > 9) ? 'opacity-35 cursor-not-allowed' : ''}" onclick="finalTableRedraw('${tour.id}')" ${(alivePlayers > 9) ? 'disabled' : ''} title="Bốc thăm ngẫu nhiên chỗ ngồi 9 người cho Bàn Chung Kết">
+                                    <button class="py-2.5 px-2 rounded text-[11px] font-bold bg-[#1e1e1e] border border-amber-500/50 text-amber-400 hover:bg-amber-900/30 transition shadow-md flex items-center justify-center gap-1.5 ${(alivePlayers > 10) ? 'opacity-35 cursor-not-allowed' : ''}" onclick="finalTableRedraw('${tour.id}')" ${(alivePlayers > 10) ? 'disabled' : ''} title="Bốc thăm ngẫu nhiên chỗ ngồi 10 người cho Bàn Chung Kết">
                                         <i class="fa-solid fa-dice"></i> FINAL REDRAW
                                     </button>
                                 </div>
@@ -1463,7 +1463,7 @@
         }
 
         function finalTableRedraw(tourId) {
-            if(!confirm("XÁC NHẬN BỐC THĂM BÀN CHUNG KẾT (FINAL TABLE REDRAW)? Toàn bộ người chơi alive sẽ được dồn vào Bàn 1 và bốc thăm ngẫu nhiên từ Ghế 1 đến Ghế 9.")) return;
+            if(!confirm("XÁC NHẬN BỐC THĂM BÀN CHUNG KẾT (FINAL TABLE REDRAW)? Toàn bộ người chơi alive sẽ được dồn vào Bàn 1 và bốc thăm ngẫu nhiên từ Ghế 1 đến Ghế 10.")) return;
             socket.emit('final_table_redraw', tourId, (res) => {
                 if(res.success) {
                     playChime('levelup');

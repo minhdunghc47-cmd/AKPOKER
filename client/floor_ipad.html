@@ -699,9 +699,10 @@
         let lastScannedPayload = null;
 
         const seatPositions = [
-            { id: 1, x: 82, y: 18 }, { id: 2, x: 95, y: 50 }, { id: 3, x: 82, y: 82 },
-            { id: 4, x: 62, y: 96 }, { id: 5, x: 50, y: 100 }, { id: 6, x: 38, y: 96 },
-            { id: 7, x: 18, y: 82 }, { id: 8, x: 5, y: 50 },  { id: 9, x: 18, y: 18 }
+            { id: 1, x: 76, y: 16 }, { id: 2, x: 93, y: 36 }, { id: 3, x: 93, y: 64 },
+            { id: 4, x: 76, y: 86 }, { id: 5, x: 58, y: 97 }, { id: 6, x: 42, y: 97 },
+            { id: 7, x: 24, y: 86 }, { id: 8, x: 7, y: 64 },  { id: 9, x: 7, y: 36 },
+            { id: 10, x: 24, y: 16 }
         ];
 
         const DEALER_SHIFT_MS = 30 * 60 * 1000;
@@ -1144,14 +1145,14 @@
                         </div>
                     </div>
 
-                    <!-- 9 Seats Grid -->
+                    <!-- 10 Seats Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" id="seat-list-grid-${tbl.id}"></div>
                 `;
 
                 container.appendChild(tableCard);
 
                 const seatGrid = document.getElementById(`seat-list-grid-${tbl.id}`);
-                for (let s = 1; s <= 9; s++) {
+                for (let s = 1; s <= 10; s++) {
                     const player = tablePlayers.find(p => p.seat === s);
                     const seatItem = document.createElement('div');
                     seatItem.id = `seat-cell-${tbl.id}-${s}`;
@@ -1726,7 +1727,7 @@
             };
             grid.appendChild(autoBtn);
 
-            for (let s = 1; s <= 9; s++) {
+            for (let s = 1; s <= 10; s++) {
                 const isOccupied = occupiedSeats.includes(s);
                 const seatBtn = document.createElement('button');
                 seatBtn.type = 'button';
