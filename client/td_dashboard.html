@@ -143,7 +143,13 @@
         </div>
 
         <div>
-            <label class="block text-[11px] font-bold text-[#d4af37] mb-2 uppercase tracking-widest">Mẫu Giải Đấu (Preset)</label>
+            <div class="flex items-center justify-between mb-2">
+                <label class="block text-[11px] font-bold text-[#d4af37] uppercase tracking-widest">Mẫu Giải Đấu (Preset)</label>
+                <!-- Quick Delete Button for Custom Templates -->
+                <button type="button" id="btn-delete-template" onclick="deleteCurrentTemplate()" class="hidden text-[10px] text-red-400 hover:text-white bg-red-950/60 hover:bg-red-800 border border-red-500/50 px-2.5 py-0.5 rounded font-bold uppercase transition flex items-center gap-1 active:scale-95 shadow" title="Xóa mẫu giải đấu này khỏi hệ thống">
+                    <i class="fa-solid fa-trash-can"></i> XÓA MẪU
+                </button>
+            </div>
             <select id="tour-preset" class="input-mafia text-sm font-semibold" onchange="onPresetChange()">
                 <option value="">-- Chọn Mẫu Giải --</option>
                 <option value="hyper">Hyper Turbo (Lên Blinds Cực Nhanh)</option>
@@ -180,9 +186,14 @@
             <button class="bg-[#1a1a1a] border border-[#d4af37] text-[#d4af37] py-3.5 rounded-lg font-bold uppercase hover:bg-[#222] transition text-xs sm:text-sm flex items-center justify-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.5)] active:scale-95" onclick="openBlindsModal()">
                 <i class="fa-solid fa-gear"></i> CẤU HÌNH BLINDS CHI TIẾT
             </button>
-            <button class="bg-[#2a1738] border border-[#9d4edd] text-[#e0aaff] py-2.5 rounded-lg font-bold uppercase hover:bg-[#3c096c] transition text-xs flex items-center justify-center gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.5)] active:scale-95" onclick="saveTemplate()">
-                <i class="fa-solid fa-floppy-disk"></i> LƯU LÀM MẪU MỚI
-            </button>
+            <div class="grid grid-cols-2 gap-2" id="template-action-buttons">
+                <button type="button" id="btn-save-overwrite" onclick="overwriteCurrentTemplate()" class="hidden bg-[#14233a] border border-blue-500/60 text-blue-300 py-2.5 rounded-lg font-bold uppercase hover:bg-blue-900/50 transition text-xs flex items-center justify-center gap-1.5 shadow active:scale-95" title="Lưu đè cập nhật vào mẫu đang chọn">
+                    <i class="fa-solid fa-floppy-disk text-blue-400"></i> LƯU ĐÈ MẪU NÀY
+                </button>
+                <button type="button" id="btn-save-new" onclick="saveTemplate()" class="col-span-2 bg-[#2a1738] border border-[#9d4edd] text-[#e0aaff] py-2.5 rounded-lg font-bold uppercase hover:bg-[#3c096c] transition text-xs flex items-center justify-center gap-1.5 shadow active:scale-95" title="Lưu thành một mẫu giải đấu mới">
+                    <i class="fa-solid fa-plus text-[#e0aaff]"></i> LƯU MẪU MỚI
+                </button>
+            </div>
         </div>
 
         <div>
@@ -700,25 +711,139 @@
             if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
                 select.value = currentVal;
             }
+            updateTemplateActionButtons();
+        }
+
+        function updateTemplateActionButtons() {
+            const select = document.getElementById('tour-preset');
+            const val = select ? select.value : '';
+            const isCustom = val && val.startsWith('tpl_');
+            const btnDelete = document.getElementById('btn-delete-template');
+            const btnOverwrite = document.getElementById('btn-save-overwrite');
+            const btnNew = document.getElementById('btn-save-new');
+
+            if (btnDelete) {
+                if (isCustom) btnDelete.classList.remove('hidden');
+                else btnDelete.classList.add('hidden');
+            }
+            if (btnOverwrite) {
+                if (isCustom) {
+                    btnOverwrite.classList.remove('hidden');
+                    const tpl = customTemplates.find(t => t.id === val);
+                    btnOverwrite.innerHTML = `<i class="fa-solid fa-floppy-disk text-blue-400"></i> LƯU ĐÈ MẪU NÀY`;
+                    btnOverwrite.title = `Cập nhật đè lên mẫu "${tpl ? tpl.name : ''}"`;
+                } else {
+                    btnOverwrite.classList.add('hidden');
+                }
+            }
+            if (btnNew) {
+                if (isCustom) {
+                    btnNew.className = btnNew.className.replace('col-span-2', 'col-span-1');
+                } else {
+                    if (!btnNew.className.includes('col-span-2')) {
+                        btnNew.className = btnNew.className.replace('col-span-1', 'col-span-2');
+                    }
+                }
+            }
+        }
+
+        function overwriteCurrentTemplate() {
+            const select = document.getElementById('tour-preset');
+            const currentTplId = select ? select.value : '';
+            if (!currentTplId || !currentTplId.startsWith('tpl_')) {
+                alert("Vui lòng chọn một mẫu tùy chỉnh trong danh sách để lưu đè!");
+                return;
+            }
+
+            const existingTpl = customTemplates.find(t => t.id === currentTplId);
+            const tplName = existingTpl ? existingTpl.name : 'mẫu này';
+
+            if (!confirm(`Xác nhận LƯU ĐÈ (CẬP NHẬT) mẫu giải đấu "${tplName}" với toàn bộ thông số và cấu trúc Blinds hiện tại?\n\nThao tác này sẽ ghi đè trực tiếp vào mẫu "${tplName}", không tạo ra bản sao trùng lặp.`)) return;
+
+            const startStack = document.getElementById('starting-stack').value;
+            const lateReg = document.getElementById('late-reg-input').value;
+            const buyIn = document.getElementById('buy-in-fee').value;
+            const tourName = document.getElementById('tour-name').value.trim() || tplName;
+
+            socket.emit('save_template', {
+                id: currentTplId,
+                name: tourName,
+                starting_stack: Number(startStack),
+                late_reg_level: Number(lateReg),
+                buyin_fee: Number(buyIn),
+                blinds: currentBlindsData,
+                overwrite: true
+            }, (res) => {
+                if (res && res.success) {
+                    if (typeof playChime === 'function') playChime('chime');
+                    alert(`✅ Đã lưu đè và cập nhật thành công mẫu "${tourName}"!`);
+                } else {
+                    alert("Lỗi: " + (res ? res.message : 'Không thể lưu đè'));
+                }
+            });
+        }
+
+        function deleteCurrentTemplate() {
+            const select = document.getElementById('tour-preset');
+            const currentTplId = select ? select.value : '';
+            if (!currentTplId || !currentTplId.startsWith('tpl_')) {
+                alert("Chỉ có thể xóa các mẫu giải đấu tùy chỉnh do bạn tạo!");
+                return;
+            }
+
+            const existingTpl = customTemplates.find(t => t.id === currentTplId);
+            const tplName = existingTpl ? existingTpl.name : 'mẫu này';
+
+            if (!confirm(`Xác nhận XÓA VĨNH VIỄN mẫu giải đấu "${tplName}" khỏi hệ thống?`)) return;
+
+            socket.emit('delete_template', currentTplId, (res) => {
+                if (res && res.success) {
+                    if (typeof playChime === 'function') playChime('alert');
+                    select.value = '';
+                    onPresetChange();
+                    alert(`🗑️ Đã xóa mẫu "${tplName}" thành công!`);
+                } else {
+                    alert("Lỗi khi xóa: " + (res ? res.message : 'Không xác định'));
+                }
+            });
         }
 
         function saveTemplate() {
-            const nameInput = prompt('Nhập tên mẫu giải đấu muốn lưu (VD: Giải Tốc Độ Cuối Tuần):');
-            if (!nameInput) return;
             if (currentBlindsData.length === 0) return alert("Vui lòng vào 'CẤU HÌNH BLINDS CHI TIẾT' tạo cấu trúc trước khi lưu mẫu!");
+
+            const currentTourName = document.getElementById('tour-name').value.trim();
+            const nameInput = prompt('Nhập tên mẫu giải đấu muốn lưu (VD: Tour 550k):', currentTourName || 'Tour 550k');
+            if (!nameInput || !nameInput.trim()) return;
+            const cleanName = nameInput.trim();
+
+            // Kiểm tra trùng tên với mẫu tùy chỉnh đã có
+            const existing = customTemplates.find(t => t.name && t.name.trim().toLowerCase() === cleanName.toLowerCase());
+            let targetId = null;
+            if (existing) {
+                const choice = confirm(`Mẫu giải đấu mang tên "${cleanName}" đã tồn tại trên hệ thống!\n\n• Bấm [OK] để LƯU ĐÈ (CẬP NHẬT) mẫu hiện có này (không bị nhân bản trùng lặp).\n• Bấm [Cancel / Hủy] để đặt lại tên khác.`);
+                if (!choice) return;
+                targetId = existing.id;
+            }
 
             const startStack = document.getElementById('starting-stack').value;
             const lateReg = document.getElementById('late-reg-input').value;
             const buyIn = document.getElementById('buy-in-fee').value;
 
             socket.emit('save_template', {
-                name: nameInput,
+                id: targetId,
+                name: cleanName,
                 starting_stack: Number(startStack),
                 late_reg_level: Number(lateReg),
                 buyin_fee: Number(buyIn),
-                blinds: currentBlindsData
+                blinds: currentBlindsData,
+                overwrite: !!targetId
             }, (res) => {
-                alert(res.message);
+                if (res && res.success) {
+                    if (typeof playChime === 'function') playChime('chime');
+                    alert(`✅ Đã lưu mẫu giải đấu "${cleanName}" thành công!`);
+                } else {
+                    alert(res ? res.message : 'Lỗi khi lưu mẫu');
+                }
             });
         }
 
@@ -883,6 +1008,7 @@
                 currentBlindsData = [];
                 renderEditableBlinds();
             }
+            updateTemplateActionButtons();
         }
 
 

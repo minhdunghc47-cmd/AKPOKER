@@ -1,4 +1,4 @@
-// ACE POKER SERVER - v2.9.0 (Full 10-Max Table Architecture: 10 Seats per Table across Server, Floor iPad, Main TV & TD Dashboard)
+// ACE POKER SERVER - v3.0.0 (Custom Tournament Template Management: Overwrite In-Place & Direct Delete Template APIs)
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const http = require('http');
@@ -414,16 +414,47 @@ io.on('connection', (socket) => {
   }));
 
   socket.on('save_template', requireRole(socket, ['god', 'td'], (templateData, callback) => {
-    // Generate an ID for the template
-    const templateId = 'tpl_' + Date.now();
-    const newTemplate = { id: templateId, ...templateData };
     if (!db.tour_templates) db.tour_templates = [];
-    db.tour_templates.push(newTemplate);
+
+    // Tìm xem mẫu đã tồn tại theo ID hoặc theo Tên (nếu cờ overwrite = true)
+    let existingIndex = -1;
+    if (templateData.id) {
+      existingIndex = db.tour_templates.findIndex(t => t.id === templateData.id);
+    }
+    if (existingIndex === -1 && templateData.overwrite && templateData.name) {
+      existingIndex = db.tour_templates.findIndex(t => t.name && t.name.trim().toLowerCase() === templateData.name.trim().toLowerCase());
+    }
+
+    if (existingIndex !== -1) {
+      db.tour_templates[existingIndex] = {
+        ...db.tour_templates[existingIndex],
+        ...templateData,
+        id: db.tour_templates[existingIndex].id
+      };
+    } else {
+      const templateId = 'tpl_' + Date.now();
+      const newTemplate = { id: templateId, ...templateData };
+      db.tour_templates.push(newTemplate);
+    }
 
     broadcastState(); // Save to firebase
     io.emit('update_tour_templates', db.tour_templates); // Broadcast to all connected clients
 
     if (callback) callback({ success: true, message: 'Đã lưu mẫu giải đấu thành công!' });
+  }));
+
+  socket.on('delete_template', requireRole(socket, ['god', 'td'], (templateId, callback) => {
+    if (!db.tour_templates) db.tour_templates = [];
+    const index = db.tour_templates.findIndex(t => t.id === templateId);
+    if (index !== -1) {
+      const deletedName = db.tour_templates[index].name;
+      db.tour_templates.splice(index, 1);
+      broadcastState();
+      io.emit('update_tour_templates', db.tour_templates);
+      if (callback) callback({ success: true, message: `Đã xóa mẫu "${deletedName}" thành công!` });
+    } else {
+      if (callback) callback({ success: false, message: 'Không tìm thấy mẫu giải đấu để xóa!' });
+    }
   }));
 
   socket.on('update_staff', requireRole(socket, ['god'], (payload, callback) => {
