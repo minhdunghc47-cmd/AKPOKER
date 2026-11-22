@@ -294,7 +294,7 @@
     </div>
 
     <!-- MODAL QUẢN TRỊ & SỬA TOÀN BỘ THÔNG TIN / BÁO CÁO GIẢI ĐẤU (MASTER TOUR EDITOR) -->
-    <div id="modal-master-tour-editor" class="fixed inset-0 z-50 bg-black/90 hidden items-center justify-center backdrop-blur-md p-3 sm:p-4">
+    <div id="modal-master-tour-editor" class="fixed inset-0 z-[80] bg-black/90 hidden items-center justify-center backdrop-blur-md p-3 sm:p-4">
         <div class="bg-[#111] border-2 border-[#d4af37]/80 rounded-2xl p-5 sm:p-6 w-full max-w-4xl shadow-[0_0_60px_rgba(212,175,55,0.4)] flex flex-col max-h-[95vh] overflow-hidden">
             <!-- HEADER -->
             <div class="flex justify-between items-center border-b border-[#333] pb-3 mb-3">
@@ -804,8 +804,10 @@
             const itmResults = tour.itm_results || {};
             const winner = tour.winner || itmResults[1] || '---';
             const runnerUp = itmResults[2] || '---';
-            document.getElementById('mte-name-rank1').innerText = winner;
-            document.getElementById('mte-name-rank2').innerText = runnerUp;
+            const elRank1 = document.getElementById('mte-name-rank1');
+            if (elRank1) elRank1.innerText = winner;
+            const elRank2 = document.getElementById('mte-name-rank2');
+            if (elRank2) elRank2.innerText = runnerUp;
 
             // Thu thập tên VĐV làm gợi ý datalist
             const playerNamesSet = new Set();
@@ -835,11 +837,6 @@
                     <div class="flex-1">
                         <input type="text" id="mte-input-rank-${r}" value="${currentName}" oninput="mteOnRankInputChanged(${r})" list="mte-player-datalist" placeholder="Gõ hoặc chọn VĐV..." class="w-full bg-[#181818] border border-[#333] focus:border-[#d4af37] text-white px-3 py-1.5 rounded text-xs font-bold uppercase transition outline-none">
                     </div>
-                    ${r <= 3 ? `
-                        <button onclick="mteQuickSwapRanks(${r}, ${r === 1 ? 2 : 1})" class="shrink-0 px-2 py-1 bg-[#1e1507] hover:bg-amber-900/60 border border-amber-600/50 text-amber-300 rounded text-[10px] font-bold transition" title="Đổi chỗ nhanh với ${r === 1 ? 'Á Quân' : 'Quán Quân'}">
-                            <i class="fa-solid fa-repeat"></i>
-                        </button>
-                    ` : ''}
                 `;
                 rankListEl.appendChild(row);
             }

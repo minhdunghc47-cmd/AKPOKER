@@ -1,4 +1,4 @@
-// VERSION: 3.1.1 - 2026-11-22T02:59:05.747Z
+// VERSION: 3.1.2 - 2026-11-22T03:16:52.348Z
 // ACE POKER SERVER - v3.0.0 (Custom Tournament Template Management: Overwrite In-Place & Direct Delete Template APIs)
 const express = require('express');
 const bcrypt = require('bcryptjs');
