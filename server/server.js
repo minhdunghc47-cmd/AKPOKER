@@ -1320,6 +1320,115 @@ io.on('connection', (socket) => {
     }
   }));
 
+  // QUYỀN GIÁM ĐỐC: HOÁN ĐỔI THỨ HẠNG (QUÁN QUÂN ⇋ Á QUÂN HOẶC BẤT KỲ 2 HẠNG NÀO)
+  socket.on('director_swap_ranks', requireRole(socket, ['god', 'td'], (payload, callback) => {
+    const { tour_id, rank1 = 1, rank2 = 2 } = payload;
+    const t = db.tournaments.find(tour => tour.id === tour_id);
+    if (!t) return callback && callback({ success: false, message: 'Không tìm thấy giải đấu!' });
+
+    t.itm_results = t.itm_results || {};
+    const r1 = Number(rank1);
+    const r2 = Number(rank2);
+
+    const name1 = t.itm_results[r1] || (r1 === 1 ? t.winner : null);
+    const name2 = t.itm_results[r2] || (r2 === 1 ? t.winner : null);
+
+    if (!name1 && !name2) {
+      return callback && callback({ success: false, message: `Không tìm thấy VĐV tại Hạng ${r1} hoặc Hạng ${r2} để đổi!` });
+    }
+
+    // Hoán đổi trong itm_results
+    if (name2) t.itm_results[r1] = name2; else delete t.itm_results[r1];
+    if (name1) t.itm_results[r2] = name1; else delete t.itm_results[r2];
+
+    // Cập nhật Quán Quân nếu liên quan đến Hạng 1
+    if (r1 === 1 || r2 === 1) {
+      t.winner = t.itm_results[1] || '';
+    }
+
+    // Hoán đổi rank trong mảng players
+    if (Array.isArray(t.players)) {
+      const p1 = t.players.slice().reverse().find(p => (p.name === name1 || p.phone === name1) && Number(p.rank) === r1);
+      const p2 = t.players.slice().reverse().find(p => (p.name === name2 || p.phone === name2) && Number(p.rank) === r2);
+      if (p1) p1.rank = r2;
+      if (p2) p2.rank = r1;
+    }
+
+    // Hoán đổi thông tin nếu đã lưu phiếu payout
+    if (Array.isArray(t.payouts)) {
+      const po1 = t.payouts.find(p => Number(p.rank) === r1);
+      const po2 = t.payouts.find(p => Number(p.rank) === r2);
+      if (po1 && po2) {
+        const tmpName = po1.name;
+        const tmpPhone = po1.phone;
+        po1.name = po2.name;
+        po1.phone = po2.phone;
+        po2.name = tmpName;
+        po2.phone = tmpPhone;
+      } else if (po1 && name2) {
+        po1.name = name2;
+      } else if (po2 && name1) {
+        po2.name = name1;
+      }
+    }
+
+    broadcastState();
+    if (callback) callback({
+      success: true,
+      message: `ĐÃ HOÁN ĐỔI THÀNH CÔNG: Hạng ${r1} (${t.itm_results[r1] || '---'}) ⇋ Hạng ${r2} (${t.itm_results[r2] || '---'})!`,
+      itm_results: t.itm_results,
+      winner: t.winner
+    });
+  }));
+
+  // QUYỀN GIÁM ĐỐC: CẬP NHẬT TOÀN BỘ DANH SÁCH THỨ HẠNG ITM
+  socket.on('director_update_ranks', requireRole(socket, ['god', 'td'], (payload, callback) => {
+    const { tour_id, itm_results, winner } = payload;
+    const t = db.tournaments.find(tour => tour.id === tour_id);
+    if (!t) return callback && callback({ success: false, message: 'Không tìm thấy giải đấu!' });
+
+    t.itm_results = t.itm_results || {};
+    if (itm_results && typeof itm_results === 'object') {
+      Object.entries(itm_results).forEach(([rk, val]) => {
+        const rkNum = Number(rk);
+        const nameVal = (val || '').trim();
+        if (nameVal) {
+          t.itm_results[rkNum] = nameVal;
+          if (Array.isArray(t.players)) {
+            const pl = t.players.slice().reverse().find(p => p.name === nameVal || p.phone === nameVal);
+            if (pl) pl.rank = rkNum;
+          }
+        } else {
+          delete t.itm_results[rkNum];
+        }
+      });
+    }
+
+    if (t.itm_results[1]) {
+      t.winner = t.itm_results[1];
+    } else if (winner) {
+      t.winner = winner.trim();
+      t.itm_results[1] = t.winner;
+    }
+
+    if (Array.isArray(t.payouts)) {
+      t.payouts.forEach(po => {
+        const rk = Number(po.rank);
+        if (t.itm_results[rk]) {
+          po.name = t.itm_results[rk];
+        }
+      });
+    }
+
+    broadcastState();
+    if (callback) callback({
+      success: true,
+      message: 'ĐÃ CẬP NHẬT TOÀN BỘ THỨ HẠNG GIẢI ĐẤU THÀNH CÔNG!',
+      itm_results: t.itm_results,
+      winner: t.winner
+    });
+  }));
+
   // --- CÁC TÍNH NĂNG TOURNAMENT DIRECTOR (TD) THEO CHUẨN BEE POKER TOUR ---
   // 1. GỘP BÀN TỰ ĐỘNG (AUTO MERGE TABLES)
   socket.on('merge_tables', requireRole(socket, ['god', 'td'], (tourId, callback) => {
