@@ -1429,6 +1429,129 @@ io.on('connection', (socket) => {
     });
   }));
 
+  // QUYỀN GIÁM ĐỐC / TD: CHỈNH SỬA TOÀN BỘ THÔNG TIN VÀ BÁO CÁO GIẢI ĐẤU (MASTER TOUR EDITOR)
+  socket.on('master_edit_tour', requireRole(socket, ['god', 'td'], (payload, callback) => {
+    const { tour_id, updates } = payload;
+    const t = db.tournaments.find(tour => tour.id === tour_id);
+    if (!t) return callback && callback({ success: false, message: 'Không tìm thấy giải đấu!' });
+
+    if (!updates || typeof updates !== 'object') {
+      return callback && callback({ success: false, message: 'Dữ liệu cập nhật không hợp lệ!' });
+    }
+
+    // 1. Tên giải đấu & cơ cấu
+    if (updates.name !== undefined) t.name = String(updates.name).trim();
+    if (updates.buyin_fee !== undefined) t.buyin_fee = Number(updates.buyin_fee) || 0;
+    if (updates.starting_stack !== undefined) t.starting_stack = Number(updates.starting_stack) || 10000;
+    if (updates.entries !== undefined) t.entries = Number(updates.entries) || 0;
+
+    // 2. Trạng thái giải đấu (status)
+    if (updates.status !== undefined && ['pending', 'running', 'paused', 'finished', 'archived'].includes(updates.status)) {
+      const oldStatus = t.status;
+      t.status = updates.status;
+      if (['running', 'paused'].includes(t.status) && ['finished', 'archived'].includes(oldStatus)) {
+        if (t.tables && Array.isArray(t.tables)) {
+          t.tables.forEach(tblId => {
+            const tbl = db.tables.find(x => x.id === tblId);
+            if (tbl) { tbl.is_locked = true; tbl.tour_id = t.id; }
+          });
+        }
+      } else if (['finished', 'archived'].includes(t.status)) {
+        if (t.tables && Array.isArray(t.tables)) {
+          t.tables.forEach(tblId => {
+            const tbl = db.tables.find(x => x.id === tblId);
+            if (tbl && tbl.tour_id === t.id) { tbl.is_locked = false; tbl.tour_id = null; }
+          });
+        }
+      }
+    }
+
+    // 3. Bàn thi đấu (tables)
+    if (updates.tables !== undefined && Array.isArray(updates.tables)) {
+      (t.tables || []).forEach(tblId => {
+        if (!updates.tables.includes(tblId)) {
+          const tbl = db.tables.find(x => x.id === tblId);
+          if (tbl && tbl.tour_id === t.id) { tbl.is_locked = false; tbl.tour_id = null; }
+        }
+      });
+      t.tables = updates.tables;
+      if (['running', 'paused'].includes(t.status)) {
+        t.tables.forEach(tblId => {
+          const tbl = db.tables.find(x => x.id === tblId);
+          if (tbl) { tbl.is_locked = true; tbl.tour_id = t.id; }
+        });
+      }
+    }
+
+    // 4. Settings
+    t.settings = t.settings || {};
+    if (updates.settings && typeof updates.settings === 'object') {
+      if (updates.settings.level_time !== undefined) t.settings.level_time = Number(updates.settings.level_time) || 15;
+      if (updates.settings.late_reg_level !== undefined) t.settings.late_reg_level = Number(updates.settings.late_reg_level) || 8;
+      if (updates.settings.min_players !== undefined) t.settings.min_players = Number(updates.settings.min_players) || 6;
+    }
+
+    // 5. Quỹ tài chính (fund)
+    t.fund = t.fund || {};
+    if (updates.fund && typeof updates.fund === 'object') {
+      if (updates.fund.total_paid !== undefined) t.fund.total_paid = Number(updates.fund.total_paid) || 0;
+      if (updates.fund.payout_pool !== undefined) t.fund.payout_pool = Number(updates.fund.payout_pool) || 0;
+      if (updates.fund.expenses !== undefined) t.fund.expenses = Number(updates.fund.expenses) || 0;
+      t.fund.net_fund = (t.fund.total_paid || 0) - (t.fund.expenses || 0);
+    }
+
+    // 6. Quán quân & Thứ hạng ITM
+    if (updates.itm_results !== undefined && typeof updates.itm_results === 'object') {
+      t.itm_results = updates.itm_results;
+    }
+    if (updates.winner !== undefined) {
+      t.winner = String(updates.winner).trim();
+      if (!t.itm_results) t.itm_results = {};
+      t.itm_results[1] = t.winner;
+    } else if (t.itm_results && t.itm_results[1]) {
+      t.winner = t.itm_results[1];
+    }
+
+    // 7. Đồng bộ danh sách VĐV & số vé (player_summaries)
+    if (updates.player_summaries && Array.isArray(updates.player_summaries)) {
+      const newPlayers = [];
+      updates.player_summaries.forEach(ps => {
+        const pName = (ps.name || '').trim();
+        const pPhone = (ps.phone || '').trim();
+        if (!pName) return;
+        const tickets = Math.max(1, Number(ps.tickets) || 1);
+        const rank = ps.rank ? Number(ps.rank) : null;
+        for (let k = 0; k < tickets; k++) {
+          newPlayers.push({
+            name: pName,
+            phone: pPhone,
+            rank: (k === tickets - 1) ? rank : 10,
+            status: rank === 1 ? 'alive' : 'busted',
+            ticket_type: k === 0 ? 'buy_in' : 're_entry',
+            table_id: (t.tables && t.tables[0]) || 1,
+            seat: 1
+          });
+        }
+      });
+      if (newPlayers.length > 0) {
+        t.players = newPlayers;
+        t.entries = newPlayers.length;
+      }
+    }
+
+    // 8. Báo cáo & Ghi chú
+    if (updates.report_notes !== undefined) {
+      t.report_notes = String(updates.report_notes).trim();
+    }
+
+    broadcastState();
+    if (callback) callback({
+      success: true,
+      message: 'ĐÃ CẬP NHẬT TOÀN BỘ THÔNG TIN GIẢI ĐẤU & BÁO CÁO THÀNH CÔNG!',
+      tour: t
+    });
+  }));
+
   // --- CÁC TÍNH NĂNG TOURNAMENT DIRECTOR (TD) THEO CHUẨN BEE POKER TOUR ---
   // 1. GỘP BÀN TỰ ĐỘNG (AUTO MERGE TABLES)
   socket.on('merge_tables', requireRole(socket, ['god', 'td'], (tourId, callback) => {

@@ -293,65 +293,209 @@
         </div>
     </div>
 
-    <!-- MODAL ĐIỀU CHỈNH THỨ HẠNG & QUÁN QUÂN (QUYỀN GIÁM ĐỐC) -->
-    <div id="modal-director-rank" class="fixed inset-0 z-50 bg-black/90 hidden items-center justify-center backdrop-blur-md p-4">
-        <div class="bg-[#111] border-2 border-[#d4af37]/80 rounded-2xl p-6 w-full max-w-2xl shadow-[0_0_50px_rgba(212,175,55,0.4)] flex flex-col max-h-[92vh] overflow-hidden">
-            <div class="flex justify-between items-center border-b border-[#333] pb-4 mb-4">
+    <!-- MODAL QUẢN TRỊ & SỬA TOÀN BỘ THÔNG TIN / BÁO CÁO GIẢI ĐẤU (MASTER TOUR EDITOR) -->
+    <div id="modal-master-tour-editor" class="fixed inset-0 z-50 bg-black/90 hidden items-center justify-center backdrop-blur-md p-3 sm:p-4">
+        <div class="bg-[#111] border-2 border-[#d4af37]/80 rounded-2xl p-5 sm:p-6 w-full max-w-4xl shadow-[0_0_60px_rgba(212,175,55,0.4)] flex flex-col max-h-[95vh] overflow-hidden">
+            <!-- HEADER -->
+            <div class="flex justify-between items-center border-b border-[#333] pb-3 mb-3">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-amber-400">
-                        <i class="fa-solid fa-crown text-xl text-[#d4af37]"></i>
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-amber-400 shrink-0">
+                        <i class="fa-solid fa-sliders text-xl text-[#d4af37]"></i>
                     </div>
                     <div>
-                        <h3 class="font-mafia text-xl text-[#d4af37] tracking-wider uppercase">SỬA THỨ HẠNG & QUÁN QUÂN / Á QUÂN</h3>
-                        <p class="text-[11px] text-gray-400 font-sans" id="mdr-tour-subtitle">Quyền hạn Giám Đốc: Đổi Quán Quân, Á Quân hoặc bất kỳ thứ hạng nào</p>
+                        <h3 class="font-mafia text-lg sm:text-xl text-[#d4af37] tracking-wider uppercase">QUẢN TRỊ & CHỈNH SỬA TOÀN BỘ GIẢI ĐẤU</h3>
+                        <p class="text-[11px] text-gray-400 font-sans" id="mte-tour-subtitle">Chỉnh sửa thông số, tài chính, thứ hạng & sinh báo cáo gửi player</p>
                     </div>
                 </div>
-                <button class="text-gray-400 hover:text-white text-xl p-1" onclick="closeDirectorRankModal()"><i class="fa-solid fa-xmark"></i></button>
+                <button class="text-gray-400 hover:text-white text-2xl p-1" onclick="closeMasterTourEditor()"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <div class="flex-1 overflow-y-auto space-y-4 pr-1">
-                <!-- NÚT HOÁN ĐỔI NHANH 1 & 2 (XỬ LÝ KHI FLOOR BẤM NHẦM HEADS-UP) -->
-                <div class="bg-gradient-to-r from-[#241a0d] via-[#1a140a] to-[#241a0d] border-2 border-amber-500/70 p-4 rounded-xl text-center shadow-lg">
-                    <div class="text-xs text-amber-300 font-bold uppercase tracking-wider mb-2 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Xử Lý Nhanh Khi Floor Bấm Nhầm Quán Quân ⇋ Về Nhì
+            <!-- TAB NAVIGATION -->
+            <div class="flex border-b border-[#2a2a2a] gap-1 pb-2 overflow-x-auto text-xs font-bold uppercase tracking-wider shrink-0">
+                <button id="mte-tab-btn-ranks" onclick="switchMasterTab('ranks')" class="px-3 py-2 rounded-lg bg-[#241a0d] text-amber-300 border border-amber-600/60 flex items-center gap-1.5 transition shrink-0">
+                    <i class="fa-solid fa-crown text-[#d4af37]"></i> 1. Thứ Hạng & Quán Quân
+                </button>
+                <button id="mte-tab-btn-config" onclick="switchMasterTab('config')" class="px-3 py-2 rounded-lg bg-[#141414] text-gray-400 border border-transparent hover:text-white flex items-center gap-1.5 transition shrink-0">
+                    <i class="fa-solid fa-gear"></i> 2. Thông Tin & Bàn
+                </button>
+                <button id="mte-tab-btn-fund" onclick="switchMasterTab('fund')" class="px-3 py-2 rounded-lg bg-[#141414] text-gray-400 border border-transparent hover:text-white flex items-center gap-1.5 transition shrink-0">
+                    <i class="fa-solid fa-coins"></i> 3. Tài Chính & Quỹ
+                </button>
+                <button id="mte-tab-btn-players" onclick="switchMasterTab('players')" class="px-3 py-2 rounded-lg bg-[#141414] text-gray-400 border border-transparent hover:text-white flex items-center gap-1.5 transition shrink-0">
+                    <i class="fa-solid fa-users"></i> 4. VĐV & Số Vé
+                </button>
+                <button id="mte-tab-btn-report" onclick="switchMasterTab('report')" class="px-3 py-2 rounded-lg bg-[#141414] text-gray-400 border border-transparent hover:text-white flex items-center gap-1.5 transition shrink-0">
+                    <i class="fa-solid fa-clipboard-list text-emerald-400"></i> 5. Báo Cáo Tour (Zalo)
+                </button>
+            </div>
+
+            <!-- BODY CONTENT -->
+            <div class="flex-1 overflow-y-auto py-3 space-y-4 pr-1">
+                <!-- TAB 1: THỨ HẠNG & QUÁN QUÂN -->
+                <div id="mte-tab-content-ranks" class="space-y-4">
+                    <div class="bg-gradient-to-r from-[#241a0d] via-[#1a140a] to-[#241a0d] border-2 border-amber-500/70 p-4 rounded-xl text-center shadow-lg">
+                        <div class="text-xs text-amber-300 font-bold uppercase tracking-wider mb-2 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Xử Lý Nhanh Khi Floor Bấm Nhầm Quán Quân ⇋ Về Nhì
+                        </div>
+                        <div class="flex items-center justify-center gap-3 py-2 text-sm flex-wrap">
+                            <div class="bg-[#0c0c0c] border border-amber-500/50 px-3.5 py-2 rounded-lg text-amber-300 font-bold flex items-center gap-2">
+                                <span class="w-5 h-5 rounded-full bg-amber-400 text-black inline-flex items-center justify-center text-xs font-black">1</span>
+                                Quán Quân: <span id="mte-name-rank1" class="text-white uppercase font-extrabold">---</span>
+                            </div>
+                            <div class="p-1.5 rounded-full bg-[#1e1507] border border-[#d4af37] text-gold">
+                                <i class="fa-solid fa-repeat text-amber-400 text-base"></i>
+                            </div>
+                            <div class="bg-[#0c0c0c] border border-gray-600 px-3.5 py-2 rounded-lg text-gray-300 font-bold flex items-center gap-2">
+                                <span class="w-5 h-5 rounded-full bg-gray-300 text-black inline-flex items-center justify-center text-xs font-black">2</span>
+                                Á Quân: <span id="mte-name-rank2" class="text-white uppercase font-extrabold">---</span>
+                            </div>
+                        </div>
+                        <button onclick="mteQuickSwapRanks(1, 2)" class="w-full mt-3 py-2.5 px-4 bg-gradient-to-r from-amber-500 via-amber-600 to-[#d4af37] hover:from-amber-400 hover:to-amber-500 text-black font-extrabold rounded-lg text-xs uppercase tracking-widest transition flex items-center justify-center gap-2 shadow-lg active:scale-95">
+                            <i class="fa-solid fa-repeat text-base"></i> ĐỔI CHỖ NGAY: QUÁN QUÂN ⇋ Á QUÂN (HẠNG 1 & 2)
+                        </button>
                     </div>
-                    <div class="flex items-center justify-center gap-3 py-2 text-sm flex-wrap">
-                        <div class="bg-[#0c0c0c] border border-amber-500/50 px-3.5 py-2 rounded-lg text-amber-300 font-bold flex items-center gap-2">
-                            <span class="w-5 h-5 rounded-full bg-amber-400 text-black inline-flex items-center justify-center text-xs font-black">1</span>
-                            Quán Quân: <span id="mdr-name-rank1" class="text-white uppercase font-extrabold">---</span>
+
+                    <div class="bg-[#141414] border border-[#2a2a2a] p-4 rounded-xl">
+                        <div class="text-xs font-bold text-[#d4af37] uppercase tracking-wider mb-3 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-list-ol"></i> Bảng Thứ Hạng Chi Tiết (ITM & Ranks)</span>
+                            <span class="text-[10px] text-gray-400 font-normal">Gõ hoặc chọn VĐV cho từng Hạng</span>
                         </div>
-                        <div class="p-1.5 rounded-full bg-[#1e1507] border border-[#d4af37] text-gold">
-                            <i class="fa-solid fa-repeat text-amber-400 text-base"></i>
-                        </div>
-                        <div class="bg-[#0c0c0c] border border-gray-600 px-3.5 py-2 rounded-lg text-gray-300 font-bold flex items-center gap-2">
-                            <span class="w-5 h-5 rounded-full bg-gray-300 text-black inline-flex items-center justify-center text-xs font-black">2</span>
-                            Á Quân: <span id="mdr-name-rank2" class="text-white uppercase font-extrabold">---</span>
-                        </div>
+                        <div id="mte-rank-list" class="space-y-2 max-h-[260px] overflow-y-auto pr-1"></div>
                     </div>
-                    <button id="btn-mdr-quick-swap" onclick="directorQuickSwapRanks(currentDirectorTourId, 1, 2)" class="w-full mt-3 py-2.5 px-4 bg-gradient-to-r from-amber-500 via-amber-600 to-[#d4af37] hover:from-amber-400 hover:to-amber-500 text-black font-extrabold rounded-lg text-xs uppercase tracking-widest transition flex items-center justify-center gap-2 shadow-lg active:scale-95">
-                        <i class="fa-solid fa-repeat text-base"></i> ĐỔI CHỖ NGAY: QUÁN QUÂN ⇋ Á QUÂN (HẠNG 1 & 2)
-                    </button>
                 </div>
 
-                <!-- BẢNG ĐIỀU CHỈNH CHI TIẾT TỪNG THỨ HẠNG -->
-                <div class="bg-[#141414] border border-[#2a2a2a] p-4 rounded-xl">
-                    <div class="text-xs font-bold text-[#d4af37] uppercase tracking-wider mb-3 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-list-ol"></i> Điều Chỉnh Chi Tiết Từng Hạng (ITM & Ranks)</span>
-                        <span class="text-[10px] text-gray-400 font-normal">Gõ hoặc chọn tên VĐV</span>
+                <!-- TAB 2: THÔNG TIN & CẤU HÌNH -->
+                <div id="mte-tab-content-config" class="hidden space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#141414] border border-[#2a2a2a] p-4 rounded-xl">
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tên Giải Đấu:</label>
+                            <input type="text" id="mte-input-name" oninput="mteRenderLiveReport()" class="w-full bg-[#1c1c1c] border border-[#333] focus:border-[#d4af37] text-white px-3 py-2 rounded text-xs font-bold transition outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Trạng Thái Giải:</label>
+                            <select id="mte-select-status" onchange="mteRenderLiveReport()" class="w-full bg-[#1c1c1c] border border-[#333] focus:border-[#d4af37] text-white px-3 py-2 rounded text-xs font-bold transition outline-none">
+                                <option value="running">🟢 RUNNING (Đang Chạy / Live)</option>
+                                <option value="paused">🟡 PAUSED (Tạm Dừng)</option>
+                                <option value="pending">🔵 PENDING (Chờ Mở / Lên Lịch)</option>
+                                <option value="finished">🏆 FINISHED (Đã Kết Thúc)</option>
+                                <option value="archived">📦 ARCHIVED (Đã Lưu Trữ)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Bàn Thi Đấu (Cách nhau dấu phẩy):</label>
+                            <input type="text" id="mte-input-tables" placeholder="Ví dụ: 1, 2" class="w-full bg-[#1c1c1c] border border-[#333] focus:border-[#d4af37] text-white px-3 py-2 rounded text-xs font-mono font-bold transition outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Starting Stack (Chip ban đầu):</label>
+                            <input type="number" id="mte-input-stack" class="w-full bg-[#1c1c1c] border border-[#333] focus:border-[#d4af37] text-emerald-400 px-3 py-2 rounded text-xs font-mono font-bold transition outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Late Reg Level (Đóng đăng ký ở Lv):</label>
+                            <input type="number" id="mte-input-late-reg" class="w-full bg-[#1c1c1c] border border-[#333] focus:border-[#d4af37] text-white px-3 py-2 rounded text-xs font-mono font-bold transition outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Thời Gian Mỗi Level (Phút):</label>
+                            <input type="number" id="mte-input-level-time" class="w-full bg-[#1c1c1c] border border-[#333] focus:border-[#d4af37] text-white px-3 py-2 rounded text-xs font-mono font-bold transition outline-none">
+                        </div>
                     </div>
-                    <div id="mdr-rank-list" class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                        <!-- Populated dynamically -->
+                </div>
+
+                <!-- TAB 3: TÀI CHÍNH & QUỸ -->
+                <div id="mte-tab-content-fund" class="hidden space-y-4">
+                    <div class="bg-[#141414] border border-[#2a2a2a] p-4 rounded-xl space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Giá Vé Buy-in / Re-entry (VNĐ):</label>
+                                <input type="number" id="mte-input-fee" oninput="mteAutoRecalculateFund()" class="w-full bg-[#1c1c1c] border border-[#333] focus:border-[#d4af37] text-emerald-400 px-3 py-2 rounded text-xs font-mono font-bold transition outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tổng Số Entries (Vé):</label>
+                                <input type="number" id="mte-input-entries" oninput="mteAutoRecalculateFund()" class="w-full bg-[#1c1c1c] border border-[#333] focus:border-[#d4af37] text-white px-3 py-2 rounded text-xs font-mono font-bold transition outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tổng Tiền Thu Vào (VNĐ):</label>
+                                <input type="number" id="mte-input-total-paid" oninput="mteRenderLiveReport()" class="w-full bg-[#1c1c1c] border border-[#333] focus:border-[#d4af37] text-emerald-400 px-3 py-2 rounded text-xs font-mono font-bold transition outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[#222]">
+                            <div>
+                                <label class="block text-[11px] font-bold text-[#d4af37] uppercase tracking-wider mb-1">Quỹ Net Payout Chi Trả VĐV (VNĐ):</label>
+                                <input type="number" id="mte-input-payout-pool" oninput="mteRenderLiveReport()" class="w-full bg-[#1c1c1c] border border-[#333] focus:border-[#d4af37] text-[#d4af37] px-3 py-2 rounded text-xs font-mono font-extrabold transition outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Phí CLB / Chi Phí Tổ Chức (VNĐ):</label>
+                                <input type="number" id="mte-input-expenses" oninput="mteRenderLiveReport()" class="w-full bg-[#1c1c1c] border border-[#333] focus:border-[#d4af37] text-red-400 px-3 py-2 rounded text-xs font-mono font-bold transition outline-none">
+                            </div>
+                        </div>
+
+                        <button onclick="mteAutoRecalculateFund(true)" class="w-full py-2.5 px-3 bg-[#1e1507] hover:bg-amber-900/60 border border-amber-600/50 text-amber-300 font-bold text-xs uppercase tracking-wider rounded-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-gold"></i> Tự Động Tính Quỹ (Thu = Entries × Vé | Payout 80% | Phí CLB 20%)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 4: DANH SÁCH VĐV & SỐ VÉ -->
+                <div id="mte-tab-content-players" class="hidden space-y-4">
+                    <div class="bg-[#141414] border border-[#2a2a2a] p-4 rounded-xl">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-bold text-[#d4af37] uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-users"></i> Bảng Danh Sách VĐV & Số Lần Mua Vé
+                            </span>
+                            <button onclick="mteAddPlayerRow('', 1, null)" class="px-3 py-1 bg-emerald-950/80 border border-emerald-500/60 text-emerald-400 hover:text-white rounded text-xs font-bold uppercase transition flex items-center gap-1">
+                                <i class="fa-solid fa-plus"></i> Thêm VĐV
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto max-h-[280px] overflow-y-auto">
+                            <table class="w-full text-left text-xs text-gray-300">
+                                <thead class="bg-[#1a1a1a] text-[#d4af37] sticky top-0 border-b border-[#333]">
+                                    <tr>
+                                        <th class="p-2">Họ Tên VĐV</th>
+                                        <th class="p-2 text-center w-24">Số Vé Mua</th>
+                                        <th class="p-2 text-right">Tổng Tiền Đóng</th>
+                                        <th class="p-2 text-center w-24">Thứ Hạng</th>
+                                        <th class="p-2 text-center w-12">Xóa</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mte-player-rows" class="divide-y divide-[#222]"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: BÁO CÁO TOUR & GỬI ZALO/PLAYER -->
+                <div id="mte-tab-content-report" class="hidden space-y-4">
+                    <div class="bg-[#0e0e0e] border border-[#2e2e2e] p-4 rounded-xl space-y-3">
+                        <div class="flex justify-between items-center flex-wrap gap-2">
+                            <span class="text-xs font-bold text-[#d4af37] uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-message text-emerald-400"></i> Nội Dung Báo Cáo Gửi Player (Tự Động Sinh Real-Time)
+                            </span>
+                            <button onclick="mteCopyReportText()" class="px-4 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs uppercase rounded-lg shadow flex items-center gap-1.5 transition active:scale-95">
+                                <i class="fa-solid fa-copy"></i> COPY BÁO CÁO ZALO
+                            </button>
+                        </div>
+                        <textarea id="mte-textarea-report" rows="12" class="w-full bg-[#141414] border border-[#333] text-gray-200 p-3 rounded-lg font-mono text-xs leading-relaxed focus:border-[#d4af37] outline-none select-all"></textarea>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Ghi Chú Báo Cáo Giải Đấu:</label>
+                            <input type="text" id="mte-input-notes" oninput="mteRenderLiveReport()" placeholder="Ví dụ: Deal Top 3, trao giải lúc 23:00..." class="w-full bg-[#181818] border border-[#333] focus:border-[#d4af37] text-white px-3 py-2 rounded text-xs transition outline-none">
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="border-t border-[#333] pt-4 mt-4 flex items-center justify-between gap-3">
-                <button class="px-5 py-2.5 bg-[#222] hover:bg-[#333] text-gray-300 font-bold rounded-lg text-xs uppercase tracking-wider transition" onclick="closeDirectorRankModal()">
+            <!-- FOOTER -->
+            <div class="border-t border-[#333] pt-3 mt-2 flex items-center justify-between gap-3 shrink-0">
+                <button class="px-5 py-2.5 bg-[#222] hover:bg-[#333] text-gray-300 font-bold rounded-lg text-xs uppercase tracking-wider transition" onclick="closeMasterTourEditor()">
                     Đóng
                 </button>
-                <button onclick="saveDirectorRanks()" class="px-6 py-2.5 bg-gradient-to-r from-[#d4af37] to-amber-500 hover:from-amber-400 hover:to-[#d4af37] text-black font-extrabold rounded-lg text-xs uppercase tracking-wider transition flex items-center gap-2 shadow-lg active:scale-95">
-                    <i class="fa-solid fa-floppy-disk"></i> Lưu & Cập Nhật Hệ Thống
-                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="mteCopyReportText()" class="px-4 py-2.5 bg-[#16202c] hover:bg-blue-900/60 border border-blue-500/60 text-blue-300 hover:text-white font-bold rounded-lg text-xs uppercase tracking-wider transition flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-copy"></i> Copy Báo Cáo
+                    </button>
+                    <button onclick="saveMasterTourEditor()" class="px-6 py-2.5 bg-gradient-to-r from-[#d4af37] to-amber-500 hover:from-amber-400 hover:to-[#d4af37] text-black font-extrabold rounded-lg text-xs uppercase tracking-wider transition flex items-center gap-2 shadow-lg active:scale-95">
+                        <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi Toàn Tour
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -571,8 +715,8 @@
                         <button onclick="openGodTourProfit('${t.id}')" class="w-full py-2 px-3 bg-[#16202c] hover:bg-blue-900/50 border border-blue-500/50 text-blue-400 hover:text-white rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 shadow">
                             <i class="fa-solid fa-chart-pie"></i> Báo Cáo P&L Tour
                         </button>
-                        <button onclick="openDirectorRankModal('${t.id}')" class="w-full py-2 px-3 bg-[#241a0d] hover:bg-amber-900/60 border border-amber-600/60 text-amber-300 hover:text-white rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 shadow">
-                            <i class="fa-solid fa-crown text-[#d4af37]"></i> Sửa Thứ Hạng & Quán Quân
+                        <button onclick="openMasterTourEditor('${t.id}')" class="w-full py-2 px-3 bg-[#241a0d] hover:bg-amber-900/60 border border-amber-600/60 text-amber-300 hover:text-white rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 shadow">
+                            <i class="fa-solid fa-sliders text-[#d4af37]"></i> Sửa Toàn Bộ Tour & Báo Cáo
                         </button>
                     </div>
                 `;
@@ -638,39 +782,54 @@
         }
 
         // =========================================================
-        // CHỨC NĂNG SỬA THỨ HẠNG & QUÁN QUÂN (QUYỀN GIÁM ĐỐC)
+        // QUẢN TRỊ & SỬA TOÀN BỘ GIẢI ĐẤU & BÁO CÁO (MASTER TOUR EDITOR)
         // =========================================================
-        let currentDirectorTourId = null;
+        let currentMasterTour = null;
+        let currentActiveMasterTab = 'ranks';
 
-        function openDirectorRankModal(tourId) {
-            currentDirectorTourId = tourId;
+        function switchMasterTab(tabName) {
+            currentActiveMasterTab = tabName;
+            ['ranks', 'config', 'fund', 'players', 'report'].forEach(t => {
+                const btn = document.getElementById(`mte-tab-btn-${t}`);
+                const content = document.getElementById(`mte-tab-content-${t}`);
+                if (btn && content) {
+                    if (t === tabName) {
+                        btn.className = "px-3 py-2 rounded-lg bg-[#241a0d] text-amber-300 border border-amber-600/60 flex items-center gap-1.5 transition shrink-0 font-bold";
+                        content.classList.remove('hidden');
+                    } else {
+                        btn.className = "px-3 py-2 rounded-lg bg-[#141414] text-gray-400 border border-transparent hover:text-white flex items-center gap-1.5 transition shrink-0 font-bold";
+                        content.classList.add('hidden');
+                    }
+                }
+            });
+
+            if (tabName === 'report') {
+                mteRenderLiveReport();
+            }
+        }
+
+        function openMasterTourEditor(tourId, initialTab = 'ranks') {
             const tour = (godAllTours || []).find(t => t.id === tourId);
             if (!tour) return alert('Không tìm thấy giải đấu!');
+            currentMasterTour = JSON.parse(JSON.stringify(tour)); // Deep clone để chỉnh sửa an toàn
 
-            document.getElementById('mdr-tour-subtitle').innerText = `${tour.name || 'Giải đấu'} [${(tour.status || '').toUpperCase()}] • ${tour.entries || 0} Entries`;
+            document.getElementById('mte-tour-subtitle').innerText = `${tour.name || 'Giải đấu'} [${(tour.status || '').toUpperCase()}] • ID: ${tour.id}`;
 
+            // TAB 1: THỨ HẠNG & QUÁN QUÂN
             const itmResults = tour.itm_results || {};
             const winner = tour.winner || itmResults[1] || '---';
             const runnerUp = itmResults[2] || '---';
+            document.getElementById('mte-name-rank1').innerText = winner;
+            document.getElementById('mte-name-rank2').innerText = runnerUp;
 
-            document.getElementById('mdr-name-rank1').innerText = winner;
-            document.getElementById('mdr-name-rank2').innerText = runnerUp;
-
-            // Thu thập toàn bộ danh sách tên VĐV đã từng đăng ký vào giải này
+            // Thu thập tên VĐV làm gợi ý datalist
             const playerNamesSet = new Set();
-            (tour.players || []).forEach(p => {
-                if (p.name) playerNamesSet.add(p.name);
-            });
-            Object.values(itmResults).forEach(n => {
-                if (n) playerNamesSet.add(n);
-            });
+            (tour.players || []).forEach(p => { if (p.name) playerNamesSet.add(p.name); });
+            Object.values(itmResults).forEach(n => { if (n) playerNamesSet.add(n); });
             const playerOptions = Array.from(playerNamesSet).sort();
 
-            // Sinh danh sách các Hạng để điều chỉnh
-            const listEl = document.getElementById('mdr-rank-list');
-            listEl.innerHTML = '';
-
-            // Số hạng tối thiểu là 5 hoặc theo số lượng ITM hiện có
+            const rankListEl = document.getElementById('mte-rank-list');
+            rankListEl.innerHTML = '';
             const maxRank = Math.max(5, Object.keys(itmResults).length > 0 ? Math.max(...Object.keys(itmResults).map(Number)) : 0, (tour.payouts || []).length);
 
             for (let r = 1; r <= maxRank; r++) {
@@ -689,81 +848,369 @@
                         ${rankTitle}
                     </div>
                     <div class="flex-1">
-                        <input type="text" id="mdr-input-rank-${r}" value="${currentName}" list="mdr-player-datalist" placeholder="Gõ hoặc chọn VĐV..." class="w-full bg-[#181818] border border-[#333] focus:border-[#d4af37] text-white px-3 py-1.5 rounded text-xs font-bold uppercase transition outline-none">
+                        <input type="text" id="mte-input-rank-${r}" value="${currentName}" oninput="mteOnRankInputChanged(${r})" list="mte-player-datalist" placeholder="Gõ hoặc chọn VĐV..." class="w-full bg-[#181818] border border-[#333] focus:border-[#d4af37] text-white px-3 py-1.5 rounded text-xs font-bold uppercase transition outline-none">
                     </div>
                     ${r <= 3 ? `
-                        <button onclick="directorQuickSwapRanks('${tourId}', ${r}, ${r === 1 ? 2 : 1})" class="shrink-0 px-2 py-1 bg-[#1e1507] hover:bg-amber-900/60 border border-amber-600/50 text-amber-300 rounded text-[10px] font-bold transition" title="Đổi chỗ nhanh với ${r === 1 ? 'Á Quân' : 'Quán Quân'}">
+                        <button onclick="mteQuickSwapRanks(${r}, ${r === 1 ? 2 : 1})" class="shrink-0 px-2 py-1 bg-[#1e1507] hover:bg-amber-900/60 border border-amber-600/50 text-amber-300 rounded text-[10px] font-bold transition" title="Đổi chỗ nhanh với ${r === 1 ? 'Á Quân' : 'Quán Quân'}">
                             <i class="fa-solid fa-repeat"></i>
                         </button>
                     ` : ''}
                 `;
-                listEl.appendChild(row);
+                rankListEl.appendChild(row);
             }
 
-            // Tạo datalist hỗ trợ gợi ý nhanh tên VĐV
-            let datalistEl = document.getElementById('mdr-player-datalist');
+            let datalistEl = document.getElementById('mte-player-datalist');
             if (!datalistEl) {
                 datalistEl = document.createElement('datalist');
-                datalistEl.id = 'mdr-player-datalist';
+                datalistEl.id = 'mte-player-datalist';
                 document.body.appendChild(datalistEl);
             }
             datalistEl.innerHTML = playerOptions.map(name => `<option value="${name}">`).join('');
 
-            document.getElementById('modal-director-rank').classList.remove('hidden');
-            document.getElementById('modal-director-rank').classList.add('flex');
+            // TAB 2: THÔNG TIN & CẤU HÌNH
+            document.getElementById('mte-input-name').value = tour.name || '';
+            document.getElementById('mte-select-status').value = tour.status || 'pending';
+            document.getElementById('mte-input-tables').value = Array.isArray(tour.tables) ? tour.tables.join(', ') : (tour.tables || '1');
+            document.getElementById('mte-input-stack').value = tour.starting_stack || 20000;
+            document.getElementById('mte-input-late-reg').value = (tour.settings && tour.settings.late_reg_level) || 8;
+            document.getElementById('mte-input-level-time').value = (tour.settings && tour.settings.level_time) || 15;
+
+            // TAB 3: TÀI CHÍNH & QUỸ
+            const fee = tour.buyin_fee || 250000;
+            const entries = tour.entries || (tour.players ? tour.players.length : 0);
+            const totalPaid = (tour.fund && tour.fund.total_paid) || (entries * fee);
+            const payoutPool = (tour.fund && tour.fund.payout_pool) || (fee === 250000 ? entries * 200000 : Math.round(totalPaid * 0.85));
+            const expenses = (tour.fund && tour.fund.expenses !== undefined) ? tour.fund.expenses : (totalPaid - payoutPool);
+
+            document.getElementById('mte-input-fee').value = fee;
+            document.getElementById('mte-input-entries').value = entries;
+            document.getElementById('mte-input-total-paid').value = totalPaid;
+            document.getElementById('mte-input-payout-pool').value = payoutPool;
+            document.getElementById('mte-input-expenses').value = expenses;
+
+            // TAB 4: DANH SÁCH VĐV & SỐ VÉ
+            const playerMap = new Map();
+            (tour.players || []).forEach(p => {
+                const name = (p.name || '').trim();
+                if (!name) return;
+                if (!playerMap.has(name)) {
+                    playerMap.set(name, { name, tickets: 0, phone: p.phone || '', rank: p.rank || null });
+                }
+                const item = playerMap.get(name);
+                item.tickets++;
+                if (p.rank && (!item.rank || p.rank < item.rank)) {
+                    item.rank = p.rank;
+                }
+            });
+
+            const tbody = document.getElementById('mte-player-rows');
+            tbody.innerHTML = '';
+            if (playerMap.size === 0) {
+                // Thêm mẫu nếu chưa có
+                mteAddPlayerRow('', 1, null);
+            } else {
+                playerMap.forEach(item => {
+                    mteAddPlayerRow(item.name, item.tickets, item.rank);
+                });
+            }
+
+            // TAB 5: BÁO CÁO & GHI CHÚ
+            document.getElementById('mte-input-notes').value = tour.report_notes || '';
+
+            switchMasterTab(initialTab);
+            document.getElementById('modal-master-tour-editor').classList.remove('hidden');
+            document.getElementById('modal-master-tour-editor').classList.add('flex');
         }
 
+        function closeMasterTourEditor() {
+            document.getElementById('modal-master-tour-editor').classList.add('hidden');
+            document.getElementById('modal-master-tour-editor').classList.remove('flex');
+            currentMasterTour = null;
+        }
+
+        function openDirectorRankModal(tourId) {
+            openMasterTourEditor(tourId, 'ranks');
+        }
         function closeDirectorRankModal() {
-            document.getElementById('modal-director-rank').classList.add('hidden');
-            document.getElementById('modal-director-rank').classList.remove('flex');
+            closeMasterTourEditor();
         }
 
-        function directorQuickSwapRanks(tourId, rank1, rank2) {
-            if (!tourId) tourId = currentDirectorTourId;
-            if (!tourId) return alert('Chưa chọn giải đấu!');
-
-            if (!confirm(`Bạn có chắc chắn muốn HOÁN ĐỔI VỊ TRÍ giữa Hạng ${rank1} và Hạng ${rank2}?`)) {
-                return;
+        function mteOnRankInputChanged(rank) {
+            if (rank === 1) {
+                const val = document.getElementById('mte-input-rank-1').value.trim();
+                document.getElementById('mte-name-rank1').innerText = val || '---';
+            } else if (rank === 2) {
+                const val = document.getElementById('mte-input-rank-2').value.trim();
+                document.getElementById('mte-name-rank2').innerText = val || '---';
             }
+            mteRenderLiveReport();
+        }
 
-            socket.emit('director_swap_ranks', { tour_id: tourId, rank1, rank2 }, (res) => {
-                if (res && res.success) {
-                    alert(res.message || 'Đã hoán đổi thứ hạng thành công!');
-                    // Tự động cập nhật lại modal nếu đang mở
-                    openDirectorRankModal(tourId);
-                } else {
-                    alert((res && res.message) || 'Lỗi khi hoán đổi thứ hạng!');
+        function mteQuickSwapRanks(r1, r2) {
+            const inp1 = document.getElementById(`mte-input-rank-${r1}`);
+            const inp2 = document.getElementById(`mte-input-rank-${r2}`);
+            if (!inp1 || !inp2) return;
+
+            const temp = inp1.value;
+            inp1.value = inp2.value;
+            inp2.value = temp;
+
+            mteOnRankInputChanged(1);
+            mteOnRankInputChanged(2);
+
+            // Cập nhật cả ở Tab Danh Sách VĐV nếu có
+            const playerRows = document.querySelectorAll('#mte-player-rows tr');
+            playerRows.forEach(tr => {
+                const nameInp = tr.querySelector('.mte-p-name');
+                const rankInp = tr.querySelector('.mte-p-rank');
+                if (nameInp && rankInp) {
+                    if (nameInp.value.trim() === inp1.value.trim()) rankInp.value = r1;
+                    else if (nameInp.value.trim() === inp2.value.trim()) rankInp.value = r2;
                 }
             });
+
+            mteRenderLiveReport();
         }
 
-        function saveDirectorRanks() {
-            if (!currentDirectorTourId) return alert('Không tìm thấy giải đấu!');
+        function mteAutoRecalculateFund(force = false) {
+            const fee = Number(document.getElementById('mte-input-fee').value) || 0;
+            let entries = 0;
 
+            // Đếm số entries từ Tab 4 (Danh sách VĐV)
+            const ticketInputs = document.querySelectorAll('.mte-p-tickets');
+            if (ticketInputs.length > 0) {
+                ticketInputs.forEach(inp => { entries += Number(inp.value) || 0; });
+            }
+            if (entries === 0 || !ticketInputs.length) {
+                entries = Number(document.getElementById('mte-input-entries').value) || 0;
+            } else {
+                document.getElementById('mte-input-entries').value = entries;
+            }
+
+            const totalPaid = entries * fee;
+            document.getElementById('mte-input-total-paid').value = totalPaid;
+
+            let pool = 0;
+            let expenses = 0;
+            if (fee === 250000) {
+                pool = entries * 200000;
+                expenses = entries * 50000;
+            } else {
+                pool = Math.round((totalPaid * 0.85) / 1000) * 1000;
+                expenses = totalPaid - pool;
+            }
+
+            document.getElementById('mte-input-payout-pool').value = pool;
+            document.getElementById('mte-input-expenses').value = expenses;
+
+            mteRenderLiveReport();
+        }
+
+        function mteAddPlayerRow(name = '', tickets = 1, rank = null) {
+            const tbody = document.getElementById('mte-player-rows');
+            const fee = Number(document.getElementById('mte-input-fee')?.value) || 250000;
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-[#1c1c1c] transition';
+
+            tr.innerHTML = `
+                <td class="p-2">
+                    <input type="text" value="${name}" placeholder="Họ tên VĐV..." list="mte-player-datalist" oninput="mteRenderLiveReport()" class="mte-p-name w-full bg-[#161616] border border-[#333] focus:border-[#d4af37] text-white px-2 py-1 rounded text-xs uppercase font-bold outline-none">
+                </td>
+                <td class="p-2 text-center">
+                    <input type="number" min="1" value="${tickets || 1}" oninput="mteOnPlayerTicketsChanged(this)" class="mte-p-tickets w-16 bg-[#161616] border border-[#333] focus:border-[#d4af37] text-center text-white px-1 py-1 rounded text-xs font-mono font-bold outline-none">
+                </td>
+                <td class="p-2 text-right">
+                    <span class="mte-p-paid font-mono font-bold text-emerald-400 text-xs">${formatMoney((tickets || 1) * fee)}</span>
+                </td>
+                <td class="p-2 text-center">
+                    <input type="number" min="1" value="${rank || ''}" placeholder="—" oninput="mteRenderLiveReport()" class="mte-p-rank w-14 bg-[#161616] border border-[#333] focus:border-[#d4af37] text-center text-gold px-1 py-1 rounded text-xs font-mono font-bold outline-none">
+                </td>
+                <td class="p-2 text-center">
+                    <button onclick="mteDeletePlayerRow(this)" class="text-red-500 hover:text-red-300 p-1" title="Xóa VĐV"><i class="fa-solid fa-trash-can"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function mteOnPlayerTicketsChanged(input) {
+            const tr = input.closest('tr');
+            const fee = Number(document.getElementById('mte-input-fee')?.value) || 250000;
+            const tickets = Number(input.value) || 1;
+            const paidSpan = tr.querySelector('.mte-p-paid');
+            if (paidSpan) {
+                paidSpan.innerText = formatMoney(tickets * fee);
+            }
+            mteAutoRecalculateFund();
+        }
+
+        function mteDeletePlayerRow(btn) {
+            btn.closest('tr').remove();
+            mteAutoRecalculateFund();
+        }
+
+        function mteRenderLiveReport() {
+            const tourName = document.getElementById('mte-input-name')?.value.trim() || (currentMasterTour?.name || 'Tour Poker');
+            const status = document.getElementById('mte-select-status')?.value || 'finished';
+            const fee = Number(document.getElementById('mte-input-fee')?.value) || 250000;
+            const entries = Number(document.getElementById('mte-input-entries')?.value) || 0;
+            const totalPaid = Number(document.getElementById('mte-input-total-paid')?.value) || (entries * fee);
+            const pool = Number(document.getElementById('mte-input-payout-pool')?.value) || 0;
+            const expenses = Number(document.getElementById('mte-input-expenses')?.value) || (totalPaid - pool);
+            const notes = document.getElementById('mte-input-notes')?.value.trim();
+
+            // Tính toán cơ cấu giải thưởng ITM
+            let itmStructure = [];
+            if (entries <= 5) itmStructure = [{ rank: 1, pct: 100 }];
+            else if (entries <= 10) itmStructure = [{ rank: 1, pct: 65 }, { rank: 2, pct: 35 }];
+            else if (entries <= 20) itmStructure = [{ rank: 1, pct: 50 }, { rank: 2, pct: 30 }, { rank: 3, pct: 20 }];
+            else if (entries <= 30) itmStructure = [{ rank: 1, pct: 45 }, { rank: 2, pct: 27 }, { rank: 3, pct: 18 }, { rank: 4, pct: 10 }];
+            else itmStructure = [{ rank: 1, pct: 38 }, { rank: 2, pct: 24 }, { rank: 3, pct: 16 }, { rank: 4, pct: 12 }, { rank: 5, pct: 10 }];
+
+            const payoutMap = {};
+            itmStructure.forEach(item => {
+                payoutMap[item.rank] = Math.round((pool * (item.pct / 100)) / 1000) * 1000;
+            });
+
+            // Lấy rank từ Tab 1 (hoặc Tab 4)
+            const ranksMap = {};
+            for (let r = 1; r <= 15; r++) {
+                const inp = document.getElementById(`mte-input-rank-${r}`);
+                if (inp && inp.value.trim()) ranksMap[r] = inp.value.trim();
+            }
+
+            // Thu thập thông tin người chơi từ Tab 4
+            const playerRows = document.querySelectorAll('#mte-player-rows tr');
+            const playerList = [];
+            playerRows.forEach(tr => {
+                const name = tr.querySelector('.mte-p-name')?.value.trim();
+                const tickets = Number(tr.querySelector('.mte-p-tickets')?.value) || 1;
+                let rank = Number(tr.querySelector('.mte-p-rank')?.value) || null;
+                if (name) {
+                    // Nếu chưa có rank trong input dòng này thì tra cứu từ ranksMap
+                    if (!rank) {
+                        for (const [rk, nm] of Object.entries(ranksMap)) {
+                            if (nm.toLowerCase() === name.toLowerCase()) { rank = Number(rk); break; }
+                        }
+                    }
+                    playerList.push({ name, tickets, paid: tickets * fee, rank });
+                }
+            });
+
+            // Sắp xếp player theo thứ hạng trước, sau đó theo số tiền đóng
+            playerList.sort((a, b) => {
+                if (a.rank && b.rank) return a.rank - b.rank;
+                if (a.rank) return -1;
+                if (b.rank) return 1;
+                return b.paid - a.paid;
+            });
+
+            let report = `♠️ ACE POKER CLUB — BÁO CÁO TỔNG KẾT ${tourName.toUpperCase()} ♠️\n`;
+            report += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+            report += `• Trạng thái giải: ${status.toUpperCase()}\n`;
+            report += `• Số lượng: ${entries} Entries (${playerList.length} VĐV)\n`;
+            report += `• Giá vé: ${formatMoney(fee)} (Net + Phí CLB)\n`;
+            report += `• Tổng thu vào: ${formatMoney(totalPaid)}\n`;
+            report += `• Phí tổ chức CLB: ${formatMoney(expenses)}\n`;
+            report += `• Quỹ thưởng chi trả (Prize Pool): ${formatMoney(pool)}\n`;
+            if (notes) report += `• Ghi chú: ${notes}\n`;
+            report += `\n🏆 BẢNG KÊ CHI TIẾT & LỜI / LỖ TỪNG VĐV (+/-):\n`;
+            report += `────────────────────────────────────────\n`;
+
+            playerList.forEach((p, idx) => {
+                const prize = (p.rank && payoutMap[p.rank]) ? payoutMap[p.rank] : 0;
+                const net = prize - p.paid;
+                const netSign = net > 0 ? `+${formatMoney(net)} 🟢` : (net === 0 ? `0đ ⚪` : `-${formatMoney(Math.abs(net))} 🔴`);
+                const rankBadge = p.rank ? (p.rank === 1 ? '🥇 QUÁN QUÂN' : p.rank === 2 ? '🥈 Á QUÂN' : `🎖 Hạng ${p.rank}`) : `Chưa xếp hạng`;
+
+                report += `${idx + 1}. ${p.name} (${rankBadge})\n`;
+                report += `   • Mua: ${p.tickets} vé (${formatMoney(p.paid)}) | Thưởng: ${formatMoney(prize)} | (+/-): ${netSign}\n`;
+            });
+
+            report += `────────────────────────────────────────\n`;
+            report += `ACE POKER CLUB xin trân trọng cảm ơn các VĐV!`;
+
+            const ta = document.getElementById('mte-textarea-report');
+            if (ta) ta.value = report;
+        }
+
+        function mteCopyReportText() {
+            const ta = document.getElementById('mte-textarea-report');
+            if (!ta || !ta.value.trim()) {
+                mteRenderLiveReport();
+            }
+            const text = document.getElementById('mte-textarea-report').value;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('ĐÃ COPY BÁO CÁO GIẢI ĐẤU! Bạn có thể dán (Paste) ngay vào Zalo/Telegram.');
+                }).catch(() => {
+                    alert('Vui lòng chọn toàn bộ văn bản và bấm Copy (Ctrl+C).');
+                });
+            } else {
+                ta.select();
+                document.execCommand('copy');
+                alert('ĐÃ COPY BÁO CÁO GIẢI ĐẤU!');
+            }
+        }
+
+        function saveMasterTourEditor() {
+            if (!currentMasterTour || !currentMasterTour.id) return alert('Không tìm thấy giải đấu để lưu!');
+
+            // Thu thập ITM results từ Tab 1
             const updatedItm = {};
-            const inputs = document.querySelectorAll('[id^="mdr-input-rank-"]');
-            inputs.forEach(inp => {
-                const rankNum = Number(inp.id.replace('mdr-input-rank-', ''));
-                const val = (inp.value || '').trim();
-                if (val) {
-                    updatedItm[rankNum] = val;
+            for (let r = 1; r <= 15; r++) {
+                const inp = document.getElementById(`mte-input-rank-${r}`);
+                if (inp && inp.value.trim()) {
+                    updatedItm[r] = inp.value.trim();
+                }
+            }
+
+            // Thu thập tables
+            const tablesStr = document.getElementById('mte-input-tables').value;
+            const tablesArr = tablesStr.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n) && n > 0);
+
+            // Thu thập player summaries từ Tab 4
+            const playerRows = document.querySelectorAll('#mte-player-rows tr');
+            const playerSummaries = [];
+            playerRows.forEach(tr => {
+                const name = tr.querySelector('.mte-p-name')?.value.trim();
+                const tickets = Number(tr.querySelector('.mte-p-tickets')?.value) || 1;
+                const rank = Number(tr.querySelector('.mte-p-rank')?.value) || null;
+                if (name) {
+                    playerSummaries.push({ name, tickets, rank });
                 }
             });
 
-            if (!updatedItm[1]) {
-                if (!confirm('Hạng 1 (Quán Quân) đang trống! Bạn có chắc chắn muốn lưu?')) return;
-            }
-
-            socket.emit('director_update_ranks', {
-                tour_id: currentDirectorTourId,
+            const updates = {
+                name: document.getElementById('mte-input-name').value.trim(),
+                status: document.getElementById('mte-select-status').value,
+                tables: tablesArr.length > 0 ? tablesArr : [1],
+                starting_stack: Number(document.getElementById('mte-input-stack').value) || 20000,
+                settings: {
+                    late_reg_level: Number(document.getElementById('mte-input-late-reg').value) || 8,
+                    level_time: Number(document.getElementById('mte-input-level-time').value) || 15
+                },
+                buyin_fee: Number(document.getElementById('mte-input-fee').value) || 250000,
+                entries: Number(document.getElementById('mte-input-entries').value) || 0,
+                fund: {
+                    total_paid: Number(document.getElementById('mte-input-total-paid').value) || 0,
+                    payout_pool: Number(document.getElementById('mte-input-payout-pool').value) || 0,
+                    expenses: Number(document.getElementById('mte-input-expenses').value) || 0
+                },
                 itm_results: updatedItm,
-                winner: updatedItm[1] || ''
+                winner: updatedItm[1] || '',
+                player_summaries: playerSummaries,
+                report_notes: document.getElementById('mte-input-notes').value.trim()
+            };
+
+            socket.emit('master_edit_tour', {
+                tour_id: currentMasterTour.id,
+                updates: updates
             }, (res) => {
                 if (res && res.success) {
-                    alert(res.message || 'Đã cập nhật thứ hạng thành công!');
-                    closeDirectorRankModal();
+                    alert(res.message || 'Đã lưu toàn bộ thông tin giải đấu thành công!');
+                    closeMasterTourEditor();
                 } else {
-                    alert((res && res.message) || 'Lỗi khi lưu thứ hạng!');
+                    alert((res && res.message) || 'Có lỗi xảy ra khi lưu thông tin giải đấu!');
                 }
             });
         }
