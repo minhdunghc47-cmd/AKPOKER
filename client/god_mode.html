@@ -333,34 +333,12 @@
             <div class="flex-1 overflow-y-auto py-3 space-y-4 pr-1">
                 <!-- TAB 1: THỨ HẠNG & QUÁN QUÂN -->
                 <div id="mte-tab-content-ranks" class="space-y-4">
-                    <div class="bg-gradient-to-r from-[#241a0d] via-[#1a140a] to-[#241a0d] border-2 border-amber-500/70 p-4 rounded-xl text-center shadow-lg">
-                        <div class="text-xs text-amber-300 font-bold uppercase tracking-wider mb-2 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Xử Lý Nhanh Khi Floor Bấm Nhầm Quán Quân ⇋ Về Nhì
-                        </div>
-                        <div class="flex items-center justify-center gap-3 py-2 text-sm flex-wrap">
-                            <div class="bg-[#0c0c0c] border border-amber-500/50 px-3.5 py-2 rounded-lg text-amber-300 font-bold flex items-center gap-2">
-                                <span class="w-5 h-5 rounded-full bg-amber-400 text-black inline-flex items-center justify-center text-xs font-black">1</span>
-                                Quán Quân: <span id="mte-name-rank1" class="text-white uppercase font-extrabold">---</span>
-                            </div>
-                            <div class="p-1.5 rounded-full bg-[#1e1507] border border-[#d4af37] text-gold">
-                                <i class="fa-solid fa-repeat text-amber-400 text-base"></i>
-                            </div>
-                            <div class="bg-[#0c0c0c] border border-gray-600 px-3.5 py-2 rounded-lg text-gray-300 font-bold flex items-center gap-2">
-                                <span class="w-5 h-5 rounded-full bg-gray-300 text-black inline-flex items-center justify-center text-xs font-black">2</span>
-                                Á Quân: <span id="mte-name-rank2" class="text-white uppercase font-extrabold">---</span>
-                            </div>
-                        </div>
-                        <button onclick="mteQuickSwapRanks(1, 2)" class="w-full mt-3 py-2.5 px-4 bg-gradient-to-r from-amber-500 via-amber-600 to-[#d4af37] hover:from-amber-400 hover:to-amber-500 text-black font-extrabold rounded-lg text-xs uppercase tracking-widest transition flex items-center justify-center gap-2 shadow-lg active:scale-95">
-                            <i class="fa-solid fa-repeat text-base"></i> ĐỔI CHỖ NGAY: QUÁN QUÂN ⇋ Á QUÂN (HẠNG 1 & 2)
-                        </button>
-                    </div>
-
                     <div class="bg-[#141414] border border-[#2a2a2a] p-4 rounded-xl">
                         <div class="text-xs font-bold text-[#d4af37] uppercase tracking-wider mb-3 flex items-center justify-between">
-                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-list-ol"></i> Bảng Thứ Hạng Chi Tiết (ITM & Ranks)</span>
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-crown text-amber-400"></i> Bảng Thứ Hạng & Quán Quân (ITM & Busted Ranks)</span>
                             <span class="text-[10px] text-gray-400 font-normal">Gõ hoặc chọn VĐV cho từng Hạng</span>
                         </div>
-                        <div id="mte-rank-list" class="space-y-2 max-h-[260px] overflow-y-auto pr-1"></div>
+                        <div id="mte-rank-list" class="space-y-2 max-h-[380px] overflow-y-auto pr-1"></div>
                     </div>
                 </div>
 
@@ -438,23 +416,30 @@
                 <!-- TAB 4: DANH SÁCH VĐV & SỐ VÉ -->
                 <div id="mte-tab-content-players" class="hidden space-y-4">
                     <div class="bg-[#141414] border border-[#2a2a2a] p-4 rounded-xl">
-                        <div class="flex justify-between items-center mb-3">
+                        <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
                             <span class="text-xs font-bold text-[#d4af37] uppercase tracking-wider flex items-center gap-1.5">
-                                <i class="fa-solid fa-users"></i> Bảng Danh Sách VĐV & Số Lần Mua Vé
+                                <i class="fa-solid fa-users"></i> Bảng Danh Sách VĐV & Tiền Thưởng (Xếp Theo Giải)
                             </span>
-                            <button onclick="mteAddPlayerRow('', 1, null)" class="px-3 py-1 bg-emerald-950/80 border border-emerald-500/60 text-emerald-400 hover:text-white rounded text-xs font-bold uppercase transition flex items-center gap-1">
-                                <i class="fa-solid fa-plus"></i> Thêm VĐV
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button onclick="mteSortPlayersByRank()" class="px-2.5 py-1 bg-[#1e1507] hover:bg-amber-900/60 border border-amber-600/50 text-amber-300 rounded text-xs font-bold uppercase transition flex items-center gap-1 shadow-sm">
+                                    <i class="fa-solid fa-arrow-down-1-9 text-gold"></i> Xếp Theo Giải
+                                </button>
+                                <button onclick="mteAddPlayerRow('', 1, null, 0)" class="px-3 py-1 bg-emerald-950/80 border border-emerald-500/60 text-emerald-400 hover:text-white rounded text-xs font-bold uppercase transition flex items-center gap-1 shadow-sm">
+                                    <i class="fa-solid fa-plus"></i> Thêm VĐV
+                                </button>
+                            </div>
                         </div>
-                        <div class="overflow-x-auto max-h-[280px] overflow-y-auto">
+                        <div class="overflow-x-auto max-h-[300px] overflow-y-auto">
                             <table class="w-full text-left text-xs text-gray-300">
                                 <thead class="bg-[#1a1a1a] text-[#d4af37] sticky top-0 border-b border-[#333]">
                                     <tr>
+                                        <th class="p-2 text-center w-20">Thứ Hạng</th>
                                         <th class="p-2">Họ Tên VĐV</th>
-                                        <th class="p-2 text-center w-24">Số Vé Mua</th>
-                                        <th class="p-2 text-right">Tổng Tiền Đóng</th>
-                                        <th class="p-2 text-center w-24">Thứ Hạng</th>
-                                        <th class="p-2 text-center w-12">Xóa</th>
+                                        <th class="p-2 text-center w-16">Số Vé</th>
+                                        <th class="p-2 text-right w-24">Tiền Đóng</th>
+                                        <th class="p-2 text-right w-28 text-emerald-400">Tiền Thưởng</th>
+                                        <th class="p-2 text-right w-28">Lời/Lỗ (+/-)</th>
+                                        <th class="p-2 text-center w-10">Xóa</th>
                                     </tr>
                                 </thead>
                                 <tbody id="mte-player-rows" class="divide-y divide-[#222]"></tbody>
@@ -903,14 +888,35 @@
                 }
             });
 
+            // Đồng bộ thứ hạng từ itmResults nếu có
+            for (const [rk, nm] of Object.entries(itmResults)) {
+                if (nm) {
+                    if (playerMap.has(nm)) {
+                        playerMap.get(nm).rank = Number(rk);
+                    } else {
+                        playerMap.set(nm, { name: nm, tickets: 1, phone: '', rank: Number(rk) });
+                    }
+                }
+            }
+
+            // XẾP THEO THỨ TỰ GIẢI (HẠNG 1, HẠNG 2, HẠNG 3...)
+            const playerArray = Array.from(playerMap.values());
+            playerArray.sort((a, b) => {
+                const rA = Number(a.rank) || 999;
+                const rB = Number(b.rank) || 999;
+                if (rA !== rB) return rA - rB;
+                return b.tickets - a.tickets;
+            });
+
+            const payoutMap = mteGetPayoutMap(entries, payoutPool);
             const tbody = document.getElementById('mte-player-rows');
             tbody.innerHTML = '';
-            if (playerMap.size === 0) {
-                // Thêm mẫu nếu chưa có
-                mteAddPlayerRow('', 1, null);
+            if (playerArray.length === 0) {
+                mteAddPlayerRow('', 1, null, 0);
             } else {
-                playerMap.forEach(item => {
-                    mteAddPlayerRow(item.name, item.tickets, item.rank);
+                playerArray.forEach(item => {
+                    const prize = (item.rank && payoutMap[item.rank]) ? payoutMap[item.rank] : 0;
+                    mteAddPlayerRow(item.name, item.tickets, item.rank, prize);
                 });
             }
 
@@ -935,40 +941,24 @@
             closeMasterTourEditor();
         }
 
-        function mteOnRankInputChanged(rank) {
-            if (rank === 1) {
-                const val = document.getElementById('mte-input-rank-1').value.trim();
-                document.getElementById('mte-name-rank1').innerText = val || '---';
-            } else if (rank === 2) {
-                const val = document.getElementById('mte-input-rank-2').value.trim();
-                document.getElementById('mte-name-rank2').innerText = val || '---';
-            }
-            mteRenderLiveReport();
+        function mteGetPayoutMap(entries, pool) {
+            let itmStructure = [];
+            const e = Number(entries) || 0;
+            const p = Number(pool) || 0;
+            if (e <= 5) itmStructure = [{ rank: 1, pct: 100 }];
+            else if (e <= 10) itmStructure = [{ rank: 1, pct: 65 }, { rank: 2, pct: 35 }];
+            else if (e <= 20) itmStructure = [{ rank: 1, pct: 50 }, { rank: 2, pct: 30 }, { rank: 3, pct: 20 }];
+            else if (e <= 30) itmStructure = [{ rank: 1, pct: 45 }, { rank: 2, pct: 27 }, { rank: 3, pct: 18 }, { rank: 4, pct: 10 }];
+            else itmStructure = [{ rank: 1, pct: 38 }, { rank: 2, pct: 24 }, { rank: 3, pct: 16 }, { rank: 4, pct: 12 }, { rank: 5, pct: 10 }];
+
+            const payoutMap = {};
+            itmStructure.forEach(item => {
+                payoutMap[item.rank] = Math.round((p * (item.pct / 100)) / 1000) * 1000;
+            });
+            return payoutMap;
         }
 
-        function mteQuickSwapRanks(r1, r2) {
-            const inp1 = document.getElementById(`mte-input-rank-${r1}`);
-            const inp2 = document.getElementById(`mte-input-rank-${r2}`);
-            if (!inp1 || !inp2) return;
-
-            const temp = inp1.value;
-            inp1.value = inp2.value;
-            inp2.value = temp;
-
-            mteOnRankInputChanged(1);
-            mteOnRankInputChanged(2);
-
-            // Cập nhật cả ở Tab Danh Sách VĐV nếu có
-            const playerRows = document.querySelectorAll('#mte-player-rows tr');
-            playerRows.forEach(tr => {
-                const nameInp = tr.querySelector('.mte-p-name');
-                const rankInp = tr.querySelector('.mte-p-rank');
-                if (nameInp && rankInp) {
-                    if (nameInp.value.trim() === inp1.value.trim()) rankInp.value = r1;
-                    else if (nameInp.value.trim() === inp2.value.trim()) rankInp.value = r2;
-                }
-            });
-
+        function mteOnRankInputChanged(rank) {
             mteRenderLiveReport();
         }
 
@@ -976,7 +966,6 @@
             const fee = Number(document.getElementById('mte-input-fee').value) || 0;
             let entries = 0;
 
-            // Đếm số entries từ Tab 4 (Danh sách VĐV)
             const ticketInputs = document.querySelectorAll('.mte-p-tickets');
             if (ticketInputs.length > 0) {
                 ticketInputs.forEach(inp => { entries += Number(inp.value) || 0; });
@@ -1003,27 +992,70 @@
             document.getElementById('mte-input-payout-pool').value = pool;
             document.getElementById('mte-input-expenses').value = expenses;
 
+            mteRefreshPlayerRowAmounts();
             mteRenderLiveReport();
         }
 
-        function mteAddPlayerRow(name = '', tickets = 1, rank = null) {
+        function mteRefreshPlayerRowAmounts() {
+            const fee = Number(document.getElementById('mte-input-fee')?.value) || 250000;
+            const entries = Number(document.getElementById('mte-input-entries')?.value) || 0;
+            const pool = Number(document.getElementById('mte-input-payout-pool')?.value) || 0;
+            const payoutMap = mteGetPayoutMap(entries, pool);
+
+            const rows = document.querySelectorAll('#mte-player-rows tr');
+            rows.forEach(tr => {
+                const tickets = Number(tr.querySelector('.mte-p-tickets')?.value) || 1;
+                const rank = Number(tr.querySelector('.mte-p-rank')?.value) || null;
+                const paid = tickets * fee;
+                const prize = (rank && payoutMap[rank]) ? payoutMap[rank] : 0;
+                const net = prize - paid;
+
+                const paidSpan = tr.querySelector('.mte-p-paid');
+                if (paidSpan) paidSpan.innerText = formatMoney(paid);
+
+                const prizeSpan = tr.querySelector('.mte-p-prize');
+                if (prizeSpan) prizeSpan.innerText = formatMoney(prize);
+
+                const netSpan = tr.querySelector('.mte-p-net');
+                if (netSpan) {
+                    netSpan.innerText = (net > 0 ? '+' : '') + formatMoney(net);
+                    netSpan.className = `mte-p-net font-mono font-extrabold text-xs ${net > 0 ? 'text-emerald-400' : (net < 0 ? 'text-red-400' : 'text-gray-400')}`;
+                }
+            });
+        }
+
+        function mteAddPlayerRow(name = '', tickets = 1, rank = null, prize = 0) {
             const tbody = document.getElementById('mte-player-rows');
             const fee = Number(document.getElementById('mte-input-fee')?.value) || 250000;
+            const t = Number(tickets) || 1;
+            const paid = t * fee;
+            const r = rank ? Number(rank) : null;
+            const pz = Number(prize) || 0;
+            const net = pz - paid;
+
             const tr = document.createElement('tr');
             tr.className = 'hover:bg-[#1c1c1c] transition';
 
             tr.innerHTML = `
+                <td class="p-2 text-center">
+                    <input type="number" min="1" value="${r || ''}" placeholder="—" oninput="mteOnPlayerRankChanged(this)" class="mte-p-rank w-14 bg-[#161616] border border-[#333] focus:border-[#d4af37] text-center text-gold px-1 py-1 rounded text-xs font-mono font-bold outline-none">
+                </td>
                 <td class="p-2">
                     <input type="text" value="${name}" placeholder="Họ tên VĐV..." list="mte-player-datalist" oninput="mteRenderLiveReport()" class="mte-p-name w-full bg-[#161616] border border-[#333] focus:border-[#d4af37] text-white px-2 py-1 rounded text-xs uppercase font-bold outline-none">
                 </td>
                 <td class="p-2 text-center">
-                    <input type="number" min="1" value="${tickets || 1}" oninput="mteOnPlayerTicketsChanged(this)" class="mte-p-tickets w-16 bg-[#161616] border border-[#333] focus:border-[#d4af37] text-center text-white px-1 py-1 rounded text-xs font-mono font-bold outline-none">
+                    <input type="number" min="1" value="${t}" oninput="mteOnPlayerTicketsChanged(this)" class="mte-p-tickets w-14 bg-[#161616] border border-[#333] focus:border-[#d4af37] text-center text-white px-1 py-1 rounded text-xs font-mono font-bold outline-none">
                 </td>
                 <td class="p-2 text-right">
-                    <span class="mte-p-paid font-mono font-bold text-emerald-400 text-xs">${formatMoney((tickets || 1) * fee)}</span>
+                    <span class="mte-p-paid font-mono font-bold text-gray-300 text-xs">${formatMoney(paid)}</span>
                 </td>
-                <td class="p-2 text-center">
-                    <input type="number" min="1" value="${rank || ''}" placeholder="—" oninput="mteRenderLiveReport()" class="mte-p-rank w-14 bg-[#161616] border border-[#333] focus:border-[#d4af37] text-center text-gold px-1 py-1 rounded text-xs font-mono font-bold outline-none">
+                <td class="p-2 text-right">
+                    <span class="mte-p-prize font-mono font-bold text-emerald-400 text-xs">${formatMoney(pz)}</span>
+                </td>
+                <td class="p-2 text-right">
+                    <span class="mte-p-net font-mono font-extrabold text-xs ${net > 0 ? 'text-emerald-400' : (net < 0 ? 'text-red-400' : 'text-gray-400')}">
+                        ${net > 0 ? '+' : ''}${formatMoney(net)}
+                    </span>
                 </td>
                 <td class="p-2 text-center">
                     <button onclick="mteDeletePlayerRow(this)" class="text-red-500 hover:text-red-300 p-1" title="Xóa VĐV"><i class="fa-solid fa-trash-can"></i></button>
@@ -1032,14 +1064,77 @@
             tbody.appendChild(tr);
         }
 
+        function mteOnPlayerRankChanged(input) {
+            const tr = input.closest('tr');
+            const rank = Number(input.value) || null;
+            const entries = Number(document.getElementById('mte-input-entries')?.value) || 0;
+            const pool = Number(document.getElementById('mte-input-payout-pool')?.value) || 0;
+            const fee = Number(document.getElementById('mte-input-fee')?.value) || 250000;
+            const tickets = Number(tr.querySelector('.mte-p-tickets')?.value) || 1;
+            const paid = tickets * fee;
+
+            const payoutMap = mteGetPayoutMap(entries, pool);
+            const prize = (rank && payoutMap[rank]) ? payoutMap[rank] : 0;
+            const net = prize - paid;
+
+            const prizeSpan = tr.querySelector('.mte-p-prize');
+            if (prizeSpan) prizeSpan.innerText = formatMoney(prize);
+
+            const netSpan = tr.querySelector('.mte-p-net');
+            if (netSpan) {
+                netSpan.innerText = (net > 0 ? '+' : '') + formatMoney(net);
+                netSpan.className = `mte-p-net font-mono font-extrabold text-xs ${net > 0 ? 'text-emerald-400' : (net < 0 ? 'text-red-400' : 'text-gray-400')}`;
+            }
+
+            // Đồng bộ tên vào Tab 1 nếu có rank
+            const name = tr.querySelector('.mte-p-name')?.value.trim();
+            if (name && rank && rank <= 15) {
+                const rankInp = document.getElementById(`mte-input-rank-${rank}`);
+                if (rankInp) rankInp.value = name;
+            }
+
+            mteRenderLiveReport();
+        }
+
+        function mteSortPlayersByRank() {
+            const tbody = document.getElementById('mte-player-rows');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            rows.sort((a, b) => {
+                const rA = Number(a.querySelector('.mte-p-rank')?.value) || 999;
+                const rB = Number(b.querySelector('.mte-p-rank')?.value) || 999;
+                if (rA !== rB) return rA - rB;
+                const tA = Number(a.querySelector('.mte-p-tickets')?.value) || 0;
+                const tB = Number(b.querySelector('.mte-p-tickets')?.value) || 0;
+                return tB - tA;
+            });
+            rows.forEach(r => tbody.appendChild(r));
+        }
+
         function mteOnPlayerTicketsChanged(input) {
             const tr = input.closest('tr');
             const fee = Number(document.getElementById('mte-input-fee')?.value) || 250000;
             const tickets = Number(input.value) || 1;
+            const paid = tickets * fee;
+            const rank = Number(tr.querySelector('.mte-p-rank')?.value) || null;
+
+            const entries = Number(document.getElementById('mte-input-entries')?.value) || 0;
+            const pool = Number(document.getElementById('mte-input-payout-pool')?.value) || 0;
+            const payoutMap = mteGetPayoutMap(entries, pool);
+            const prize = (rank && payoutMap[rank]) ? payoutMap[rank] : 0;
+            const net = prize - paid;
+
             const paidSpan = tr.querySelector('.mte-p-paid');
-            if (paidSpan) {
-                paidSpan.innerText = formatMoney(tickets * fee);
+            if (paidSpan) paidSpan.innerText = formatMoney(paid);
+
+            const prizeSpan = tr.querySelector('.mte-p-prize');
+            if (prizeSpan) prizeSpan.innerText = formatMoney(prize);
+
+            const netSpan = tr.querySelector('.mte-p-net');
+            if (netSpan) {
+                netSpan.innerText = (net > 0 ? '+' : '') + formatMoney(net);
+                netSpan.className = `mte-p-net font-mono font-extrabold text-xs ${net > 0 ? 'text-emerald-400' : (net < 0 ? 'text-red-400' : 'text-gray-400')}`;
             }
+
             mteAutoRecalculateFund();
         }
 
